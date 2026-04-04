@@ -258,17 +258,37 @@ install_system_packages() {
             ;;
         rhel|centos|fedora)
             if [ "$AUTO_INSTALL" = true ]; then
+                # Install core packages first
                 if command_exists dnf; then
-                    sudo dnf install -y python3 python3-pip fio iozone3 dbench nfs-utils
+                    echo "Installing core packages..."
+                    sudo dnf install -y python3 python3-pip fio nfs-utils
+                    
+                    # Try to install optional benchmark tools (may not be available)
+                    echo "Attempting to install optional benchmark tools..."
+                    sudo dnf install -y iozone3 2>/dev/null || echo -e "${YELLOW}⚠ iozone3 not available in repos${NC}"
+                    sudo dnf install -y dbench 2>/dev/null || echo -e "${YELLOW}⚠ dbench not available in repos${NC}"
+                    sudo dnf install -y bonnie++ 2>/dev/null || echo -e "${YELLOW}⚠ bonnie++ not available in repos${NC}"
                 else
-                    sudo yum install -y python3 python3-pip fio iozone3 dbench nfs-utils
+                    echo "Installing core packages..."
+                    sudo yum install -y python3 python3-pip fio nfs-utils
+                    
+                    # Try to install optional benchmark tools (may not be available)
+                    echo "Attempting to install optional benchmark tools..."
+                    sudo yum install -y iozone3 2>/dev/null || echo -e "${YELLOW}⚠ iozone3 not available in repos${NC}"
+                    sudo yum install -y dbench 2>/dev/null || echo -e "${YELLOW}⚠ dbench not available in repos${NC}"
+                    sudo yum install -y bonnie++ 2>/dev/null || echo -e "${YELLOW}⚠ bonnie++ not available in repos${NC}"
                 fi
+                echo -e "${YELLOW}Note: Some benchmark tools may need manual installation from source or EPEL${NC}"
             else
                 echo "Run the following commands to install system packages:"
                 if command_exists dnf; then
-                    echo "  sudo dnf install -y python3 python3-pip fio iozone3 dbench nfs-utils"
+                    echo "  sudo dnf install -y python3 python3-pip fio nfs-utils"
+                    echo "  # Optional benchmark tools (may not be available):"
+                    echo "  sudo dnf install -y iozone3 dbench bonnie++"
                 else
-                    echo "  sudo yum install -y python3 python3-pip fio iozone3 dbench nfs-utils"
+                    echo "  sudo yum install -y python3 python3-pip fio nfs-utils"
+                    echo "  # Optional benchmark tools (may not be available):"
+                    echo "  sudo yum install -y iozone3 dbench bonnie++"
                 fi
             fi
             ;;

@@ -82,7 +82,7 @@ class DDTestTool(BaseTestTool):
             dict: Test results for all DD tests
         """
         self.log("=" * 60, "INFO")
-        self.log("Starting DD Tests", "INFO")
+        self.log("Starting DD Tests (Sanity Test - Fixed 5GB)", "INFO")
         self.log("=" * 60, "INFO")
         
         # Test 1: Sequential write with direct I/O
@@ -130,7 +130,7 @@ class DDTestTool(BaseTestTool):
             direct: Use direct I/O (bypasses cache)
             sync: Use synchronized I/O (ensures data is written)
         """
-        self.log(f"Running DD write test: {name}...", "INFO")
+        self.log(f"Running DD write test (sanity): {name}...", "INFO")
         
         # Start metrics collection
         self._start_metrics_collection()
@@ -243,7 +243,7 @@ class DDTestTool(BaseTestTool):
             filepath: Path to read file
             direct: Use direct I/O (bypasses cache)
         """
-        self.log(f"Running DD read test: {name}...", "INFO")
+        self.log(f"Running DD read test (sanity): {name}...", "INFO")
         
         # Start metrics collection
         self._start_metrics_collection()

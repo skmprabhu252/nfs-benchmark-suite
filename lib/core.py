@@ -168,15 +168,11 @@ class BaseTestTool(ABC):
             # Check if result has stdout/stderr attributes (set when capture_output=True)
             if hasattr(result, 'stdout') and result.stdout:
                 self.log("Command stdout:", "INFO")
-                for line in result.stdout.splitlines():
-                    if line.strip():  # Only log non-empty lines
-                        self.log(f"  {line}", "INFO")
+                self.log(result.stdout, "INFO")
             
             if hasattr(result, 'stderr') and result.stderr:
                 self.log("Command stderr:", "INFO")
-                for line in result.stderr.splitlines():
-                    if line.strip():  # Only log non-empty lines
-                        self.log(f"  {line}", "INFO")
+                self.log(result.stderr, "INFO")
             
             return result
             

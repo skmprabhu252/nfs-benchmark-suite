@@ -308,8 +308,7 @@ CONFIG_SCHEMA = {
                         "loadfile": {
                             "type": "string"
                         }
-                    },
-                    "required": ["num_clients", "duration"]
+                    }
                 }
             }
         },

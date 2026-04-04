@@ -376,13 +376,15 @@ class DBenchTestTool(BaseTestTool):
         
         # Skip cleanup - always enabled for NFS backend to avoid cleanup errors
         # dbench has issues cleaning up NFS files (NFS3ERR_NOENT errors)
-        skip_cleanup = common_config.get('skip_cleanup', True if backend == 'nfs' else False)
-        if skip_cleanup:
-            if self._check_dbench_option('--skip-cleanup'):
+        # Always add for NFS backend regardless of version check
+        if backend == 'nfs':
+            cmd.append('--skip-cleanup')
+            self.log("Added --skip-cleanup flag for NFS backend", "DEBUG")
+        else:
+            # For other backends, check config
+            skip_cleanup = common_config.get('skip_cleanup', False)
+            if skip_cleanup and self._check_dbench_option('--skip-cleanup'):
                 cmd.append('--skip-cleanup')
-                self.log("Added --skip-cleanup flag for NFS backend", "DEBUG")
-            else:
-                self.log("Warning: --skip-cleanup not supported by this dbench version", "WARNING")
         
         # Number of clients (last argument)
         cmd.append(str(num_clients))

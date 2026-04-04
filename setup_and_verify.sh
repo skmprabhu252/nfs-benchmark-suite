@@ -249,11 +249,11 @@ install_system_packages() {
         ubuntu|debian)
             if [ "$AUTO_INSTALL" = true ]; then
                 sudo apt-get update
-                sudo apt-get install -y python3 python3-pip fio iozone3 bonnie++ dbench nfs-common
+                sudo apt-get install -y python3 python3-pip fio iozone bonnie++ dbench nfs-common
             else
                 echo "Run the following commands to install system packages:"
                 echo "  sudo apt-get update"
-                echo "  sudo apt-get install -y python3 python3-pip fio iozone3 bonnie++ dbench nfs-common"
+                echo "  sudo apt-get install -y python3 python3-pip fio iozone bonnie++ dbench nfs-common"
             fi
             ;;
         rhel|centos|fedora)
@@ -284,11 +284,11 @@ install_system_packages() {
                 if command_exists dnf; then
                     echo "  sudo dnf install -y python3 python3-pip fio nfs-utils"
                     echo "  # Optional benchmark tools (may not be available):"
-                    echo "  sudo dnf install -y iozone3 dbench bonnie++"
+                    echo "  sudo dnf install -y iozone dbench bonnie++"
                 else
                     echo "  sudo yum install -y python3 python3-pip fio nfs-utils"
                     echo "  # Optional benchmark tools (may not be available):"
-                    echo "  sudo yum install -y iozone3 dbench bonnie++"
+                    echo "  sudo yum install -y iozone dbench bonnie++"
                 fi
             fi
             ;;

@@ -463,11 +463,11 @@ mount | grep nfs
 **3. Tool Not Found**
 ```bash
 # Ubuntu/Debian
-sudo apt-get install fio iozone3 bonnie++ dbench
+sudo apt-get install fio iozone bonnie++ dbench
 
 # RHEL/CentOS - try EPEL first
 sudo dnf install -y epel-release
-sudo dnf install fio iozone3 bonnie++ dbench
+sudo dnf install fio iozone bonnie++ dbench
 
 # If tools not available in repos, see Requirements section for manual installation
 ```

@@ -153,13 +153,13 @@ This tool helps you **measure and validate NFS storage performance** through com
 #### Ubuntu/Debian
 ```bash
 sudo apt-get update
-sudo apt-get install python3 python3-pip fio iozone bonnie++ dbench nfs-common
+sudo apt-get install python3 python3-pip fio iozone bonnie++ dbench libnsl2 nfs-common
 ```
 
 #### RHEL/CentOS/Fedora
 ```bash
 # Install core packages (always available)
-sudo dnf install -y python3 python3-pip fio nfs-utils
+sudo dnf install -y python3 python3-pip fio nfs-utils libnsl
 
 # Optional benchmark tools (may need manual installation)
 sudo dnf install -y iozone bonnie++ dbench
@@ -172,6 +172,8 @@ sudo dnf install -y iozone bonnie++ dbench
    sudo dnf install -y epel-release
    sudo dnf install -y iozone bonnie++ dbench
    ```
+
+**Note:** `libnsl` library is required for dbench to run properly.
 
 2. **Install from source** (if EPEL doesn't have them):
    
@@ -463,11 +465,11 @@ mount | grep nfs
 **3. Tool Not Found**
 ```bash
 # Ubuntu/Debian
-sudo apt-get install fio iozone bonnie++ dbench
+sudo apt-get install fio iozone bonnie++ dbench libnsl2
 
 # RHEL/CentOS - try EPEL first
 sudo dnf install -y epel-release
-sudo dnf install fio iozone bonnie++ dbench
+sudo dnf install fio iozone bonnie++ dbench libnsl
 
 # If tools not available in repos, see Requirements section for manual installation
 ```

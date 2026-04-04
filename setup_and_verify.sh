@@ -249,11 +249,11 @@ install_system_packages() {
         ubuntu|debian)
             if [ "$AUTO_INSTALL" = true ]; then
                 sudo apt-get update
-                sudo apt-get install -y python3 python3-pip fio iozone bonnie++ dbench nfs-common
+                sudo apt-get install -y python3 python3-pip fio iozone bonnie++ dbench libnsl2 nfs-common
             else
                 echo "Run the following commands to install system packages:"
                 echo "  sudo apt-get update"
-                echo "  sudo apt-get install -y python3 python3-pip fio iozone bonnie++ dbench nfs-common"
+                echo "  sudo apt-get install -y python3 python3-pip fio iozone bonnie++ dbench libnsl2 nfs-common"
             fi
             ;;
         rhel|centos|fedora)
@@ -261,7 +261,7 @@ install_system_packages() {
                 # Install core packages first
                 if command_exists dnf; then
                     echo "Installing core packages..."
-                    sudo dnf install -y python3 python3-pip fio nfs-utils
+                    sudo dnf install -y python3 python3-pip fio nfs-utils libnsl
                     
                     # Try to install optional benchmark tools (may not be available)
                     echo "Attempting to install optional benchmark tools..."
@@ -270,7 +270,7 @@ install_system_packages() {
                     sudo dnf install -y bonnie++ 2>/dev/null || echo -e "${YELLOW}⚠ bonnie++ not available in repos${NC}"
                 else
                     echo "Installing core packages..."
-                    sudo yum install -y python3 python3-pip fio nfs-utils
+                    sudo yum install -y python3 python3-pip fio nfs-utils libnsl
                     
                     # Try to install optional benchmark tools (may not be available)
                     echo "Attempting to install optional benchmark tools..."
@@ -282,11 +282,11 @@ install_system_packages() {
             else
                 echo "Run the following commands to install system packages:"
                 if command_exists dnf; then
-                    echo "  sudo dnf install -y python3 python3-pip fio nfs-utils"
+                    echo "  sudo dnf install -y python3 python3-pip fio nfs-utils libnsl"
                     echo "  # Optional benchmark tools (may not be available):"
                     echo "  sudo dnf install -y iozone dbench bonnie++"
                 else
-                    echo "  sudo yum install -y python3 python3-pip fio nfs-utils"
+                    echo "  sudo yum install -y python3 python3-pip fio nfs-utils libnsl"
                     echo "  # Optional benchmark tools (may not be available):"
                     echo "  sudo yum install -y iozone dbench bonnie++"
                 fi

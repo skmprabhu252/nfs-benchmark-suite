@@ -272,8 +272,7 @@ dbench_tests:
     num_clients: 1                # Single client for latency
     duration: 120                 # 2 minutes
     loadfile: "dbench_client.txt"
-    fsync: true                   # Enable fsync for realistic latency
-    sync_dirs: true               # Sync directories
+    # Note: fsync and sync_dirs not supported by dbench 5.0
     target_rate: 0
   
   # Test 6: Sustained Load Test (stability)

@@ -260,8 +260,7 @@ dbench_tests:
     num_clients: 1
     duration: 180                 # 3 minutes (increased)
     loadfile: "dbench_client.txt"
-    fsync: true
-    sync_dirs: true
+    # Note: fsync and sync_dirs not supported by dbench 5.0
     target_rate: 0
   
   sustained_load:

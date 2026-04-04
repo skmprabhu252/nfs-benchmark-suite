@@ -79,8 +79,9 @@ class DBenchTestTool(BaseTestTool):
             self.log("  • Run: ./setup_and_verify.sh --auto", "ERROR")
             self.log("", "ERROR")
             self.log("  Manual Installation:", "ERROR")
-            self.log("  • Ubuntu/Debian: sudo apt-get install dbench", "ERROR")
-            self.log("  • RHEL/CentOS: sudo yum install dbench", "ERROR")
+            self.log("  • Ubuntu/Debian: sudo apt-get install dbench libnsl2", "ERROR")
+            self.log("  • RHEL/CentOS: sudo yum install dbench libnsl", "ERROR")
+            self.log("  Note: libnsl library is required for dbench to run", "ERROR")
             self.log("  Verify installation: dbench --version", "ERROR")
             return False
         return True

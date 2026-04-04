@@ -91,9 +91,16 @@ def _safe_generate_html(func, *args, section_name="Section", **kwargs):
 def generate_html_report(results, output_file=None):
     """Generate HTML report from test results"""
     
+    # Create report directory if it doesn't exist
+    report_dir = Path("report")
+    report_dir.mkdir(exist_ok=True)
+    
     if output_file is None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_file = f"nfs_performance_report_{timestamp}.html"
+        output_file = report_dir / f"nfs_performance_report_{timestamp}.html"
+    else:
+        # Ensure output_file is in report directory
+        output_file = report_dir / Path(output_file).name
     
     # Extract data with None-safe defaults
     test_run = results.get('test_run') or {}

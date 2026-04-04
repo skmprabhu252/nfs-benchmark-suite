@@ -167,11 +167,9 @@ class BaseTestTool(ABC):
             # Log command output to log file at INFO level
             # Check if result has stdout/stderr attributes (set when capture_output=True)
             if hasattr(result, 'stdout') and result.stdout:
-                self.log("Command stdout:", "INFO")
                 self.log(result.stdout, "INFO")
             
             if hasattr(result, 'stderr') and result.stderr:
-                self.log("Command stderr:", "INFO")
                 self.log(result.stderr, "INFO")
             
             return result

@@ -203,9 +203,16 @@ class DBenchTestTool(BaseTestTool):
                 self.log(f"loadfile must be string, got {type(loadfile).__name__}", "ERROR")
                 return False
             
-            # Check if loadfile exists (warning only, not error)
-            if not Path(loadfile).exists() and not Path(f'/usr/share/dbench/{loadfile}').exists():
-                self.log(f"loadfile '{loadfile}' not found, dbench will use default", "WARNING")
+            # Check if loadfile exists (info only, we have fallback)
+            possible_paths = [
+                Path(loadfile),
+                Path(__file__).parent.parent / 'config' / loadfile,
+                Path(f'/usr/share/dbench/{loadfile}'),
+                Path(f'/usr/local/share/dbench/{loadfile}')
+            ]
+            
+            if not any(p.exists() for p in possible_paths):
+                self.log(f"loadfile '{loadfile}' not found in standard locations, will use default", "INFO")
         
         return True
     
@@ -261,15 +268,32 @@ class DBenchTestTool(BaseTestTool):
         if 'duration' in test_config:
             cmd.extend(['-t', str(test_config['duration'])])
         
-        # Loadfile (workload definition)
-        if 'loadfile' in test_config:
-            loadfile = test_config['loadfile']
-            # Check if loadfile exists, otherwise use default
-            if Path(loadfile).exists():
-                cmd.extend(['-c', loadfile])
-            elif Path(f'/usr/share/dbench/{loadfile}').exists():
-                cmd.extend(['-c', f'/usr/share/dbench/{loadfile}'])
-            # If not found, dbench will use its default
+        # Loadfile (workload definition) - REQUIRED for dbench 5.0+
+        loadfile = test_config.get('loadfile', 'client.txt')
+        loadfile_path = None
+        
+        # Check multiple locations for the loadfile
+        possible_paths = [
+            Path(loadfile),  # Absolute or relative path
+            Path(__file__).parent.parent / 'config' / loadfile,  # Suite's config directory
+            Path(f'/usr/share/dbench/{loadfile}'),  # System default location
+            Path(f'/usr/local/share/dbench/{loadfile}')  # Local installation
+        ]
+        
+        for path in possible_paths:
+            if path.exists():
+                loadfile_path = str(path)
+                break
+        
+        if loadfile_path:
+            cmd.extend(['-c', loadfile_path])
+        else:
+            # If no loadfile found, use the suite's default
+            default_loadfile = Path(__file__).parent.parent / 'config' / 'client.txt'
+            if default_loadfile.exists():
+                cmd.extend(['-c', str(default_loadfile)])
+            else:
+                self.log(f"Warning: No loadfile found, dbench may fail", "WARNING")
         
         # Warmup period
         common_config = self.config.get('common', {})

@@ -163,18 +163,18 @@ class BaseTestTool(ABC):
                 **kwargs
             )
             
-            # Log command output to log file
+            # Log command output to log file at INFO level
             if capture_output and result.stdout:
-                self.log("Command stdout:", "DEBUG")
+                self.log("Command stdout:", "INFO")
                 for line in result.stdout.splitlines():
                     if line.strip():  # Only log non-empty lines
-                        self.log(f"  {line}", "DEBUG")
+                        self.log(f"  {line}", "INFO")
             
             if capture_output and result.stderr:
-                self.log("Command stderr:", "DEBUG")
+                self.log("Command stderr:", "INFO")
                 for line in result.stderr.splitlines():
                     if line.strip():  # Only log non-empty lines
-                        self.log(f"  {line}", "DEBUG")
+                        self.log(f"  {line}", "INFO")
             
             return result
             

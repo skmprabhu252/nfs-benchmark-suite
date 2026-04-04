@@ -209,6 +209,26 @@ class DBenchTestTool(BaseTestTool):
         
         return True
     
+    def _check_dbench_option(self, option: str) -> bool:
+        """
+        Check if dbench supports a specific option.
+        
+        Args:
+            option: The option to check (e.g., '--fsync')
+            
+        Returns:
+            bool: True if option is supported
+        """
+        try:
+            result = subprocess.run(
+                ['dbench', '--help'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            return option in result.stdout or option in result.stderr
+        except Exception:
+            return False
     
     def _build_dbench_command(self, test_config: Dict[str, Any]) -> List[str]:
         """
@@ -256,21 +276,29 @@ class DBenchTestTool(BaseTestTool):
         if 'target_rate' in test_config and test_config['target_rate'] > 0:
             cmd.extend(['--target-rate', str(test_config['target_rate'])])
         
-        # Fsync option
+        # Fsync option (check if supported)
         if test_config.get('fsync', False):
-            cmd.append('--fsync')
+            if self._check_dbench_option('--fsync'):
+                cmd.append('--fsync')
+            else:
+                self.log("Warning: --fsync not supported by this dbench version", "WARNING")
         
-        # Sync directories
+        # Sync directories (check if supported)
         if test_config.get('sync_dirs', False):
-            cmd.append('--sync-dirs')
+            if self._check_dbench_option('--sync-dirs'):
+                cmd.append('--sync-dirs')
+            else:
+                self.log("Warning: --sync-dirs not supported by this dbench version", "WARNING")
         
-        # Machine-readable output
+        # Machine-readable output (check if supported)
         if common_config.get('machine_readable', True):
-            cmd.append('--machine-readable')
+            if self._check_dbench_option('--machine-readable'):
+                cmd.append('--machine-readable')
         
-        # Skip cleanup (keep files for inspection)
+        # Skip cleanup (check if supported)
         if common_config.get('skip_cleanup', False):
-            cmd.append('--skip-cleanup')
+            if self._check_dbench_option('--skip-cleanup'):
+                cmd.append('--skip-cleanup')
         
         # Number of clients (last argument)
         cmd.append(str(num_clients))

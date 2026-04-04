@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-IOzone Test Tool for NFS Performance Testing
+IOzone Test Tool for NFS Benchmark Suite
 
 This module implements the IOzoneTestTool class for running IOzone
 performance tests on NFS mounts. IOzone is a filesystem benchmark tool

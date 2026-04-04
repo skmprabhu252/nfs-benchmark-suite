@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# NFS Performance Test Suite - Setup and Verification Script
+# NFS Benchmark Suite - Setup and Verification Script
 # This script installs prerequisites and verifies the environment
 #
 # Usage:
@@ -46,7 +46,7 @@ done
 
 # Print header
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}NFS Performance Test Suite${NC}"
+echo -e "${BLUE}NFS Benchmark Suite${NC}"
 echo -e "${BLUE}Setup and Verification Script${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
@@ -426,7 +426,7 @@ main() {
     echo -e "\n${BLUE}=== TESTING FUNCTIONALITY ===${NC}"
     if test_functionality; then
         echo -e "\n${GREEN}=== SETUP COMPLETE ===${NC}"
-        echo -e "${GREEN}NFS Performance Test Suite is ready to use!${NC}"
+        echo -e "${GREEN}NFS Benchmark Suite is ready to use!${NC}"
         echo ""
         echo "Usage examples:"
         echo "  python3 runtest.py --mount-path /mnt/nfs1 --quick-test"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Input Validation Utilities for NFS Performance Testing
+Input Validation Utilities for NFS Benchmark Suite
 
 This module provides comprehensive validation for:
 - Mount paths (existence, type, NFS mount, permissions)

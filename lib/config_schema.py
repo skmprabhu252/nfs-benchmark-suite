@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Configuration Schema for NFS Performance Testing
+Configuration Schema for NFS Benchmark Suite
 
 This module defines JSON schemas for validating test configuration files.
 Provides comprehensive validation with clear error messages.
@@ -9,7 +9,7 @@ Provides comprehensive validation with clear error messages.
 # Configuration schema for NFS performance tests
 CONFIG_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "NFS Performance Test Configuration",
+    "title": "NFS Benchmark Suite Configuration",
     "description": "Configuration schema for NFS performance testing suite",
     "type": "object",
     "required": ["dd_tests", "fio_tests"],
@@ -400,7 +400,7 @@ def get_schema_description():
         str: Description of configuration requirements
     """
     return """
-NFS Performance Test Configuration Schema
+NFS Benchmark Suite Configuration Schema
 
 Required Sections:
   - dd_tests: DD (Data Duplicator) test configurations

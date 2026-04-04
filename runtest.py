@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NFS Performance Testing Script
+NFS Benchmark Suite Script
 
 This script performs comprehensive DD and FIO tests on NFS mounts to evaluate
 performance across various workload patterns. Results are automatically saved
@@ -1866,7 +1866,7 @@ class NFSPerformanceTest:
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description='NFS Performance Testing Script with Configurable Parameters',
+        description='NFS Benchmark Suite Script with Configurable Parameters',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

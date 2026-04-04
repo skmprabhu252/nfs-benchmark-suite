@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-dbench Test Tool for NFS Performance Testing
+dbench Test Tool for NFS Benchmark Suite
 
 This module implements the DBenchTestTool class for running dbench
 performance tests on NFS mounts. dbench simulates realistic client/server

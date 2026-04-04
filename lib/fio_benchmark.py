@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-FIO Test Tool for NFS Performance Testing
+FIO Test Tool for NFS Benchmark Suite
 
 This module implements the FIOTestTool class for running FIO (Flexible I/O Tester)
 performance tests on NFS mounts.

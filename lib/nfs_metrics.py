@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NFS Metrics Collector for NFS Performance Testing
+NFS Metrics Collector for NFS Benchmark Suite
 
 This module provides comprehensive NFS-level metrics collection including:
 - nfsstat: NFS operation statistics

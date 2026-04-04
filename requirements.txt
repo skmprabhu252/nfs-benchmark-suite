@@ -1,4 +1,4 @@
-# NFS Performance Test Suite - Python Dependencies
+# NFS Benchmark Suite - Python Dependencies
 # Install with: pip install -r requirements.txt
 
 # Core dependencies

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Base Test Tool Class for NFS Performance Testing
+Base Test Tool Class for NFS Benchmark Suite
 
 This module provides the abstract base class that all test tools must inherit from.
 It defines the interface and provides common functionality for all test tools.

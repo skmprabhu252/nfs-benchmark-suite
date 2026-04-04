@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DD Test Tool for NFS Performance Testing
+DD Test Tool for NFS Benchmark Suite
 
 This module implements the DDTestTool class for running DD (Data Duplicator)
 performance tests on NFS mounts.

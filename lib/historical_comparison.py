@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Historical Comparison Module for NFS Performance Test Suite
+Historical Comparison Module for NFS Benchmark Suite
 
 This module manages historical test result storage, retrieval, and comparison.
 It enables tracking performance trends over time and detecting regressions.
 
-Author: NFS Performance Test Suite
+Author: NFS Benchmark Suite
 Date: 2026-04-03
 """
 

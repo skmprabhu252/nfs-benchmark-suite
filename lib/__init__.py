@@ -1,5 +1,5 @@
 """
-NFS Performance Test Library
+NFS Benchmark Suite Library
 
 This package contains the core benchmark classes for NFS performance testing.
 These are library modules and should not be executed directly.

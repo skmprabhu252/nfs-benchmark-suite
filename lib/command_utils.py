@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Command Execution Utilities for NFS Performance Testing
+Command Execution Utilities for NFS Benchmark Suite
 
 This module provides centralized command execution with timeout protection
 to prevent NFS hangs from stalling the entire test framework.

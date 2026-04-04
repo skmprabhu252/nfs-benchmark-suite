@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate HTML Report from NFS Performance Test Results
+Generate HTML Report from NFS Benchmark Suite Results
 
 This script converts JSON test results into an interactive HTML report with charts.
 
@@ -145,7 +145,7 @@ def generate_html_report(results, output_file=None):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFS Performance Test Report</title>
+    <title>NFS Benchmark Suite Report</title>
     <style>
         * {{
             margin: 0;
@@ -346,7 +346,7 @@ def generate_html_report(results, output_file=None):
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 NFS Performance Test Report</h1>
+            <h1>📊 NFS Benchmark Suite Report</h1>
             <p><strong>Mount Path:</strong> {test_run.get('mount_path', 'N/A')}</p>
             <p><strong>Hostname:</strong> {test_run.get('hostname', 'N/A')}</p>
             <p><strong>Test Date:</strong> {test_run.get('timestamp', 'N/A')}</p>
@@ -412,7 +412,7 @@ def generate_html_report(results, output_file=None):
         
         <div class="footer">
             <p>Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-            <p>NFS Performance Test Suite</p>
+            <p>NFS Benchmark Suite</p>
         </div>
     </div>
 </body>
@@ -1807,7 +1807,7 @@ def main():
     
     # Show help if requested
     if json_file in ['--help', '-h', 'help']:
-        print("\nNFS Performance Test - HTML Report Generator")
+        print("\nNFS Benchmark Suite - HTML Report Generator")
         print("=" * 50)
         print("\nUsage:")
         print("  python3 generate_html_report.py <json_file>")

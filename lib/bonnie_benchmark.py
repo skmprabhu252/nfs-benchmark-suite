@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bonnie++ Test Tool for NFS Performance Testing
+Bonnie++ Test Tool for NFS Benchmark Suite
 
 This module implements the BonnieTestTool class for running Bonnie++
 performance tests on NFS mounts. Bonnie++ is a comprehensive filesystem

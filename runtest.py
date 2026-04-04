@@ -116,7 +116,7 @@ def setup_logging(log_dir="logs", log_level=logging.INFO, debug=False):
     # File handler for general execution log (INFO and above)
     file_handler = RotatingFileHandler(
         log_file,
-        maxBytes=10*1024*1024,  # 10MB
+        maxBytes=100*1024*1024,  # 100MB
         backupCount=5
     )
     file_handler.setLevel(logging.INFO)

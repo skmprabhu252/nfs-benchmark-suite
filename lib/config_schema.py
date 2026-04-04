@@ -1,0 +1,356 @@
+#!/usr/bin/env python3
+"""
+Configuration Schema for NFS Performance Testing
+
+This module defines JSON schemas for validating test configuration files.
+Provides comprehensive validation with clear error messages.
+"""
+
+# Configuration schema for NFS performance tests
+CONFIG_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "NFS Performance Test Configuration",
+    "description": "Configuration schema for NFS performance testing suite",
+    "type": "object",
+    "required": ["dd_tests", "fio_tests"],
+    "properties": {
+        "dd_tests": {
+            "type": "object",
+            "description": "DD (Data Duplicator) test configurations",
+            "patternProperties": {
+                "^.*$": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable/disable this test"
+                        },
+                        "block_size": {
+                            "type": "string",
+                            "pattern": "^[0-9]+[KMGkmg]$",
+                            "description": "Block size (e.g., '1M', '4K')"
+                        },
+                        "count": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 10000000,
+                            "description": "Number of blocks to transfer"
+                        },
+                        "flags": {
+                            "type": "object",
+                            "properties": {
+                                "direct": {
+                                    "type": "boolean",
+                                    "description": "Use direct I/O (bypass cache)"
+                                },
+                                "sync": {
+                                    "type": "boolean",
+                                    "description": "Use synchronized I/O"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "fio_tests": {
+            "type": "object",
+            "description": "FIO (Flexible I/O Tester) test configurations",
+            "properties": {
+                "common": {
+                    "type": "object",
+                    "description": "Common FIO parameters",
+                    "properties": {
+                        "time_based": {
+                            "type": "boolean"
+                        },
+                        "group_reporting": {
+                            "type": "boolean"
+                        },
+                        "output_format": {
+                            "type": "string",
+                            "enum": ["json", "normal", "terse"]
+                        }
+                    }
+                }
+            },
+            "patternProperties": {
+                "^(?!common$).*$": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "rw": {
+                            "type": "string",
+                            "enum": ["read", "write", "randread", "randwrite", "randrw", "readwrite"]
+                        },
+                        "rwmixread": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 100
+                        },
+                        "bs": {
+                            "type": "string",
+                            "pattern": "^[0-9]+[KMGkmg]?$"
+                        },
+                        "size": {
+                            "type": "string",
+                            "pattern": "^[0-9]+[KMGkmg]?$"
+                        },
+                        "filesize": {
+                            "type": "string",
+                            "pattern": "^[0-9]+[KMGkmg]?$"
+                        },
+                        "nrfiles": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100000
+                        },
+                        "numjobs": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 256
+                        },
+                        "ioengine": {
+                            "type": "string",
+                            "enum": ["sync", "psync", "libaio", "posixaio", "mmap"]
+                        },
+                        "iodepth": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 1024
+                        },
+                        "direct": {
+                            "type": "integer",
+                            "enum": [0, 1]
+                        },
+                        "runtime": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 7200
+                        },
+                        "randrepeat": {
+                            "type": "integer",
+                            "enum": [0, 1]
+                        },
+                        "create_on_open": {
+                            "type": "integer",
+                            "enum": [0, 1]
+                        },
+                        "lat_percentiles": {
+                            "type": "integer",
+                            "enum": [0, 1]
+                        }
+                    }
+                }
+            }
+        },
+        "iozone_tests": {
+            "type": "object",
+            "description": "IOzone test configurations",
+            "patternProperties": {
+                "^.*$": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "file_size_mb": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 1000000
+                        },
+                        "record_size_kb": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 16384
+                        },
+                        "threads": {
+                            "oneOf": [
+                                {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 256
+                                },
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 256
+                                    },
+                                    "minItems": 1,
+                                    "maxItems": 20
+                                }
+                            ]
+                        },
+                        "direct_io": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
+        "bonnie_tests": {
+            "type": "object",
+            "description": "Bonnie++ test configurations",
+            "patternProperties": {
+                "^.*$": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "size_mb": {
+                            "type": "integer",
+                            "minimum": 100,
+                            "maximum": 1000000
+                        },
+                        "num_files": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 1000000
+                        },
+                        "max_file_size_kb": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 1048576
+                        },
+                        "min_file_size_kb": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 1048576
+                        },
+                        "num_dirs": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 1000
+                        },
+                        "fast_mode": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
+        "dbench_tests": {
+            "type": "object",
+            "description": "dbench test configurations",
+            "patternProperties": {
+                "^.*$": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "num_clients": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 256
+                        },
+                        "duration": {
+                            "type": "number",
+                            "minimum": 1,
+                            "maximum": 7200
+                        },
+                        "target_rate": {
+                            "type": "number",
+                            "minimum": 0
+                        },
+                        "warmup": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 600
+                        },
+                        "fsync": {
+                            "type": "boolean"
+                        },
+                        "sync_open": {
+                            "type": "boolean"
+                        },
+                        "sync_dirs": {
+                            "type": "boolean"
+                        },
+                        "loadfile": {
+                            "type": "string"
+                        }
+                    },
+                    "required": ["num_clients", "duration"]
+                }
+            }
+        },
+        "test_config": {
+            "type": "object",
+            "description": "General test configuration",
+            "properties": {
+                "timeout": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 7200,
+                    "description": "Default timeout in seconds"
+                },
+                "cleanup_on_error": {
+                    "type": "boolean",
+                    "description": "Clean up test files on error"
+                },
+                "log_level": {
+                    "type": "string",
+                    "enum": ["DEBUG", "INFO", "WARNING", "ERROR"],
+                    "description": "Logging level"
+                }
+            }
+        }
+    },
+    "additionalProperties": false
+}
+
+
+def get_schema():
+    """
+    Get the configuration schema.
+    
+    Returns:
+        dict: JSON schema for configuration validation
+    """
+    return CONFIG_SCHEMA
+
+
+def get_schema_description():
+    """
+    Get human-readable description of the schema.
+    
+    Returns:
+        str: Description of configuration requirements
+    """
+    return """
+NFS Performance Test Configuration Schema
+
+Required Sections:
+  - dd_tests: DD (Data Duplicator) test configurations
+  - fio_tests: FIO (Flexible I/O Tester) test configurations
+
+Optional Sections:
+  - iozone_tests: IOzone test configurations
+  - bonnie_tests: Bonnie++ test configurations
+  - dbench_tests: dbench test configurations
+  - test_config: General test settings
+
+Common Parameters:
+  - enabled: boolean - Enable/disable test
+  - timeout: integer (1-7200) - Timeout in seconds
+  - threads/numjobs: integer (1-256) - Parallel operations
+  - size/file_size: string - Size with K/M/G suffix
+
+Value Constraints:
+  - Block sizes: Must end with K, M, or G (e.g., '1M', '4K')
+  - Counts: 1 to 10,000,000
+  - Threads/Jobs: 1 to 256
+  - Timeouts: 1 to 7200 seconds (2 hours)
+  - File counts: 1 to 1,000,000
+
+For detailed schema, see CONFIG_SCHEMA in lib/config_schema.py
+"""
+
+
+# Made with Bob

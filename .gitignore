@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Ignore Python build lib directory but not our source lib/
+# Our source lib/ directory is tracked
+
+# Test results and logs
+nfs_performance_test_*.json
+nfs_performance_test_*.log
+nfs_performance_report_*.html
+*.log
+results/
+test_results/
+
+# Documentation (internal use only - exclude all .md files except README.md)
+*.md
+!README.md
+!*/README.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+testfile
+file1
+file2
+cthon/

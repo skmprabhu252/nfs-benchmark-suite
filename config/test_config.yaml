@@ -1,0 +1,337 @@
+# NFS Performance Test Configuration
+# This file contains default parameters for all tests
+# Users can modify these values to customize test behavior
+
+# DD Test Configuration
+dd_tests:
+  enabled: true
+  
+  sequential_write_direct:
+    enabled: true
+    block_size: "1M"          # Block size (e.g., 1M, 4M, 8M)
+    count: 100000             # Number of blocks (100000 * 1M = 100GB)
+    flags:
+      direct: true            # Use direct I/O (oflag=direct)
+      sync: false             # Use synchronized I/O (conv=fdatasync)
+  
+  sequential_write_sync:
+    enabled: true
+    block_size: "1M"
+    count: 100000
+    flags:
+      direct: false
+      sync: true              # Ensures data persistence
+  
+  sequential_read_direct:
+    enabled: true
+    block_size: "1M"
+    count: 100000
+    flags:
+      direct: true            # Bypass page cache
+  
+  sequential_read_cached:
+    enabled: true
+    block_size: "1M"
+    count: 100000
+    flags:
+      direct: false           # Use page cache
+
+# IOzone Test Configuration
+iozone_tests:
+  enabled: true
+  
+  baseline_throughput:
+    enabled: true
+    file_size: "4g"              # File size for test
+    record_size: "1m"            # Block/record size
+    test_types: [0, 1]           # 0=write, 1=read
+    direct_io: true              # Use direct I/O
+    include_close: true          # Include flush/close in timing
+  
+  cache_behavior:
+    enabled: true
+    file_size: "2g"
+    record_size: "1m"
+    test_types: [1]              # 1=read only
+    direct_io: false             # Test cache behavior
+  
+  random_io_4k:
+    enabled: true
+    file_size: "1g"
+    record_size: "4k"            # 4KB blocks for IOPS
+    test_types: [2, 4]           # 2=random read, 4=random write
+    direct_io: true
+  
+  concurrency_16_threads:
+    enabled: true
+    file_size: "1g"
+    record_size: "1m"
+    threads: 16                  # 16 concurrent threads
+    test_types: [0, 1]           # write and read
+    direct_io: true
+    throughput_mode: true        # Report aggregate throughput
+  
+  metadata_operations:
+    enabled: true
+    file_size: "64m"             # Smaller files for metadata ops
+    record_size: "4k"
+    threads: 32                  # High thread count for metadata
+    test_types: [0, 1]
+    direct_io: false
+    throughput_mode: true
+  
+  scaling_test:
+    enabled: true
+    thread_counts: [4, 8, 16, 32]  # Test different thread counts
+    file_size: "512m"
+    record_size: "1m"
+    test_types: [0, 1]
+    direct_io: true
+    throughput_mode: true
+  
+  mixed_workload:
+    enabled: true
+    file_size: "2g"
+    record_size: "128k"
+    threads: 8
+    test_types: [0, 1, 2, 4]     # Sequential and random operations
+    direct_io: true
+    throughput_mode: true
+
+# FIO Test Configuration
+fio_tests:
+  enabled: true
+  
+  # Common FIO parameters
+  common:
+    output_format: "json"
+    time_based: true
+    group_reporting: true
+  
+  sequential_write:
+    enabled: true
+    rw: "write"               # I/O pattern: write, read, randwrite, randread, randrw
+    bs: "1M"                  # Block size
+    size: "4G"                # Size per job
+    numjobs: 1                # Number of parallel jobs
+    ioengine: "libaio"        # I/O engine: libaio, sync, psync, io_uring
+    iodepth: 16               # Queue depth
+    direct: 1                 # Direct I/O (1=yes, 0=no)
+    runtime: 60               # Runtime in seconds
+  
+  sequential_read:
+    enabled: true
+    rw: "read"
+    bs: "1M"
+    size: "4G"
+    numjobs: 4                # Multiple jobs for higher throughput
+    ioengine: "libaio"
+    iodepth: 16
+    direct: 1
+    runtime: 60
+  
+  random_read_4k:
+    enabled: true
+    rw: "randread"
+    bs: "4k"                  # 4KB for IOPS measurement
+    size: "2G"
+    numjobs: 4
+    ioengine: "libaio"
+    iodepth: 32               # Higher queue depth for IOPS
+    direct: 1
+    runtime: 120
+    randrepeat: 0             # Don't repeat random pattern
+  
+  random_write_4k:
+    enabled: true
+    rw: "randwrite"
+    bs: "4k"
+    size: "2G"
+    numjobs: 4
+    ioengine: "libaio"
+    iodepth: 32
+    direct: 1
+    runtime: 120
+    randrepeat: 0
+  
+  mixed_randrw_70_30:
+    enabled: true
+    rw: "randrw"
+    rwmixread: 70             # 70% read, 30% write
+    bs: "8k"                  # Database-like block size
+    size: "2G"
+    numjobs: 8
+    ioengine: "libaio"
+    iodepth: 16
+    direct: 1
+    runtime: 120
+    randrepeat: 0
+  
+  metadata_operations:
+    enabled: true
+    rw: "write"
+    bs: "4k"
+    filesize: "1M"            # Size of each file
+    nrfiles: 5000             # Number of files
+    numjobs: 8
+    ioengine: "sync"          # Sync engine for metadata ops
+    create_on_open: 1
+    runtime: 120
+  
+  latency_test:
+    enabled: true
+    rw: "randread"
+    bs: "4k"
+    size: "1G"
+    numjobs: 1                # Single-threaded for latency
+    ioengine: "libaio"
+    iodepth: 1                # Queue depth 1 for latency measurement
+    direct: 1
+    runtime: 60
+    lat_percentiles: 1        # Enable latency percentiles
+
+# Bonnie++ Test Configuration
+bonnie_tests:
+  enabled: true
+  
+  comprehensive_test:
+    enabled: true
+    file_size: "8g"              # File size for I/O tests (8GB)
+    num_files: "16:0:0:16"       # Number of files: max:min:num_dirs:chunk_size
+    timeout: 3600                # 1 hour timeout
+  
+  fast_test:
+    enabled: true
+    file_size: "4g"              # Smaller file size for faster test
+    num_files: "8:0:0:8"         # Fewer files
+    fast_mode: true              # Skip per-character tests
+    timeout: 1800                # 30 minutes timeout
+  
+  file_operations:
+    enabled: true
+    file_size: "2g"              # Focus on file operations
+    num_files: "32:0:0:32"       # More files for metadata testing
+    processes: 4                 # Multiple processes
+# dbench Test Configuration
+# dbench simulates realistic client/server workloads using NetBench traces
+dbench_tests:
+  enabled: true
+  
+  # Common settings
+  common:
+    directory: "dbench_test"      # Test directory name
+    warmup: 10                    # Warmup period in seconds
+    machine_readable: true        # Enable machine-readable output
+    skip_cleanup: false           # Cleanup test files after completion
+    fsync: false                  # Don't force fsync (faster, less realistic)
+    sync_dirs: false              # Don't sync directories
+  
+  # Test 1: Light Client Load (baseline performance)
+  light_client_load:
+    enabled: true
+    description: "Baseline test with minimal client load"
+    num_clients: 2                # 2 concurrent clients
+    duration: 120                 # 2 minutes
+    loadfile: "client.txt"        # Standard NetBench workload
+    target_rate: 0                # No rate limiting (max speed)
+  
+  # Test 2: Moderate Client Load (typical office scenario)
+  moderate_client_load:
+    enabled: true
+    description: "Simulates typical office workload with moderate concurrency"
+    num_clients: 8                # 8 concurrent clients
+    duration: 180                 # 3 minutes
+    loadfile: "client.txt"
+    target_rate: 0
+  
+  # Test 3: Heavy Client Load (stress test)
+  heavy_client_load:
+    enabled: true
+    description: "High concurrency stress test"
+    num_clients: 16               # 16 concurrent clients
+    duration: 240                 # 4 minutes
+    loadfile: "client.txt"
+    target_rate: 0
+  
+  # Test 4: Scalability Analysis (progressive load)
+  scalability_test:
+    enabled: true
+    description: "Tests performance scaling across different client counts"
+    client_counts: [1, 2, 4, 8, 16, 32]  # Progressive client counts
+    duration_per_count: 120       # 2 minutes per client count
+    loadfile: "client.txt"
+    target_rate: 0
+  
+  # Test 5: Latency-Focused Test (single client)
+  latency_test:
+    enabled: true
+    description: "Single-client test for accurate latency measurement"
+    num_clients: 1                # Single client for latency
+    duration: 120                 # 2 minutes
+    loadfile: "client.txt"
+    fsync: true                   # Enable fsync for realistic latency
+    sync_dirs: true               # Sync directories
+    target_rate: 0
+  
+  # Test 6: Sustained Load Test (stability)
+  sustained_load:
+    enabled: true
+    description: "Long-running test for stability and consistency"
+    num_clients: 12               # Moderate sustained load
+    duration: 600                 # 10 minutes
+    loadfile: "client.txt"
+    target_rate: 0
+    warmup: 30                    # Longer warmup for sustained test
+  
+  # Test 7: Rate-Limited Test (controlled throughput)
+  rate_limited_test:
+    enabled: true
+    description: "Tests performance under controlled rate limiting"
+    num_clients: 8
+    duration: 180                 # 3 minutes
+    loadfile: "client.txt"
+    target_rate: 50               # 50 MB/s target rate
+  
+  # Test 8: Metadata-Intensive Test (small files)
+  metadata_intensive:
+    enabled: true
+    description: "Focus on metadata operations with small file workload"
+    num_clients: 16               # High client count for metadata
+    duration: 180                 # 3 minutes
+    loadfile: "client.txt"        # Use client.txt (smbtorture.txt if available)
+    target_rate: 0
+
+    timeout: 1800                # 30 minutes timeout
+
+# Test Execution Options
+execution:
+  stop_on_error: false        # Continue tests even if one fails
+  cleanup_on_completion: true # Cleanup test files after completion
+  verbose: false              # Verbose output
+  warmup:
+    enabled: true             # Enable warm-up run before tests
+    size_mb: 1000             # Warm-up file size in MB (1GB default)
+
+# Monitoring Options
+monitoring:
+  system_metrics_enabled: true  # Collect CPU, memory, disk, network metrics
+  collection_interval: 1.0      # Metrics collection interval in seconds
+  nfs_stats_enabled: true       # Collect NFS statistics (requires nfsstat command)
+
+# Output Options
+output:
+  json_enabled: true
+  log_enabled: true
+  console_summary: true
+
+# Performance Baselines (for reference)
+# These are not used by the script but provided for comparison
+baselines:
+  network_10gbe:
+    sequential_read_mbps: [900, 1150]
+    sequential_write_mbps: [700, 1000]
+    random_read_iops: [20000, 40000]
+    random_write_iops: [15000, 30000]
+    latency_avg_ms: [1, 2]
+
+# Made with Bob

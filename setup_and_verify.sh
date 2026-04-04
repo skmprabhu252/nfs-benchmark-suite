@@ -152,6 +152,7 @@ check_iozone() {
         echo -e "${RED}✗ iozone not found${NC}"
         return 1
     fi
+}
 
 # Check bonnie++
 check_bonnie() {

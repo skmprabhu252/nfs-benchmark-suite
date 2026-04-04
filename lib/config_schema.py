@@ -300,6 +300,52 @@ CONFIG_SCHEMA = {
                     "description": "Logging level"
                 }
             }
+        },
+        "execution": {
+            "type": "object",
+            "description": "Test execution options",
+            "properties": {
+                "stop_on_error": {
+                    "type": "boolean",
+                    "description": "Stop execution on first error"
+                },
+                "cleanup_on_completion": {
+                    "type": "boolean",
+                    "description": "Clean up test files after completion"
+                },
+                "verbose": {
+                    "type": "boolean",
+                    "description": "Enable verbose output"
+                }
+            }
+        },
+        "output": {
+            "type": "object",
+            "description": "Output configuration",
+            "properties": {
+                "json_enabled": {
+                    "type": "boolean",
+                    "description": "Enable JSON output"
+                },
+                "log_enabled": {
+                    "type": "boolean",
+                    "description": "Enable log file output"
+                },
+                "console_summary": {
+                    "type": "boolean",
+                    "description": "Show summary on console"
+                }
+            }
+        },
+        "baselines": {
+            "type": "object",
+            "description": "Performance baselines for comparison",
+            "patternProperties": {
+                "^.*$": {
+                    "type": "object",
+                    "description": "Baseline configuration for specific network type"
+                }
+            }
         }
     },
     "additionalProperties": False

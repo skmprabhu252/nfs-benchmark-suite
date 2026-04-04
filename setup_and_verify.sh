@@ -265,7 +265,7 @@ install_system_packages() {
                     
                     # Try to install optional benchmark tools (may not be available)
                     echo "Attempting to install optional benchmark tools..."
-                    sudo dnf install -y iozone3 2>/dev/null || echo -e "${YELLOW}⚠ iozone3 not available in repos${NC}"
+                    sudo dnf install -y iozone 2>/dev/null || echo -e "${YELLOW}⚠ iozone not available in repos${NC}"
                     sudo dnf install -y dbench 2>/dev/null || echo -e "${YELLOW}⚠ dbench not available in repos${NC}"
                     sudo dnf install -y bonnie++ 2>/dev/null || echo -e "${YELLOW}⚠ bonnie++ not available in repos${NC}"
                 else
@@ -274,7 +274,7 @@ install_system_packages() {
                     
                     # Try to install optional benchmark tools (may not be available)
                     echo "Attempting to install optional benchmark tools..."
-                    sudo yum install -y iozone3 2>/dev/null || echo -e "${YELLOW}⚠ iozone3 not available in repos${NC}"
+                    sudo yum install -y iozone 2>/dev/null || echo -e "${YELLOW}⚠ iozone not available in repos${NC}"
                     sudo yum install -y dbench 2>/dev/null || echo -e "${YELLOW}⚠ dbench not available in repos${NC}"
                     sudo yum install -y bonnie++ 2>/dev/null || echo -e "${YELLOW}⚠ bonnie++ not available in repos${NC}"
                 fi
@@ -297,7 +297,7 @@ install_system_packages() {
             echo "  - Python 3.7+"
             echo "  - pip"
             echo "  - fio"
-            echo "  - iozone3"
+            echo "  - iozone"
             echo "  - bonnie++"
             echo "  - dbench"
             echo "  - NFS client utilities"

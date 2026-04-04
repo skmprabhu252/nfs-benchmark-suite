@@ -146,14 +146,14 @@ This tool helps you **measure and validate NFS storage performance** through com
 
 - **System**: Linux (kernel 4.x+), Python 3.6+, ~250GB free space
 - **Network**: 1 Gbps or higher recommended
-- **Tools**: fio, iozone3, bonnie++, dbench, nfs-common
+- **Tools**: fio, iozone, bonnie++, dbench, nfs-common
 
 ### Installing Prerequisites
 
 #### Ubuntu/Debian
 ```bash
 sudo apt-get update
-sudo apt-get install python3 python3-pip fio iozone3 bonnie++ dbench nfs-common
+sudo apt-get install python3 python3-pip fio iozone bonnie++ dbench nfs-common
 ```
 
 #### RHEL/CentOS/Fedora
@@ -162,7 +162,7 @@ sudo apt-get install python3 python3-pip fio iozone3 bonnie++ dbench nfs-common
 sudo dnf install -y python3 python3-pip fio nfs-utils
 
 # Optional benchmark tools (may need manual installation)
-sudo dnf install -y iozone3 bonnie++ dbench
+sudo dnf install -y iozone bonnie++ dbench
 ```
 
 **Note for RHEL/CentOS users:** Some benchmark tools (iozone, bonnie++, dbench) may not be available in standard repositories. If installation fails, you can:
@@ -170,7 +170,7 @@ sudo dnf install -y iozone3 bonnie++ dbench
 1. **Enable EPEL repository** (recommended):
    ```bash
    sudo dnf install -y epel-release
-   sudo dnf install -y iozone3 bonnie++ dbench
+   sudo dnf install -y iozone bonnie++ dbench
    ```
 
 2. **Install from source** (if EPEL doesn't have them):

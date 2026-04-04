@@ -426,17 +426,17 @@ my_test:
 **Benchmark Tools:**
 - dd (coreutils)
 - fio
-- iozone3
+- iozone
 - bonnie++
 - dbench
 
 **Install:**
 ```bash
 # Ubuntu/Debian
-sudo apt-get install coreutils fio iozone3 bonnie++ dbench
+sudo apt-get install coreutils fio iozone bonnie++ dbench
 
 # RHEL/CentOS
-sudo yum install coreutils fio iozone3 bonnie++ dbench
+sudo yum install coreutils fio iozone bonnie++ dbench
 
 # Python dependencies
 pip install pyyaml psutil

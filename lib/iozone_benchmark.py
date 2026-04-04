@@ -73,8 +73,8 @@ class IOzoneTestTool(BaseTestTool):
             self.log("  • Run: ./setup_and_verify.sh --auto", "ERROR")
             self.log("", "ERROR")
             self.log("  Manual Installation:", "ERROR")
-            self.log("  • Ubuntu/Debian: sudo apt-get install iozone3", "ERROR")
-            self.log("  • RHEL/CentOS: sudo yum install iozone3", "ERROR")
+            self.log("  • Ubuntu/Debian: sudo apt-get install iozone", "ERROR")
+            self.log("  • RHEL/CentOS: sudo yum install iozone", "ERROR")
             self.log("  Verify installation: iozone -v", "ERROR")
             return False
         return True

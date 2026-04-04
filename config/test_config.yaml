@@ -8,8 +8,8 @@ dd_tests:
   
   sequential_write_direct:
     enabled: true
-    block_size: "1M"          # Block size (e.g., 1M, 4M, 8M)
-    count: 100000             # Number of blocks (100000 * 1M = 100GB)
+    block_size: "1M"          # Block size (fixed for sanity test)
+    count: 5000               # Number of blocks (5000 * 1M = 5GB - sanity test)
     flags:
       direct: true            # Use direct I/O (oflag=direct)
       sync: false             # Use synchronized I/O (conv=fdatasync)
@@ -17,7 +17,7 @@ dd_tests:
   sequential_write_sync:
     enabled: true
     block_size: "1M"
-    count: 100000
+    count: 5000               # 5GB - sanity test
     flags:
       direct: false
       sync: true              # Ensures data persistence
@@ -25,14 +25,14 @@ dd_tests:
   sequential_read_direct:
     enabled: true
     block_size: "1M"
-    count: 100000
+    count: 5000               # 5GB - sanity test
     flags:
       direct: true            # Bypass page cache
   
   sequential_read_cached:
     enabled: true
     block_size: "1M"
-    count: 100000
+    count: 5000               # 5GB - sanity test
     flags:
       direct: false           # Use page cache
 

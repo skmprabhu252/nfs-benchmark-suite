@@ -9,7 +9,7 @@ dd_tests:
   sequential_write_direct:
     enabled: true
     block_size: "1M"
-    count: 100000             # 100GB
+    count: 5000               # 5GB - sanity test (fixed size)
     flags:
       direct: true
       sync: false
@@ -17,7 +17,7 @@ dd_tests:
   sequential_write_sync:
     enabled: true
     block_size: "1M"
-    count: 100000             # 100GB
+    count: 5000               # 5GB - sanity test (fixed size)
     flags:
       direct: false
       sync: true
@@ -25,14 +25,14 @@ dd_tests:
   sequential_read_direct:
     enabled: true
     block_size: "1M"
-    count: 100000             # 100GB
+    count: 5000               # 5GB - sanity test (fixed size)
     flags:
       direct: true
   
   sequential_read_cached:
     enabled: true
     block_size: "1M"
-    count: 100000             # 100GB
+    count: 5000               # 5GB - sanity test (fixed size)
     flags:
       direct: false
 

@@ -231,35 +231,35 @@ dbench_tests:
     enabled: true
     num_clients: 2
     duration: 180                 # 3 minutes (increased)
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 0
   
   moderate_client_load:
     enabled: true
     num_clients: 12               # Increased from 8
     duration: 300                 # 5 minutes (increased)
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 0
   
   heavy_client_load:
     enabled: true
     num_clients: 24               # Increased from 16
     duration: 360                 # 6 minutes (increased)
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 0
   
   scalability_test:
     enabled: true
     client_counts: [1, 2, 4, 8, 16, 32, 64]  # Extended range
     duration_per_count: 150       # 2.5 minutes per count (increased)
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 0
   
   latency_test:
     enabled: true
     num_clients: 1
     duration: 180                 # 3 minutes (increased)
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     fsync: true
     sync_dirs: true
     target_rate: 0
@@ -268,7 +268,7 @@ dbench_tests:
     enabled: true
     num_clients: 16               # Increased from 12
     duration: 1200                # 20 minutes (increased)
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 0
     warmup: 60                    # 1 minute warmup
   
@@ -276,14 +276,14 @@ dbench_tests:
     enabled: true
     num_clients: 8
     duration: 300                 # 5 minutes (increased)
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 100              # 100 MB/s target (increased)
   
   metadata_intensive:
     enabled: true
     num_clients: 32               # Increased from 16
     duration: 300                 # 5 minutes (increased)
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 0
 
     timeout: 3600                # 60 minutes

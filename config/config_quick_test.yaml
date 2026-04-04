@@ -227,14 +227,14 @@ dbench_tests:
     enabled: true
     num_clients: 2
     duration: 60                  # 1 minute (reduced)
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 0
   
   moderate_client_load:
     enabled: true
     num_clients: 4                # Reduced from 8
     duration: 90                  # 1.5 minutes (reduced)
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 0
   
   heavy_client_load:
@@ -247,7 +247,7 @@ dbench_tests:
     enabled: true
     num_clients: 1
     duration: 60                  # 1 minute (reduced)
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     fsync: true
     sync_dirs: true
     target_rate: 0

@@ -235,7 +235,7 @@ dbench_tests:
     description: "Baseline test with minimal client load"
     num_clients: 2                # 2 concurrent clients
     duration: 120                 # 2 minutes
-    loadfile: "client.txt"        # Standard NetBench workload
+    loadfile: "dbench_client.txt"        # Standard NetBench workload
     target_rate: 0                # No rate limiting (max speed)
   
   # Test 2: Moderate Client Load (typical office scenario)
@@ -244,7 +244,7 @@ dbench_tests:
     description: "Simulates typical office workload with moderate concurrency"
     num_clients: 8                # 8 concurrent clients
     duration: 180                 # 3 minutes
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 0
   
   # Test 3: Heavy Client Load (stress test)
@@ -253,7 +253,7 @@ dbench_tests:
     description: "High concurrency stress test"
     num_clients: 16               # 16 concurrent clients
     duration: 240                 # 4 minutes
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 0
   
   # Test 4: Scalability Analysis (progressive load)
@@ -262,7 +262,7 @@ dbench_tests:
     description: "Tests performance scaling across different client counts"
     client_counts: [1, 2, 4, 8, 16, 32]  # Progressive client counts
     duration_per_count: 120       # 2 minutes per client count
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 0
   
   # Test 5: Latency-Focused Test (single client)
@@ -271,7 +271,7 @@ dbench_tests:
     description: "Single-client test for accurate latency measurement"
     num_clients: 1                # Single client for latency
     duration: 120                 # 2 minutes
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     fsync: true                   # Enable fsync for realistic latency
     sync_dirs: true               # Sync directories
     target_rate: 0
@@ -282,7 +282,7 @@ dbench_tests:
     description: "Long-running test for stability and consistency"
     num_clients: 12               # Moderate sustained load
     duration: 600                 # 10 minutes
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 0
     warmup: 30                    # Longer warmup for sustained test
   
@@ -292,7 +292,7 @@ dbench_tests:
     description: "Tests performance under controlled rate limiting"
     num_clients: 8
     duration: 180                 # 3 minutes
-    loadfile: "client.txt"
+    loadfile: "dbench_client.txt"
     target_rate: 50               # 50 MB/s target rate
   
   # Test 8: Metadata-Intensive Test (small files)
@@ -301,7 +301,7 @@ dbench_tests:
     description: "Focus on metadata operations with small file workload"
     num_clients: 16               # High client count for metadata
     duration: 180                 # 3 minutes
-    loadfile: "client.txt"        # Use client.txt (smbtorture.txt if available)
+    loadfile: "dbench_client.txt"        # Use client.txt (smbtorture.txt if available)
     target_rate: 0
 
     timeout: 1800                # 30 minutes timeout

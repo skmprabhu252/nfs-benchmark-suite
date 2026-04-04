@@ -213,7 +213,7 @@ bonnie_tests:
     file_size: "4g"              # Increased from 2g
     ram_size: "2048"             # Tell bonnie++ to assume 2GB RAM
     num_files: "64:0:0:64"       # More files for extensive metadata testing
-    processes: 8                 # More processes
+    # processes: 8               # Disabled - causes issues with CSV output in some bonnie++ versions
 # dbench Test Configuration (Long Test Profile)
 # Estimated time: ~30-35 minutes
 dbench_tests:

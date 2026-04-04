@@ -214,7 +214,7 @@ bonnie_tests:
     file_size: "2g"              # Focus on file operations
     ram_size: "1024"             # Tell bonnie++ to assume 1GB RAM
     num_files: "32:0:0:32"       # More files for metadata testing
-    processes: 4                 # Multiple processes
+    # processes: 4               # Disabled - causes issues with CSV output in some bonnie++ versions
 # dbench Test Configuration
 # dbench simulates realistic client/server workloads using NetBench traces
 dbench_tests:

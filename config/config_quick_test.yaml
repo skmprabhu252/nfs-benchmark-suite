@@ -209,7 +209,7 @@ bonnie_tests:
     file_size: "1g"              # Reduced from 2g
     ram_size: "512"              # Tell bonnie++ to assume 512MB RAM
     num_files: "16:0:0:16"       # Reduced files
-    processes: 2                 # Reduced processes
+    # processes: 2               # Disabled - causes issues with CSV output in some bonnie++ versions
 # dbench Test Configuration (Quick Test Profile)
 # Estimated time: ~2-3 minutes
 dbench_tests:

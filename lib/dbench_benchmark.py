@@ -380,6 +380,9 @@ class DBenchTestTool(BaseTestTool):
         if skip_cleanup:
             if self._check_dbench_option('--skip-cleanup'):
                 cmd.append('--skip-cleanup')
+                self.log("Added --skip-cleanup flag for NFS backend", "DEBUG")
+            else:
+                self.log("Warning: --skip-cleanup not supported by this dbench version", "WARNING")
         
         # Number of clients (last argument)
         cmd.append(str(num_clients))

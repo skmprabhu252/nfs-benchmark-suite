@@ -941,9 +941,11 @@ class NFSPerformanceTest:
             collection_interval=metrics_interval
         ) if nfs_metrics_enabled else None
         
-        # Generate timestamped output filename
+        # Generate timestamped output filename in logs directory
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.output_file = f"nfs_performance_test_{timestamp}.json"
+        log_dir = Path("logs")
+        log_dir.mkdir(exist_ok=True)
+        self.output_file = log_dir / f"nfs_performance_test_{timestamp}.json"
         
         # Test directories and files (for backward compatibility)
         self.test_dir = self.mount_path / "cthon"

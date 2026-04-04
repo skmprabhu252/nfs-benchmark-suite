@@ -246,6 +246,11 @@ class DBenchTestTool(BaseTestTool):
         
         cmd = ['dbench']
         
+        # Backend specification (required for dbench 5.0+)
+        # Use fileio backend for filesystem/NFS testing
+        backend = test_config.get('backend', 'fileio')
+        cmd.extend(['-B', backend])
+        
         # Number of clients (required)
         num_clients = test_config.get('num_clients', 1)
         

@@ -52,14 +52,14 @@ iozone_tests:
     enabled: true
     file_size: "4g"              # Increased from 2g
     record_size: "1m"
-    test_types: [1]
+    test_types: [0, 1]           # 0=write to create file, 1=read for cache test
     direct_io: false
   
   random_io_4k:
     enabled: true
     file_size: "2g"              # Increased from 1g
     record_size: "4k"
-    test_types: [2, 4]
+    test_types: [0, 2, 4]        # 0=write to create file, 2=random read, 4=random write
     direct_io: true
   
   concurrency_16_threads:

@@ -169,14 +169,26 @@ def run_command_with_timeout(
     # Define the actual command execution function
     def _execute_command():
         try:
-            result = subprocess.run(
-                cmd,
-                capture_output=capture_output,
-                text=text,
-                check=check,
-                timeout=timeout,
-                **kwargs
-            )
+            # Python 3.6 compatibility: capture_output was added in 3.7
+            # Use stdout/stderr parameters instead
+            if capture_output:
+                result = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=text,  # text parameter was added in 3.7, use universal_newlines for 3.6
+                    check=check,
+                    timeout=timeout,
+                    **kwargs
+                )
+            else:
+                result = subprocess.run(
+                    cmd,
+                    universal_newlines=text,
+                    check=check,
+                    timeout=timeout,
+                    **kwargs
+                )
             return result
             
         except subprocess.TimeoutExpired as e:

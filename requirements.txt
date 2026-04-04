@@ -2,12 +2,12 @@
 # Install with: pip install -r requirements.txt
 
 # Core dependencies
-pyyaml>=5.4.1,<6.0  # PyYAML 6.x requires Python 3.6+, but 5.x is more compatible
+pyyaml>=5.4.1  # Compatible with Python 3.6+
 jsonschema>=3.2.0,<4.0  # jsonschema 4.x requires Python 3.7+, using 3.x for Python 3.6 compatibility
 
 # System metrics collection (optional but recommended)
-psutil>=5.8.0,<6.0  # Compatible with Python 3.6
+psutil>=5.8.0  # Compatible with Python 3.6+
 
 # HTML report generation (optional)
-plotly>=4.14.3,<5.0  # plotly 5.x requires Python 3.6+, but older versions are more stable
-jinja2>=2.11.3,<3.0  # jinja2 3.x requires Python 3.6+, using 2.x for better compatibility
+plotly>=4.14.3  # Compatible with Python 3.6+, allows newer versions if already installed
+jinja2>=2.11.3  # Compatible with Python 3.6+, allows newer versions if already installed

@@ -374,8 +374,10 @@ class DBenchTestTool(BaseTestTool):
             if self._check_dbench_option('--machine-readable'):
                 cmd.append('--machine-readable')
         
-        # Skip cleanup (check if supported)
-        if common_config.get('skip_cleanup', False):
+        # Skip cleanup - always enabled for NFS backend to avoid cleanup errors
+        # dbench has issues cleaning up NFS files (NFS3ERR_NOENT errors)
+        skip_cleanup = common_config.get('skip_cleanup', True if backend == 'nfs' else False)
+        if skip_cleanup:
             if self._check_dbench_option('--skip-cleanup'):
                 cmd.append('--skip-cleanup')
         

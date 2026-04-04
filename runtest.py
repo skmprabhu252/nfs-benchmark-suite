@@ -1338,7 +1338,8 @@ class NFSPerformanceTest:
         # Cleanup DD test files if they still exist
         if not self.skip_dd and hasattr(self, 'dd_tool'):
             try:
-                if self.dd_tool.test_dir.exists() or any(self.mount_path.glob("dd_test_*")):
+                # DD uses file1 and file2 directly in mount path, not a test directory
+                if self.dd_tool.file1.exists() or self.dd_tool.file2.exists():
                     self.dd_tool.cleanup()
                     self._clear_cache()
                     cleanup_needed = True

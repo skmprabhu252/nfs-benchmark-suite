@@ -419,6 +419,16 @@ def generate_html_report(results, output_file=None):
 </html>
 """
     
+    # Write HTML to file
+    try:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        logger.info(f"Report saved to: {output_file}")
+        return output_file
+    except Exception as e:
+        logger.error(f"Failed to write report file: {e}")
+        return None
+
 
 def generate_executive_summary_html(analysis: Dict[str, Any]) -> str:
     """
@@ -1835,8 +1845,12 @@ def main():
     logger.info("Generating HTML report...")
     output_file = generate_html_report(results)
     
-    logger.info("✓ Report generated successfully!")
-    logger.info(f"Open in browser: file://{os.path.abspath(output_file)}")
+    if output_file:
+        logger.info("✓ Report generated successfully!")
+        logger.info(f"Open in browser: file://{os.path.abspath(output_file)}")
+    else:
+        logger.error("Failed to generate report")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

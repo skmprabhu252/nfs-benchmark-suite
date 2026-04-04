@@ -194,7 +194,11 @@ bonnie_tests:
   enabled: true
   
   comprehensive_test:
-    enabled: false               # Disabled for quick test
+    enabled: true
+    file_size: "2g"              # Reduced from 8g for quick test
+    ram_size: "1024"             # Tell bonnie++ to assume 1GB RAM
+    num_files: "8:0:0:8"         # Reduced from 16:0:0:16
+    timeout: 1800                # 30 minutes
   
   fast_test:
     enabled: true

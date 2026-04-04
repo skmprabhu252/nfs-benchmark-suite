@@ -151,7 +151,7 @@ class BaseTestTool(ABC):
         if timeout is None:
             timeout = self.config.get('timeout', 300)
         
-        self.log(f"Running command with {timeout}s timeout: {' '.join(cmd)}", "DEBUG")
+        self.log(f"Command: {' '.join(cmd)}", "INFO")
         
         try:
             result = _run_command_with_timeout(

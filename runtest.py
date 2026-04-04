@@ -1068,7 +1068,7 @@ class NFSPerformanceTest:
             config_file = Path(config_file)
         
         if not config_file.exists():
-            self.log(f"Config file not found: {config_file}, using defaults", "WARNING")
+            print(f"⚠️  Warning: Config file not found: {config_file}, using defaults")
             return self._get_default_config()
         
         try:

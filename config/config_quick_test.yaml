@@ -227,14 +227,14 @@ dbench_tests:
     enabled: true
     num_clients: 2
     duration: 60                  # 1 minute (reduced)
-    loadfile: "dbench_client.txt"
+    loadfile: "nfs_3.load"
     target_rate: 0
   
   moderate_client_load:
     enabled: true
     num_clients: 4                # Reduced from 8
     duration: 90                  # 1.5 minutes (reduced)
-    loadfile: "dbench_client.txt"
+    loadfile: "nfs_3.load"
     target_rate: 0
   
   heavy_client_load:
@@ -247,7 +247,7 @@ dbench_tests:
     enabled: true
     num_clients: 1
     duration: 60                  # 1 minute (reduced)
-    loadfile: "dbench_client.txt"
+    loadfile: "nfs_3.load"
     # Note: fsync and sync_dirs not supported by dbench 5.0
     target_rate: 0
   

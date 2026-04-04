@@ -57,7 +57,7 @@ iozone_tests:
   
   random_io_4k:
     enabled: true
-    file_size: "256m"            # Reduced from 1g
+    file_size: "8m"            # Reduced from 1g
     record_size: "4k"
     test_types: [0, 2, 4]        # 0=write to create file, 2=random read, 4=random write
     direct_io: true

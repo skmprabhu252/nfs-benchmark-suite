@@ -9,6 +9,8 @@ It defines the interface and provides common functionality for all test tools.
 import subprocess
 import signal
 import sys
+import logging
+import logging.handlers
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, Any, Optional, List
@@ -118,6 +120,33 @@ class BaseTestTool(ABC):
         else:
             self.logger.info(message)
     
+    def log_to_file_only(self, message: str):
+        """
+        Log a message only to file handlers, not to console.
+        
+        This is useful for verbose command output that should be in logs
+        but not clutter the console.
+        
+        Args:
+            message: Message to log to file only
+        """
+        # Create a log record at INFO level
+        record = self.logger.makeRecord(
+            self.logger.name,
+            logging.INFO,
+            "(file_only)",
+            0,
+            message,
+            (),
+            None
+        )
+        
+        # Send to file handlers only (skip console handlers)
+        for handler in self.logger.handlers:
+            if not isinstance(handler, logging.StreamHandler) or \
+               isinstance(handler, (logging.FileHandler, logging.handlers.RotatingFileHandler)):
+                handler.emit(record)
+    
     def run_command_with_timeout(
         self,
         cmd: List[str],
@@ -164,13 +193,13 @@ class BaseTestTool(ABC):
                 **kwargs
             )
             
-            # Log command output to log file at INFO level
+            # Log command output to file only (not console)
             # Check if result has stdout/stderr attributes (set when capture_output=True)
             if hasattr(result, 'stdout') and result.stdout:
-                self.log(result.stdout, "INFO")
+                self.log_to_file_only(result.stdout)
             
             if hasattr(result, 'stderr') and result.stderr:
-                self.log(result.stderr, "INFO")
+                self.log_to_file_only(result.stderr)
             
             return result
             

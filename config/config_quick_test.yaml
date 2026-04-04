@@ -238,10 +238,18 @@ dbench_tests:
     target_rate: 0
   
   heavy_client_load:
-    enabled: false                # Disabled for quick test
+    enabled: true
+    num_clients: 8                # Reduced from 16
+    duration: 60                  # 1 minute (reduced from 4 minutes)
+    loadfile: "nfs_3.load"
+    target_rate: 0
   
   scalability_test:
-    enabled: false                # Disabled for quick test
+    enabled: true
+    client_counts: [1, 2, 4]      # Reduced from [1, 2, 4, 8, 16, 32]
+    duration_per_count: 30        # 30 seconds per count (reduced from 120)
+    loadfile: "nfs_3.load"
+    target_rate: 0
   
   latency_test:
     enabled: true
@@ -252,13 +260,26 @@ dbench_tests:
     target_rate: 0
   
   sustained_load:
-    enabled: false                # Disabled for quick test
+    enabled: true
+    num_clients: 4                # Reduced from 12
+    duration: 120                 # 2 minutes (reduced from 10 minutes)
+    loadfile: "nfs_3.load"
+    target_rate: 0
+    warmup: 10                    # Reduced warmup
   
   rate_limited_test:
-    enabled: false                # Disabled for quick test
+    enabled: true
+    num_clients: 4                # Reduced from 8
+    duration: 60                  # 1 minute (reduced from 3 minutes)
+    loadfile: "nfs_3.load"
+    target_rate: 25               # 25 MB/s (reduced from 50)
   
   metadata_intensive:
-    enabled: false                # Disabled for quick test
+    enabled: true
+    num_clients: 8                # Reduced from 16
+    duration: 60                  # 1 minute (reduced from 3 minutes)
+    loadfile: "nfs_3.load"
+    target_rate: 0
 
     timeout: 600                 # 10 minutes
 

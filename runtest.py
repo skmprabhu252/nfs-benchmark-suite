@@ -1324,35 +1324,69 @@ class NFSPerformanceTest:
             # Don't fail validation if we can't check disk space
             return True
     def cleanup(self):
-        """Clean up test files and directories using tool classes with cache clearing"""
-        self.log("Starting cleanup...", "INFO")
+        """
+        Clean up any remaining test files and directories.
+        Note: Individual test cleanups are now done after each test for better isolation.
+        This method handles any remaining cleanup in case of errors.
+        """
+        self.log("Starting final cleanup...", "INFO")
         
-        # Cleanup DD test files
-        if not self.skip_dd:
-            self.dd_tool.cleanup()
-            self._clear_cache()
+        cleanup_needed = False
         
-        # Cleanup FIO test directory
-        if not self.skip_fio:
-            self.fio_tool.cleanup()
-            self._clear_cache()
+        # Cleanup DD test files if they still exist
+        if not self.skip_dd and hasattr(self, 'dd_tool'):
+            try:
+                if self.dd_tool.test_dir.exists() or any(self.mount_path.glob("dd_test_*")):
+                    self.dd_tool.cleanup()
+                    self._clear_cache()
+                    cleanup_needed = True
+            except Exception as e:
+                self.log(f"Error during DD cleanup: {e}", "WARNING")
         
-        # Cleanup IOzone test directory
-        if not self.skip_iozone:
-            self.iozone_tool.cleanup()
-            self._clear_cache()
+        # Cleanup FIO test directory if it still exists
+        if not self.skip_fio and hasattr(self, 'fio_tool'):
+            try:
+                if self.fio_tool.test_dir.exists():
+                    self.fio_tool.cleanup()
+                    self._clear_cache()
+                    cleanup_needed = True
+            except Exception as e:
+                self.log(f"Error during FIO cleanup: {e}", "WARNING")
         
-        # Cleanup Bonnie++ test directory
-        if not self.skip_bonnie:
-            self.bonnie_tool.cleanup()
-            self._clear_cache()
+        # Cleanup IOzone test directory if it still exists
+        if not self.skip_iozone and hasattr(self, 'iozone_tool'):
+            try:
+                if self.iozone_tool.test_dir.exists():
+                    self.iozone_tool.cleanup()
+                    self._clear_cache()
+                    cleanup_needed = True
+            except Exception as e:
+                self.log(f"Error during IOzone cleanup: {e}", "WARNING")
         
-        # Cleanup dbench test directory
-        if not self.skip_dbench:
-            self.dbench_tool.cleanup()
-            self._clear_cache()
+        # Cleanup Bonnie++ test directory if it still exists
+        if not self.skip_bonnie and hasattr(self, 'bonnie_tool'):
+            try:
+                if self.bonnie_tool.test_dir.exists():
+                    self.bonnie_tool.cleanup()
+                    self._clear_cache()
+                    cleanup_needed = True
+            except Exception as e:
+                self.log(f"Error during Bonnie++ cleanup: {e}", "WARNING")
         
-        self.log("Cleanup completed with cache clearing", "SUCCESS")
+        # Cleanup dbench test directory if it still exists
+        if not self.skip_dbench and hasattr(self, 'dbench_tool'):
+            try:
+                if self.dbench_tool.test_dir.exists():
+                    self.dbench_tool.cleanup()
+                    self._clear_cache()
+                    cleanup_needed = True
+            except Exception as e:
+                self.log(f"Error during dbench cleanup: {e}", "WARNING")
+        
+        if cleanup_needed:
+            self.log("✓ Final cleanup completed", "SUCCESS")
+        else:
+            self.log("✓ No cleanup needed (already cleaned after each test)", "SUCCESS")
     
     def run_dd_tests(self):
         """Run DD performance tests using DDTestTool"""
@@ -1815,25 +1849,30 @@ class NFSPerformanceTest:
             # Run warm-up if enabled
             self._warmup_test()
             
-            # Run tests with cache clearing between tools for proper isolation
+            # Run tests with cleanup and cache clearing after each tool for proper isolation
             self.run_dd_tests()
             if not self.skip_dd:
+                self.dd_tool.cleanup()
                 self._clear_cache()
             
             self.run_fio_tests()
             if not self.skip_fio:
+                self.fio_tool.cleanup()
                 self._clear_cache()
             
             self.run_iozone_tests()
             if not self.skip_iozone:
+                self.iozone_tool.cleanup()
                 self._clear_cache()
             
             self.run_bonnie_tests()
             if not self.skip_bonnie:
+                self.bonnie_tool.cleanup()
                 self._clear_cache()
             
             self.run_dbench_tests()
             if not self.skip_dbench:
+                self.dbench_tool.cleanup()
                 self._clear_cache()
             
             # Collect NFS stats after tests

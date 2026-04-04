@@ -378,6 +378,9 @@ class IOzoneTestTool(BaseTestTool):
         Returns:
             dict: Test results
         """
+        # Ensure test directory exists
+        self.test_dir.mkdir(parents=True, exist_ok=True)
+        
         # Start metrics collection
         self._start_metrics_collection()
         

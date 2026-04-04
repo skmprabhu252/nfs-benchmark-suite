@@ -7,15 +7,17 @@ A comprehensive benchmarking tool for evaluating NFS storage performance using i
 1. [Why Use This Tool?](#why-use-this-tool)
 2. [Features](#features)
 3. [Architecture](#architecture)
-4. [Requirements](#requirements)
-5. [Installation](#installation)
-6. [Quick Start](#quick-start)
-7. [Usage](#usage)
-8. [Configuration](#configuration)
-9. [Understanding Results](#understanding-results)
-10. [Best Practices](#best-practices)
-11. [Troubleshooting](#troubleshooting)
-12. [Author](#author)
+4. [Test Profiles](#test-profiles)
+5. [Performance Dimensions](#performance-dimensions)
+6. [Requirements](#requirements)
+7. [Installation](#installation)
+8. [Quick Start](#quick-start)
+9. [Usage](#usage)
+10. [Configuration](#configuration)
+11. [Understanding Results](#understanding-results)
+12. [Best Practices](#best-practices)
+13. [Troubleshooting](#troubleshooting)
+14. [Author](#author)
 
 ---
 
@@ -46,9 +48,6 @@ This tool helps you **measure and validate NFS storage performance** through com
 - **Performance Analysis**: Automatically identifies bottlenecks and suggests improvements
 - **Historical Tracking**: Compares results with previous runs to detect performance regressions
 - **Industry Baselines**: Shows how your results compare to expected performance
-- **HTML Reports**: Interactive reports with charts, trends, and executive summary
-- **Flexible Testing**: Quick (~15 min) or comprehensive (~60 min) test profiles
-
 ---
 
 ## Architecture
@@ -71,19 +70,19 @@ This tool helps you **measure and validate NFS storage performance** through com
 │  • Config Validation   │                        │  • NFS Metrics         │
 │  • Space Check         │                        │  • Network Stats       │
 │  • Permission Check    │                        │  • xprt Statistics     │
-└─────────┬──────────────┘                        └───────────┬-───────────┘
+└─────────┬──────────────┘                        └───────────┬────────────┘
           │                                                   │
           v                                                   v
-┌────────────────────────────────────────────────────────────-────┐
-│                    Benchmark Modules                            │
-│  ─────────────────────────────────────────────────────────      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐         │
-│  │    DD    │  │   FIO    │  │  IOzone  │  │ Bonnie++ │         │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘         │
-│  ┌──────────┐                                                   │
-│  │  dbench  │  All inherit from BaseTestTool                    │
-│  └──────────┘                                                   │
-└────────────┬────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│                    Benchmark Modules                           │
+│  ─────────────────────────────────────────────────────────     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
+│  │    DD    │  │   FIO    │  │  IOzone  │  │ Bonnie++ │      │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘      │
+│  ┌──────────┐                                                 │
+│  │  dbench  │  All inherit from BaseTestTool                  │
+│  └──────────┘                                                 │
+└────────────┬───────────────────────────────────────────────────┘
              │
              v
 ┌─────────────────────────────────────────────────────────────────┐
@@ -140,11 +139,77 @@ This tool helps you **measure and validate NFS storage performance** through com
 └──────────────────────┘
 ```
 
+- **HTML Reports**: Interactive reports with charts, trends, and executive summary
+- **Flexible Testing**: Quick (~15 min) or comprehensive (4-8 hours) test profiles
+
+---
+
+## Test Profiles
+
+### Profile Comparison
+
+| Aspect | Quick Test | Long Test |
+|--------|-----------|-----------|
+| **Duration** | ~15 minutes | 4-8 hours |
+| **Purpose** | Validation & Sanity Check | Production Benchmark |
+| **File Sizes** | 500MB - 2GB | 8GB - 64GB |
+| **Runtime per Test** | 30-90 seconds | 30-120 minutes |
+| **Threads/Clients** | 2-8 | 8-128 |
+| **Total Data Written** | ~20-30GB | ~500GB-1TB |
+| **Disk Space Required** | 50GB min, 100GB rec | 1TB min, 2TB rec |
+| **Command** | `--quick-test` | `--long-test` |
+
+### Quick Test (~15 minutes)
+
+**Purpose:** Rapid validation to ensure installation, setup, and environment are working correctly
+
+**Command:**
+```bash
+python3 runtest.py --mount-path /mnt/nfs1 --quick-test
+```
+
+### Long Test (4-8 hours)
+
+**Purpose:** Comprehensive production benchmark for detailed performance analysis
+
+**Test Duration Breakdown:**
+
+| Tool | Duration | Purpose |
+|------|----------|---------|
+| DD Tests | ~5 minutes | Sanity check |
+| FIO Tests | ~4.5 hours | Sequential, random, mixed, metadata, latency |
+| IOzone Tests | ~1-2 hours | Filesystem operations and scaling |
+| Bonnie++ Tests | ~6-8 hours | Comprehensive filesystem stress testing |
+| dbench Tests | ~2-3 hours | Multi-client workload simulation |
+
+**Command:**
+```bash
+python3 runtest.py --mount-path /mnt/nfs1 --long-test
+```
+
+---
+
+## Performance Dimensions
+
+Both test profiles measure these **6 critical performance dimensions**:
+
+| Dimension | What It Measures | Why It Matters | Tools Used |
+|-----------|------------------|----------------|------------|
+| **1. Throughput (MB/s)** | Sequential data transfer rate for large files | Critical for bulk data operations, backups, large file transfers | DD, FIO (sequential), IOzone (baseline), Bonnie++ |
+| **2. IOPS** | Random I/O performance with small block sizes (4K) | Database workloads, virtual machines, application servers | FIO (random 4K), IOzone (random I/O) |
+| **3. Latency (ms)** | Response time for I/O operations | Interactive applications, real-time systems, user experience | FIO (latency test), dbench (single client) |
+| **4. Metadata ops/sec** | File creation, deletion, stat, rename operations | Applications with many small files, build systems, source code repos | FIO (metadata), IOzone, Bonnie++ (file ops), dbench |
+| **5. Cache Effects** | Performance difference between cached and direct I/O | Understanding client-side caching behavior, tuning cache parameters | DD (cached vs direct), IOzone (cache behavior), FIO |
+| **6. Concurrency Scaling** | Performance scaling with multiple concurrent clients/threads | Multi-user environments, parallel workloads, capacity planning | IOzone (scaling), FIO (numjobs), dbench (scalability) |
+
 ---
 
 ## Requirements
 
-- **System**: Linux (kernel 4.x+), Python 3.6+, ~250GB free space
+- **System**: Linux (kernel 4.x+), Python 3.6+
+- **Disk Space**: 
+  - Quick Test: 50GB minimum, 100GB recommended
+  - Long Test: 1TB minimum, 2TB recommended
 - **Network**: 1 Gbps or higher recommended
 - **Tools**: fio, iozone, bonnie++, dbench, nfs-common
 
@@ -173,13 +238,10 @@ sudo dnf install -y iozone bonnie++ dbench
    sudo dnf install -y iozone bonnie++ dbench
    ```
 
-**Note:** `libnsl` library is required for dbench to run properly.
-
 2. **Install from source** (if EPEL doesn't have them):
    
    **IOzone:**
    ```bash
-   # Download from official site
    wget http://www.iozone.org/src/current/iozone3_506.tar
    tar xf iozone3_506.tar
    cd iozone3_506/src/current
@@ -191,7 +253,6 @@ sudo dnf install -y iozone bonnie++ dbench
 
    **Bonnie++:**
    ```bash
-   # Install from source
    wget https://www.coker.com.au/bonnie++/bonnie++-2.00a.tgz
    tar xzf bonnie++-2.00a.tgz
    cd bonnie++-2.00a
@@ -204,7 +265,6 @@ sudo dnf install -y iozone bonnie++ dbench
 
    **dbench:**
    ```bash
-   # Install from source
    git clone https://github.com/sahlberg/dbench.git
    cd dbench
    ./autogen.sh
@@ -215,7 +275,6 @@ sudo dnf install -y iozone bonnie++ dbench
    - GitHub: https://github.com/sahlberg/dbench
 
 3. **Run tests without missing tools:**
-   The benchmark suite will automatically skip tests for tools that aren't installed. You can run with available tools:
    ```bash
    # Skip specific tests if tools are missing
    python3 runtest.py --mount-path /mnt/nfs1 --skip-iozone --skip-bonnie --skip-dbench
@@ -255,14 +314,14 @@ python3 generate_html_report.py nfs_performance_test_*.json
 ### Basic Usage
 
 ```bash
-# Default test (~30 minutes)
-python3 runtest.py --mount-path /mnt/nfs1
-
-# Quick test (faster, less comprehensive)
+# Quick test (validation, ~15 minutes)
 python3 runtest.py --mount-path /mnt/nfs1 --quick-test
 
-# Long test (comprehensive, ~60 minutes)
+# Long test (benchmark, 4-8 hours)
 python3 runtest.py --mount-path /mnt/nfs1 --long-test
+
+# Default test (balanced, ~30 minutes)
+python3 runtest.py --mount-path /mnt/nfs1
 
 # Custom configuration
 python3 runtest.py --mount-path /mnt/nfs1 --config my_config.yaml
@@ -302,6 +361,14 @@ python3 runtest.py --mount-path /mnt/nfs1 --no-save-history
 
 ## Configuration
 
+### Configuration Files
+
+The suite includes three pre-configured test profiles:
+
+1. **config/config_quick_test.yaml** - Quick validation test (~15 minutes)
+2. **config/config_long_test.yaml** - Production benchmark (4-8 hours)
+3. **config/test_config.yaml** - Default balanced test (~30 minutes)
+
 ### Custom Test Configuration
 
 ```bash
@@ -330,6 +397,7 @@ fio_tests:
     bs: "1M"
     size: "4G"
     numjobs: 1
+    runtime: 60
 ```
 
 ---
@@ -345,30 +413,13 @@ After running tests, you'll get:
 
 ### Key Metrics
 
-**Throughput Tests (DD, FIO Sequential)**
-- Measures: MB/s for large file transfers
-- Good for: Evaluating bulk data transfer performance
-- Look for: Close to network bandwidth limit (e.g., ~1,100 MB/s for 10 GbE)
-
-**IOPS Tests (FIO Random)**
-- Measures: Operations per second for small random I/O
-- Good for: Database and application workloads
-- Look for: Consistent IOPS without high latency
-
-**Latency Tests**
-- Measures: Response time in milliseconds
-- Good for: Interactive applications
-- Look for: Low and consistent latency (<5ms average)
-
-**Metadata Tests (IOzone, Bonnie++)**
-- Measures: File operations per second
-- Good for: Applications with many small files
-- Look for: High file creation/deletion rates
-
-**Client Simulation (dbench)**
-- Measures: Multi-client throughput and latency
-- Good for: Understanding concurrent user performance
-- Look for: Linear scaling up to 4-8 clients
+| Test Type | What It Measures | Good For | What To Look For |
+|-----------|------------------|----------|------------------|
+| **Throughput Tests**<br>(DD, FIO Sequential) | MB/s for large file transfers | Evaluating bulk data transfer performance | Close to network bandwidth limit<br>(e.g., ~1,100 MB/s for 10 GbE) |
+| **IOPS Tests**<br>(FIO Random) | Operations per second for small random I/O | Database and application workloads | Consistent IOPS without high latency |
+| **Latency Tests** | Response time in milliseconds | Interactive applications | Low and consistent latency<br>(<5ms average) |
+| **Metadata Tests**<br>(IOzone, Bonnie++) | File operations per second | Applications with many small files | High file creation/deletion rates |
+| **Client Simulation**<br>(dbench) | Multi-client throughput and latency | Understanding concurrent user performance | Linear scaling up to 4-8 clients |
 
 ### Performance Baselines (10 GbE)
 
@@ -379,8 +430,13 @@ After running tests, you'll get:
 | Random Read (4K) | 8K IOPS | 20K IOPS | 40K IOPS |
 | Random Write (4K) | 5K IOPS | 15K IOPS | 30K IOPS |
 | Latency (avg) | <10ms | <5ms | <2ms |
+| Metadata ops/sec | 1K ops/s | 5K ops/s | 10K ops/s |
 
-*Note: Baselines vary by network speed. 1 GbE: ~100 MB/s, 25 GbE: ~2 GB/s, 100 GbE: ~8 GB/s*
+*Note: Baselines vary by network speed*
+- 1 GbE: ~100 MB/s sequential
+- 10 GbE: ~1,000 MB/s sequential
+- 25 GbE: ~2,500 MB/s sequential
+- 100 GbE: ~10,000 MB/s sequential
 
 ### Historical Comparison
 
@@ -396,13 +452,28 @@ The tool automatically tracks performance over time:
 
 ### Testing Guidelines
 
-1. **Run During Maintenance Windows**: Tests generate significant load
+1. **Run During Maintenance Windows**: Tests generate significant load (especially long tests)
 2. **Avoid Concurrent Workloads**: Ensure no other processes using the NFS mount
 3. **Run Multiple Iterations**: Run 3-5 times for consistent results
 4. **Compare Apples to Apples**: Use same test profile when comparing configurations
 5. **Check Network First**: Use `iperf3` to verify network performance before blaming NFS
 6. **Monitor Server**: Check NFS server CPU, memory, and storage during tests
 7. **Document Configuration**: Record mount options, NFS version, and server details
+
+### For Quick Tests
+- Run before making any configuration changes
+- Use as a smoke test after NFS mount changes
+- Integrate into CI/CD pipelines for automated validation
+- Run multiple times to verify consistency
+
+### For Long Tests
+- Schedule during maintenance windows
+- Ensure no other workloads on the NFS mount
+- Monitor NFS server resources during test
+- Run 2-3 times for statistical validation
+- Document all configuration details
+- Compare results against vendor specifications
+- Use results for capacity planning decisions
 
 ### Recommended NFS Mount Options
 
@@ -414,18 +485,31 @@ mount -t nfs -o vers=4.2,rsize=1048576,wsize=1048576,hard,async,noatime server:/
 mount -t nfs -o vers=3,rsize=1048576,wsize=1048576,hard,async,noatime server:/export /mnt/nfs1
 ```
 
-**Key Mount Options Explained:**
-- `vers=4.2`: Use NFSv4.2 for best performance (10-30% faster than NFSv3)
-- `rsize/wsize=1048576`: 1MB read/write buffer (optimal for 10 GbE networks)
-- `hard`: Retry indefinitely on failure (prevents data loss, recommended for production)
-- `async`: Better write performance (use `sync` for critical data requiring immediate persistence)
-- `noatime`: Don't update file access times (reduces metadata operations by ~20%)
+**Key Mount Options:**
 
-**Performance Tips:**
-- For 1 GbE networks: Use `rsize/wsize=262144` (256KB)
-- For 25+ GbE networks: Use `rsize/wsize=1048576` (1MB)
-- For latency-sensitive apps: Consider `sync` instead of `async`
-- For read-heavy workloads: Increase client cache with `actimeo=600`
+| Option | Purpose | Impact |
+|--------|---------|--------|
+| `vers=4.2` | Use NFSv4.2 protocol | 10-30% faster than NFSv3 |
+| `rsize/wsize=1048576` | 1MB read/write buffer | Optimal for 10 GbE networks |
+| `hard` | Retry indefinitely on failure | Prevents data loss (recommended for production) |
+| `async` | Better write performance | Use `sync` for critical data requiring immediate persistence |
+| `noatime` | Don't update file access times | Reduces metadata operations by ~20% |
+
+**Performance Tips by Network Speed:**
+
+| Network Speed | Recommended rsize/wsize | Notes |
+|---------------|------------------------|-------|
+| 1 GbE | `262144` (256KB) | Standard gigabit |
+| 10 GbE | `1048576` (1MB) | Most common enterprise |
+| 25+ GbE | `1048576` (1MB) | High-performance networks |
+
+**Workload-Specific Tips:**
+
+| Workload Type | Recommendation |
+|---------------|----------------|
+| Latency-sensitive apps | Consider `sync` instead of `async` |
+| Read-heavy workloads | Increase client cache with `actimeo=600` |
+| Write-heavy workloads | Use `async` for better performance |
 
 ---
 
@@ -474,8 +558,6 @@ sudo dnf install fio iozone bonnie++ dbench libnsl
 # If tools not available in repos, see Requirements section for manual installation
 ```
 
-For detailed installation instructions including building from source, see the [Requirements](#requirements) section above.
-
 **4. Test Hangs or Times Out**
 ```bash
 # Check NFS server status
@@ -500,11 +582,23 @@ done
 # Ensure no other processes using NFS mount
 ```
 
+**6. Disk Space Errors**
+```bash
+# Check available space
+df -h /mnt/nfs1
+
+# Quick test needs: 50GB minimum, 100GB recommended
+# Long test needs: 1TB minimum, 2TB recommended
+
+# Clean up old test files if needed
+rm -rf /mnt/nfs1/cthon /mnt/nfs1/iozone_test /mnt/nfs1/bonnie_test /mnt/nfs1/dbench_test
+```
+
 ---
 
 ## Author
 
-**Prabhu Murugesan**
+**Prabhu Murugesan**  
 Email: prabhu.murugesan1@ibm.com
 
-**Version:** 1.0 | **Updated:** 2026-04-03
+**Version:** 1.0 | **Updated:** 2026-04-04

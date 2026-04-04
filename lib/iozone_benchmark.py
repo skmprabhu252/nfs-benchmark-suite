@@ -146,8 +146,9 @@ class IOzoneTestTool(BaseTestTool):
             cmd.extend(['-r', test_config['record_size']])
         
         # Number of threads
-        if 'threads' in test_config:
-            cmd.extend(['-t', str(test_config['threads'])])
+        threads = test_config.get('threads')
+        if threads:
+            cmd.extend(['-t', str(threads)])
         
         # Direct I/O
         if test_config.get('direct_io', False):
@@ -167,8 +168,15 @@ class IOzoneTestTool(BaseTestTool):
             output_file = self.test_dir / f"{test_config.get('name', 'test')}.xls"
             cmd.append(str(output_file))
         
-        # Working directory
-        cmd.extend(['-f', str(self.test_dir / 'iozone.tmp')])
+        # File specification: use -F for multiple threads, -f for single thread
+        if threads and threads > 1:
+            # Multiple threads require -F with one file per thread
+            cmd.append('-F')
+            for i in range(threads):
+                cmd.append(str(self.test_dir / f'iozone.tmp.{i}'))
+        else:
+            # Single thread uses -f with one file
+            cmd.extend(['-f', str(self.test_dir / 'iozone.tmp')])
         
         return cmd
     

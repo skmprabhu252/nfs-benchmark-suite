@@ -82,11 +82,11 @@ check_python() {
         PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
         PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
         
-        if [ "$PYTHON_MAJOR" -ge 3 ] && [ "$PYTHON_MINOR" -ge 7 ]; then
+        if [ "$PYTHON_MAJOR" -ge 3 ] && [ "$PYTHON_MINOR" -ge 6 ]; then
             echo -e "${GREEN}✓ Python $PYTHON_VERSION found${NC}"
             return 0
         else
-            echo -e "${RED}✗ Python 3.7+ required, found $PYTHON_VERSION${NC}"
+            echo -e "${RED}✗ Python 3.6+ required, found $PYTHON_VERSION${NC}"
             return 1
         fi
     else

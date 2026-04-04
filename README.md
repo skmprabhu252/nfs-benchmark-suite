@@ -216,7 +216,7 @@ sudo dnf install -y iozone3 bonnie++ dbench
    The benchmark suite will automatically skip tests for tools that aren't installed. You can run with available tools:
    ```bash
    # Skip specific tests if tools are missing
-   python runtest.py --mount-path /mnt/nfs1 --skip-iozone --skip-bonnie --skip-dbench
+   python3 runtest.py --mount-path /mnt/nfs1 --skip-iozone --skip-bonnie --skip-dbench
    ```
 
 ### Python Dependencies
@@ -240,10 +240,10 @@ cd nfs-benchmark-suite
 
 ```bash
 # Run quick test (~15 minutes)
-python runtest.py --mount-path /mnt/nfs1 --quick-test
+python3 runtest.py --mount-path /mnt/nfs1 --quick-test
 
 # Generate HTML report
-python generate_html_report.py nfs_performance_test_*.json
+python3 generate_html_report.py nfs_performance_test_*.json
 ```
 
 ---
@@ -254,29 +254,29 @@ python generate_html_report.py nfs_performance_test_*.json
 
 ```bash
 # Default test (~30 minutes)
-python runtest.py --mount-path /mnt/nfs1
+python3 runtest.py --mount-path /mnt/nfs1
 
 # Quick test (faster, less comprehensive)
-python runtest.py --mount-path /mnt/nfs1 --quick-test
+python3 runtest.py --mount-path /mnt/nfs1 --quick-test
 
 # Long test (comprehensive, ~60 minutes)
-python runtest.py --mount-path /mnt/nfs1 --long-test
+python3 runtest.py --mount-path /mnt/nfs1 --long-test
 
 # Custom configuration
-python runtest.py --mount-path /mnt/nfs1 --config my_config.yaml
+python3 runtest.py --mount-path /mnt/nfs1 --config my_config.yaml
 
 # Verbose output
-python runtest.py --mount-path /mnt/nfs1 --verbose
+python3 runtest.py --mount-path /mnt/nfs1 --verbose
 ```
 
 ### Skip Specific Tests
 
 ```bash
-python runtest.py --mount-path /mnt/nfs1 --skip-dd
-python runtest.py --mount-path /mnt/nfs1 --skip-fio
-python runtest.py --mount-path /mnt/nfs1 --skip-iozone
-python runtest.py --mount-path /mnt/nfs1 --skip-bonnie
-python runtest.py --mount-path /mnt/nfs1 --skip-dbench
+python3 runtest.py --mount-path /mnt/nfs1 --skip-dd
+python3 runtest.py --mount-path /mnt/nfs1 --skip-fio
+python3 runtest.py --mount-path /mnt/nfs1 --skip-iozone
+python3 runtest.py --mount-path /mnt/nfs1 --skip-bonnie
+python3 runtest.py --mount-path /mnt/nfs1 --skip-dbench
 ```
 
 ### Common Scenarios
@@ -284,16 +284,16 @@ python runtest.py --mount-path /mnt/nfs1 --skip-dbench
 ```bash
 # Test different mount options
 mount -t nfs -o vers=4.2,rsize=1048576,wsize=1048576 server:/export /mnt/nfs1
-python runtest.py --mount-path /mnt/nfs1
+python3 runtest.py --mount-path /mnt/nfs1
 
 # Compare NFSv3 vs NFSv4
 mount -t nfs -o vers=3 server:/export /mnt/nfs3
 mount -t nfs -o vers=4.2 server:/export /mnt/nfs4
-python runtest.py --mount-path /mnt/nfs3
-python runtest.py --mount-path /mnt/nfs4
+python3 runtest.py --mount-path /mnt/nfs3
+python3 runtest.py --mount-path /mnt/nfs4
 
 # Disable history tracking (for testing)
-python runtest.py --mount-path /mnt/nfs1 --no-save-history
+python3 runtest.py --mount-path /mnt/nfs1 --no-save-history
 ```
 
 ---
@@ -310,7 +310,7 @@ cp config/test_config.yaml my_config.yaml
 vim my_config.yaml
 
 # Run with custom config
-python runtest.py --mount-path /mnt/nfs1 --config my_config.yaml
+python3 runtest.py --mount-path /mnt/nfs1 --config my_config.yaml
 ```
 
 ### Example Configuration
@@ -339,7 +339,7 @@ fio_tests:
 After running tests, you'll get:
 - **JSON file**: `nfs_performance_test_YYYYMMDD_HHMMSS.json` - Raw results
 - **Log file**: `nfs_performance_test_YYYYMMDD_HHMMSS.log` - Detailed logs
-- **HTML report**: Generate with `python generate_html_report.py <json_file>`
+- **HTML report**: Generate with `python3 generate_html_report.py <json_file>`
 
 ### Key Metrics
 
@@ -490,7 +490,7 @@ dmesg | grep -i nfs
 ```bash
 # Run multiple iterations
 for i in {1..3}; do
-  python runtest.py --mount-path /mnt/nfs1 --quick-test
+  python3 runtest.py --mount-path /mnt/nfs1 --quick-test
 done
 
 # Avoid concurrent workloads

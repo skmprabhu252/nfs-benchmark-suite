@@ -107,7 +107,7 @@ def setup_logging(log_dir="logs", log_level=logging.INFO, debug=False):
     debug_log_file = log_path / f"nfs_test_debug_{timestamp}.log"
     
     # Create logger
-    logger = logging.getLogger('nfs_performance_test')
+    logger = logging.getLogger('nfs_benchmark_suite')
     logger.setLevel(logging.DEBUG)  # Capture all levels
     
     # Remove existing handlers to avoid duplicates
@@ -945,7 +945,7 @@ class NFSPerformanceTest:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         log_dir = Path("logs")
         log_dir.mkdir(exist_ok=True)
-        self.output_file = log_dir / f"nfs_performance_test_{timestamp}.json"
+        self.output_file = log_dir / f"nfs_benchmark_suite_{timestamp}.json"
         
         # Test directories and files (for backward compatibility)
         self.test_dir = self.mount_path / "cthon"

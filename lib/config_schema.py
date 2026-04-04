@@ -225,34 +225,32 @@ CONFIG_SCHEMA = {
                         "enabled": {
                             "type": "boolean"
                         },
-                        "size_mb": {
-                            "type": "integer",
-                            "minimum": 100,
-                            "maximum": 1000000
+                        "file_size": {
+                            "type": "string",
+                            "pattern": "^[0-9]+[kmg]?$",
+                            "description": "File size (e.g., '2g', '1024m')"
                         },
                         "num_files": {
-                            "type": "integer",
-                            "minimum": 1,
-                            "maximum": 1000000
-                        },
-                        "max_file_size_kb": {
-                            "type": "integer",
-                            "minimum": 1,
-                            "maximum": 1048576
-                        },
-                        "min_file_size_kb": {
-                            "type": "integer",
-                            "minimum": 0,
-                            "maximum": 1048576
-                        },
-                        "num_dirs": {
-                            "type": "integer",
-                            "minimum": 1,
-                            "maximum": 1000
+                            "type": "string",
+                            "pattern": "^[0-9]+:[0-9]+:[0-9]+:[0-9]+$",
+                            "description": "Number of files in format num:max:min:num_dirs (e.g., '4:0:0:4')"
                         },
                         "fast_mode": {
-                            "type": "boolean"
-                        }
+                            "type": "boolean",
+                            "description": "Enable fast mode"
+                        },
+                        "processes": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 256,
+                            "description": "Number of processes"
+                        },
+                        "timeout": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 7200,
+                            "description": "Timeout in seconds"
+                        },
                     }
                 }
             }

@@ -162,6 +162,20 @@ class BaseTestTool(ABC):
                 check=check,
                 **kwargs
             )
+            
+            # Log command output to log file
+            if capture_output and result.stdout:
+                self.log("Command stdout:", "DEBUG")
+                for line in result.stdout.splitlines():
+                    if line.strip():  # Only log non-empty lines
+                        self.log(f"  {line}", "DEBUG")
+            
+            if capture_output and result.stderr:
+                self.log("Command stderr:", "DEBUG")
+                for line in result.stderr.splitlines():
+                    if line.strip():  # Only log non-empty lines
+                        self.log(f"  {line}", "DEBUG")
+            
             return result
             
         except CommandTimeoutError as e:
@@ -205,7 +219,6 @@ class BaseTestTool(ABC):
             self.metrics_collector.start()
         if self.nfs_metrics_collector:
             self.nfs_metrics_collector.start()
-    
     def _stop_metrics_collection(self) -> Dict[str, Any]:
         """
         Stop metrics collection and return combined summary.
@@ -228,6 +241,8 @@ class BaseTestTool(ABC):
             nfs_metrics = self.nfs_metrics_collector.get_summary()
             if nfs_metrics:
                 summary['nfs'] = nfs_metrics
+        
+        return summary
         
     
     def _attach_metrics_to_result(self, result: Dict[str, Any], metrics_summary: Dict[str, Any]) -> None:

@@ -7,13 +7,13 @@ performance across various workload patterns. Results are automatically saved
 to timestamped JSON log files.
 
 Usage:
-    python runtest.py --mount-path /mnt/nfs1
-    python runtest.py --mount-path /mnt/nfs1 --config custom_config.yaml
-    python runtest.py --mount-path /mnt/nfs1 --skip-dd
-    python runtest.py --mount-path /mnt/nfs1 --skip-fio
-    python runtest.py --mount-path /mnt/nfs1 --skip-bonnie
-    python runtest.py --mount-path /mnt/nfs1 --skip-dbench
-    python runtest.py --mount-path /mnt/nfs1 --cleanup-only
+    python3 runtest.py --mount-path /mnt/nfs1
+    python3 runtest.py --mount-path /mnt/nfs1 --config custom_config.yaml
+    python3 runtest.py --mount-path /mnt/nfs1 --skip-dd
+    python3 runtest.py --mount-path /mnt/nfs1 --skip-fio
+    python3 runtest.py --mount-path /mnt/nfs1 --skip-bonnie
+    python3 runtest.py --mount-path /mnt/nfs1 --skip-dbench
+    python3 runtest.py --mount-path /mnt/nfs1 --cleanup-only
 """
 
 import argparse
@@ -1910,37 +1910,37 @@ def main():
         epilog="""
 Examples:
   # Run quick test profile (~15 minutes)
-  python runtest.py --mount-path /mnt/nfs1 --quick-test
+  python3 runtest.py --mount-path /mnt/nfs1 --quick-test
   
   # Run long test profile (~60 minutes)
-  python runtest.py --mount-path /mnt/nfs1 --long-test
+  python3 runtest.py --mount-path /mnt/nfs1 --long-test
   
   # Run all tests with default config
-  python runtest.py --mount-path /mnt/nfs1
+  python3 runtest.py --mount-path /mnt/nfs1
   
   # Run with custom configuration
-  python runtest.py --mount-path /mnt/nfs1 --config my_config.yaml
+  python3 runtest.py --mount-path /mnt/nfs1 --config my_config.yaml
   
   # Skip DD tests
-  python runtest.py --mount-path /mnt/nfs1 --skip-dd
+  python3 runtest.py --mount-path /mnt/nfs1 --skip-dd
   
   # Skip FIO tests
-  python runtest.py --mount-path /mnt/nfs1 --skip-fio
+  python3 runtest.py --mount-path /mnt/nfs1 --skip-fio
   
   # Skip IOzone tests
-  python runtest.py --mount-path /mnt/nfs1 --skip-iozone
+  python3 runtest.py --mount-path /mnt/nfs1 --skip-iozone
   
   # Skip Bonnie++ tests
-  python runtest.py --mount-path /mnt/nfs1 --skip-bonnie
+  python3 runtest.py --mount-path /mnt/nfs1 --skip-bonnie
   
   # Skip dbench tests
-  python runtest.py --mount-path /mnt/nfs1 --skip-dbench
+  python3 runtest.py --mount-path /mnt/nfs1 --skip-dbench
   
   # Cleanup only
-  python runtest.py --mount-path /mnt/nfs1 --cleanup-only
+  python3 runtest.py --mount-path /mnt/nfs1 --cleanup-only
   
   # Verbose mode
-  python runtest.py --mount-path /mnt/nfs1 --verbose
+  python3 runtest.py --mount-path /mnt/nfs1 --verbose
 
 Test Profiles:
   --quick-test: Reduced file sizes and shorter runtimes (~15 minutes)

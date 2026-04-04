@@ -302,7 +302,7 @@ CONFIG_SCHEMA = {
             }
         }
     },
-    "additionalProperties": false
+    "additionalProperties": False
 }
 
 

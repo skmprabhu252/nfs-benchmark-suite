@@ -213,7 +213,7 @@ class IOzoneTestTool(BaseTestTool):
             test_config = {}
         
         test_config.setdefault('name', test_name)
-        test_config.setdefault('test_types', [1])  # 1=read
+        test_config.setdefault('test_types', [0, 1])  # 0=write, 1=read (need write first to create file)
         test_config.setdefault('file_size', '2g')
         test_config.setdefault('record_size', '1m')
         test_config.setdefault('direct_io', False)  # No direct I/O to test cache
@@ -236,7 +236,7 @@ class IOzoneTestTool(BaseTestTool):
             test_config = {}
         
         test_config.setdefault('name', test_name)
-        test_config.setdefault('test_types', [2, 4])  # 2=random read, 4=random write
+        test_config.setdefault('test_types', [0, 2, 4])  # 0=write first, then 2=random read, 4=random write
         test_config.setdefault('file_size', '1g')
         test_config.setdefault('record_size', '4k')
         test_config.setdefault('direct_io', True)

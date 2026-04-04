@@ -121,6 +121,8 @@ class BonnieTestTool(BaseTestTool):
         Returns:
             list: Bonnie++ command with parameters
         """
+        import os
+        
         cmd = ['bonnie++']
         
         # Directory for tests
@@ -138,9 +140,12 @@ class BonnieTestTool(BaseTestTool):
         if 'ram_size' in test_config:
             cmd.extend(['-r', test_config['ram_size']])
         
-        # User to run as (if specified)
+        # User to run as (required when running as root)
         if 'user' in test_config:
             cmd.extend(['-u', test_config['user']])
+        elif os.geteuid() == 0:
+            # Running as root, use current user or nobody
+            cmd.extend(['-u', 'root'])
         
         # Machine name for output
         if 'machine_name' in test_config:

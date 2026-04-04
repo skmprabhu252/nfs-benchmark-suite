@@ -197,12 +197,14 @@ bonnie_tests:
   comprehensive_test:
     enabled: true
     file_size: "8g"              # File size for I/O tests (8GB)
+    ram_size: "4096"             # Tell bonnie++ to assume 4GB RAM
     num_files: "16:0:0:16"       # Number of files: max:min:num_dirs:chunk_size
     timeout: 3600                # 1 hour timeout
   
   fast_test:
     enabled: true
     file_size: "4g"              # Smaller file size for faster test
+    ram_size: "2048"             # Tell bonnie++ to assume 2GB RAM
     num_files: "8:0:0:8"         # Fewer files
     fast_mode: true              # Skip per-character tests
     timeout: 1800                # 30 minutes timeout
@@ -210,6 +212,7 @@ bonnie_tests:
   file_operations:
     enabled: true
     file_size: "2g"              # Focus on file operations
+    ram_size: "1024"             # Tell bonnie++ to assume 1GB RAM
     num_files: "32:0:0:32"       # More files for metadata testing
     processes: 4                 # Multiple processes
 # dbench Test Configuration

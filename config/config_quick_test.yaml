@@ -199,6 +199,7 @@ bonnie_tests:
   fast_test:
     enabled: true
     file_size: "2g"              # Reduced from 4g
+    ram_size: "1024"             # Tell bonnie++ to assume 1GB RAM to avoid size warning
     num_files: "4:0:0:4"         # Reduced files
     fast_mode: true
     timeout: 900                 # 15 minutes
@@ -206,6 +207,7 @@ bonnie_tests:
   file_operations:
     enabled: true
     file_size: "1g"              # Reduced from 2g
+    ram_size: "512"              # Tell bonnie++ to assume 512MB RAM
     num_files: "16:0:0:16"       # Reduced files
     processes: 2                 # Reduced processes
 # dbench Test Configuration (Quick Test Profile)

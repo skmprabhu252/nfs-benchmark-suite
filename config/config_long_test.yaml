@@ -196,12 +196,14 @@ bonnie_tests:
   comprehensive_test:
     enabled: true
     file_size: "16g"             # Increased from 8g
+    ram_size: "8192"             # Tell bonnie++ to assume 8GB RAM
     num_files: "32:0:0:32"       # More files
     timeout: 5400                # 90 minutes
   
   fast_test:
     enabled: true
     file_size: "8g"              # Increased from 4g
+    ram_size: "4096"             # Tell bonnie++ to assume 4GB RAM
     num_files: "16:0:0:16"
     fast_mode: true
     timeout: 3600                # 60 minutes
@@ -209,6 +211,7 @@ bonnie_tests:
   file_operations:
     enabled: true
     file_size: "4g"              # Increased from 2g
+    ram_size: "2048"             # Tell bonnie++ to assume 2GB RAM
     num_files: "64:0:0:64"       # More files for extensive metadata testing
     processes: 8                 # More processes
 # dbench Test Configuration (Long Test Profile)

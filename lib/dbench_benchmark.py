@@ -269,7 +269,7 @@ class DBenchTestTool(BaseTestTool):
             cmd.extend(['-t', str(test_config['duration'])])
         
         # Loadfile (workload definition) - REQUIRED for dbench 5.0+
-        loadfile = test_config.get('loadfile', 'client.txt')
+        loadfile = test_config.get('loadfile', 'dbench_client.txt')
         loadfile_path = None
         
         # Check multiple locations for the loadfile
@@ -297,7 +297,7 @@ class DBenchTestTool(BaseTestTool):
                 self.log(f"Could not read loadfile content: {e}", "WARNING")
         else:
             # If no loadfile found, use the suite's default
-            default_loadfile = Path(__file__).parent.parent / 'config' / 'client.txt'
+            default_loadfile = Path(__file__).parent.parent / 'config' / 'dbench_client.txt'
             if default_loadfile.exists():
                 cmd.extend(['-c', str(default_loadfile)])
                 self.log(f"Using default loadfile: {default_loadfile}", "DEBUG")

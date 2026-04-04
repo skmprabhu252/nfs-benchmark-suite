@@ -1,44 +1,62 @@
-# Default dbench loadfile for NFS Benchmark Suite
-# Based on standard SMB/CIFS client operations
-# Format: operation filename size
-
-# File operations
-OPEN file1.dat 0
-WRITE file1.dat 0 65536
-CLOSE file1.dat 0
-OPEN file1.dat 0
-READ file1.dat 0 65536
-CLOSE file1.dat 0
-
-# Directory operations
-MKDIR dir1 0
-OPEN dir1/file2.dat 0
-WRITE dir1/file2.dat 0 32768
-CLOSE dir1/file2.dat 0
-UNLINK dir1/file2.dat 0
-RMDIR dir1 0
-
-# Multiple file operations
-OPEN file3.dat 0
-WRITE file3.dat 0 16384
-WRITE file3.dat 16384 16384
-WRITE file3.dat 32768 16384
-CLOSE file3.dat 0
-OPEN file3.dat 0
-READ file3.dat 0 49152
-CLOSE file3.dat 0
-UNLINK file3.dat 0
-
-# Rename operations
-OPEN file4.dat 0
-WRITE file4.dat 0 8192
-CLOSE file4.dat 0
-RENAME file4.dat file5.dat 0
-UNLINK file5.dat 0
-
-# Flush operations
-OPEN file6.dat 0
-WRITE file6.dat 0 4096
-FLUSH file6.dat 0
-CLOSE file6.dat 0
-UNLINK file6.dat 0
+0 OPEN "\\file1.dat" 0x0 0
+0 STATUS 0 0
+0 WRITE 0 0 65536
+0 STATUS 0 65536
+0 CLOSE 0
+0 STATUS 0 0
+0 OPEN "\\file1.dat" 0x0 0
+0 STATUS 0 0
+0 READ 0 0 65536
+0 STATUS 0 65536
+0 CLOSE 0
+0 STATUS 0 0
+0 MKDIR "\\dir1" 0
+0 STATUS 0 0
+0 OPEN "\\dir1\\file2.dat" 0x0 0
+0 STATUS 0 0
+0 WRITE 0 0 32768
+0 STATUS 0 32768
+0 CLOSE 0
+0 STATUS 0 0
+0 UNLINK "\\dir1\\file2.dat"
+0 STATUS 0 0
+0 RMDIR "\\dir1"
+0 STATUS 0 0
+0 OPEN "\\file3.dat" 0x0 0
+0 STATUS 0 0
+0 WRITE 0 0 16384
+0 STATUS 0 16384
+0 WRITE 0 16384 16384
+0 STATUS 0 16384
+0 WRITE 0 32768 16384
+0 STATUS 0 16384
+0 CLOSE 0
+0 STATUS 0 0
+0 OPEN "\\file3.dat" 0x0 0
+0 STATUS 0 0
+0 READ 0 0 49152
+0 STATUS 0 49152
+0 CLOSE 0
+0 STATUS 0 0
+0 UNLINK "\\file3.dat"
+0 STATUS 0 0
+0 OPEN "\\file4.dat" 0x0 0
+0 STATUS 0 0
+0 WRITE 0 0 8192
+0 STATUS 0 8192
+0 CLOSE 0
+0 STATUS 0 0
+0 RENAME "\\file4.dat" "\\file5.dat"
+0 STATUS 0 0
+0 UNLINK "\\file5.dat"
+0 STATUS 0 0
+0 OPEN "\\file6.dat" 0x0 0
+0 STATUS 0 0
+0 WRITE 0 0 4096
+0 STATUS 0 4096
+0 FLUSH 0
+0 STATUS 0 0
+0 CLOSE 0
+0 STATUS 0 0
+0 UNLINK "\\file6.dat"
+0 STATUS 0 0

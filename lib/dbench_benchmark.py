@@ -61,8 +61,37 @@ class DBenchTestTool(BaseTestTool):
         test_dir_name = common_config.get('directory', 'dbench_test')
         self.test_dir = self.mount_path / test_dir_name
         
+        # Get NFS server and export path
+        self.nfs_url = self._get_nfs_url()
+        
         # Results storage
         self.results = {}
+    
+    def _get_nfs_url(self) -> str:
+        """
+        Get NFS URL from mount information.
+        
+        Returns:
+            str: NFS URL in format nfs://server/export/path or empty string
+        """
+        try:
+            # Read /proc/mounts to find NFS mount
+            with open('/proc/mounts', 'r') as f:
+                for line in f:
+                    parts = line.split()
+                    if len(parts) >= 2 and parts[1] == str(self.mount_path):
+                        # NFS mount format: server:/export/path
+                        mount_source = parts[0]
+                        if ':' in mount_source:
+                            server, export_path = mount_source.split(':', 1)
+                            # Append test directory to export path
+                            test_dir_name = self.config.get('common', {}).get('directory', 'dbench_test')
+                            full_path = f"{export_path.rstrip('/')}/{test_dir_name}"
+                            return f"nfs://{server}{full_path}"
+            return ""
+        except Exception as e:
+            self.log(f"Could not determine NFS URL: {e}", "WARNING")
+            return ""
     
     def validate_tool(self) -> bool:
         """
@@ -255,15 +284,19 @@ class DBenchTestTool(BaseTestTool):
         cmd = ['dbench']
         
         # Backend specification (required for dbench 5.0+)
-        # Use fileio backend for filesystem/NFS testing
-        backend = test_config.get('backend', 'fileio')
+        # Use NFS backend for proper NFS testing
+        backend = test_config.get('backend', 'nfs')
         cmd.extend(['-B', backend])
         
         # Number of clients (required)
         num_clients = test_config.get('num_clients', 1)
         
-        # Directory for tests
-        cmd.extend(['-D', str(self.test_dir)])
+        # NFS URL for tests (if using NFS backend)
+        if backend == 'nfs' and self.nfs_url:
+            cmd.extend(['--nfs', self.nfs_url])
+        else:
+            # Fallback to directory for fileio backend
+            cmd.extend(['-D', str(self.test_dir)])
         
         # Duration (in seconds)
         if 'duration' in test_config:

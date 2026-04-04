@@ -17,8 +17,14 @@ CONFIG_SCHEMA = {
         "dd_tests": {
             "type": "object",
             "description": "DD (Data Duplicator) test configurations",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable/disable all DD tests"
+                }
+            },
             "patternProperties": {
-                "^.*$": {
+                "^(?!enabled$).*$": {
                     "type": "object",
                     "properties": {
                         "enabled": {
@@ -51,12 +57,17 @@ CONFIG_SCHEMA = {
                         }
                     }
                 }
-            }
+            },
+            "additionalProperties": False
         },
         "fio_tests": {
             "type": "object",
             "description": "FIO (Flexible I/O Tester) test configurations",
             "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable/disable all FIO tests"
+                },
                 "common": {
                     "type": "object",
                     "description": "Common FIO parameters",
@@ -75,7 +86,7 @@ CONFIG_SCHEMA = {
                 }
             },
             "patternProperties": {
-                "^(?!common$).*$": {
+                "^(?!enabled|common).*$": {
                     "type": "object",
                     "properties": {
                         "enabled": {
@@ -149,8 +160,14 @@ CONFIG_SCHEMA = {
         "iozone_tests": {
             "type": "object",
             "description": "IOzone test configurations",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable/disable all IOzone tests"
+                }
+            },
             "patternProperties": {
-                "^.*$": {
+                "^(?!enabled$).*$": {
                     "type": "object",
                     "properties": {
                         "enabled": {
@@ -195,8 +212,14 @@ CONFIG_SCHEMA = {
         "bonnie_tests": {
             "type": "object",
             "description": "Bonnie++ test configurations",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable/disable all Bonnie++ tests"
+                }
+            },
             "patternProperties": {
-                "^.*$": {
+                "^(?!enabled$).*$": {
                     "type": "object",
                     "properties": {
                         "enabled": {
@@ -237,8 +260,18 @@ CONFIG_SCHEMA = {
         "dbench_tests": {
             "type": "object",
             "description": "dbench test configurations",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable/disable all dbench tests"
+                },
+                "common": {
+                    "type": "object",
+                    "description": "Common dbench parameters"
+                }
+            },
             "patternProperties": {
-                "^.*$": {
+                "^(?!enabled|common).*$": {
                     "type": "object",
                     "properties": {
                         "enabled": {

@@ -1523,7 +1523,7 @@ class NFSPerformanceTest:
     def print_summary(self):
         """Print test summary to console"""
         print("\n" + "=" * 80)
-        print(f"{Colors.BOLD}{Colors.HEADER}NFS/RDMA Performance Test Summary{Colors.ENDC}")
+        print(f"{Colors.BOLD}{Colors.HEADER}NFS Benchmark Suite Summary{Colors.ENDC}")
         print("=" * 80)
         
         print(f"\n{Colors.BOLD}Test Run Information:{Colors.ENDC}")

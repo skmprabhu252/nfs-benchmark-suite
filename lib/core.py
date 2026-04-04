@@ -164,19 +164,19 @@ class BaseTestTool(ABC):
                 **kwargs
             )
             
-            # Log command output to log file at INFO level (Python 3.6+ only)
-            if sys.version_info >= (3, 6):
-                if capture_output and hasattr(result, 'stdout') and result.stdout:
-                    self.log("Command stdout:", "INFO")
-                    for line in result.stdout.splitlines():
-                        if line.strip():  # Only log non-empty lines
-                            self.log(f"  {line}", "INFO")
-                
-                if capture_output and hasattr(result, 'stderr') and result.stderr:
-                    self.log("Command stderr:", "INFO")
-                    for line in result.stderr.splitlines():
-                        if line.strip():  # Only log non-empty lines
-                            self.log(f"  {line}", "INFO")
+            # Log command output to log file at INFO level
+            # Check if result has stdout/stderr attributes (set when capture_output=True)
+            if hasattr(result, 'stdout') and result.stdout:
+                self.log("Command stdout:", "INFO")
+                for line in result.stdout.splitlines():
+                    if line.strip():  # Only log non-empty lines
+                        self.log(f"  {line}", "INFO")
+            
+            if hasattr(result, 'stderr') and result.stderr:
+                self.log("Command stderr:", "INFO")
+                for line in result.stderr.splitlines():
+                    if line.strip():  # Only log non-empty lines
+                        self.log(f"  {line}", "INFO")
             
             return result
             

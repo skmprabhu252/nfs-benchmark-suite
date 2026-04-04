@@ -144,16 +144,84 @@ This tool helps you **measure and validate NFS storage performance** through com
 
 ## Requirements
 
-- **System**: Linux (kernel 4.x+), Python 3.7+, ~250GB free space
+- **System**: Linux (kernel 4.x+), Python 3.6+, ~250GB free space
 - **Network**: 1 Gbps or higher recommended
 - **Tools**: fio, iozone3, bonnie++, dbench, nfs-common
 
-```bash
-# Ubuntu/Debian
-sudo apt-get install python3 python3-pip fio iozone3 bonnie++ dbench nfs-common
+### Installing Prerequisites
 
-# RHEL/CentOS
-sudo yum install python3 python3-pip fio iozone3 bonnie++ dbench nfs-utils
+#### Ubuntu/Debian
+```bash
+sudo apt-get update
+sudo apt-get install python3 python3-pip fio iozone3 bonnie++ dbench nfs-common
+```
+
+#### RHEL/CentOS/Fedora
+```bash
+# Install core packages (always available)
+sudo dnf install -y python3 python3-pip fio nfs-utils
+
+# Optional benchmark tools (may need manual installation)
+sudo dnf install -y iozone3 bonnie++ dbench
+```
+
+**Note for RHEL/CentOS users:** Some benchmark tools (iozone, bonnie++, dbench) may not be available in standard repositories. If installation fails, you can:
+
+1. **Enable EPEL repository** (recommended):
+   ```bash
+   sudo dnf install -y epel-release
+   sudo dnf install -y iozone3 bonnie++ dbench
+   ```
+
+2. **Install from source** (if EPEL doesn't have them):
+   
+   **IOzone:**
+   ```bash
+   # Download from official site
+   wget http://www.iozone.org/src/current/iozone3_506.tar
+   tar xf iozone3_506.tar
+   cd iozone3_506/src/current
+   make linux
+   sudo cp iozone /usr/local/bin/
+   ```
+   - Official site: http://www.iozone.org/
+   - GitHub mirror: https://github.com/chaos/iozone
+
+   **Bonnie++:**
+   ```bash
+   # Install from source
+   wget https://www.coker.com.au/bonnie++/bonnie++-2.00a.tgz
+   tar xzf bonnie++-2.00a.tgz
+   cd bonnie++-2.00a
+   ./configure
+   make
+   sudo make install
+   ```
+   - Official site: https://www.coker.com.au/bonnie++/
+   - GitHub: https://github.com/sbates130272/bonnie
+
+   **dbench:**
+   ```bash
+   # Install from source
+   git clone https://github.com/sahlberg/dbench.git
+   cd dbench
+   ./autogen.sh
+   ./configure
+   make
+   sudo make install
+   ```
+   - GitHub: https://github.com/sahlberg/dbench
+
+3. **Run tests without missing tools:**
+   The benchmark suite will automatically skip tests for tools that aren't installed. You can run with available tools:
+   ```bash
+   # Skip specific tests if tools are missing
+   python runtest.py --mount-path /mnt/nfs1 --skip-iozone --skip-bonnie --skip-dbench
+   ```
+
+### Python Dependencies
+```bash
+pip3 install --user -r requirements.txt
 ```
 
 ---
@@ -394,10 +462,17 @@ mount | grep nfs
 
 **3. Tool Not Found**
 ```bash
-# Install missing tools
-sudo apt-get install fio iozone3 bonnie++ dbench  # Ubuntu
-sudo yum install fio iozone3 bonnie++ dbench      # RHEL
+# Ubuntu/Debian
+sudo apt-get install fio iozone3 bonnie++ dbench
+
+# RHEL/CentOS - try EPEL first
+sudo dnf install -y epel-release
+sudo dnf install fio iozone3 bonnie++ dbench
+
+# If tools not available in repos, see Requirements section for manual installation
 ```
+
+For detailed installation instructions including building from source, see the [Requirements](#requirements) section above.
 
 **4. Test Hangs or Times Out**
 ```bash

@@ -339,8 +339,8 @@ test_functionality() {
         return 1
     fi
     
-    # Test help command
-    if python3 runtest.py --help >/dev/null 2>&1; then
+    # Test help command (allow warnings on stderr)
+    if python3 runtest.py --help >/dev/null; then
         echo -e "${GREEN}✓ Script help command works${NC}"
     else
         echo -e "${RED}✗ Script help command failed${NC}"

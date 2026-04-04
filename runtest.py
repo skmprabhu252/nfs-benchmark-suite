@@ -1072,10 +1072,11 @@ class NFSPerformanceTest:
         try:
             with open(config_file, 'r') as f:
                 config = yaml.safe_load(f)
-            self.log(f"Loaded configuration from: {config_file}", "INFO")
+            # Logger not initialized yet, will log after initialization
             return config
         except Exception as e:
-            self.log(f"Error loading config file: {e}, using defaults", "ERROR")
+            print(f"⚠️  Warning: Error loading config file: {e}")
+            print("   Using default configuration")
             return self._get_default_config()
     
     def _get_default_config(self):

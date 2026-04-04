@@ -60,7 +60,11 @@ class FIOTestTool(BaseTestTool):
         if not self._check_command("fio"):
             self.log("❌ fio command not found", "ERROR")
             self.log("  fio (Flexible I/O Tester) is required for comprehensive I/O testing", "ERROR")
-            self.log("  Installation:", "ERROR")
+            self.log("", "ERROR")
+            self.log("  Quick Fix:", "ERROR")
+            self.log("  • Run: ./setup_and_verify.sh --auto", "ERROR")
+            self.log("", "ERROR")
+            self.log("  Manual Installation:", "ERROR")
             self.log("  • Ubuntu/Debian: sudo apt-get install fio", "ERROR")
             self.log("  • RHEL/CentOS: sudo yum install fio", "ERROR")
             self.log("  • macOS: brew install fio", "ERROR")

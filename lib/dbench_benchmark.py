@@ -72,9 +72,16 @@ class DBenchTestTool(BaseTestTool):
             bool: True if dbench is available
         """
         if not self._check_command("dbench"):
-            self.log("dbench command not found. Install dbench package.", "ERROR")
-            self.log("On Ubuntu/Debian: sudo apt-get install dbench", "ERROR")
-            self.log("On RHEL/CentOS: sudo yum install dbench", "ERROR")
+            self.log("❌ dbench command not found", "ERROR")
+            self.log("  dbench is required for client load simulation", "ERROR")
+            self.log("", "ERROR")
+            self.log("  Quick Fix:", "ERROR")
+            self.log("  • Run: ./setup_and_verify.sh --auto", "ERROR")
+            self.log("", "ERROR")
+            self.log("  Manual Installation:", "ERROR")
+            self.log("  • Ubuntu/Debian: sudo apt-get install dbench", "ERROR")
+            self.log("  • RHEL/CentOS: sudo yum install dbench", "ERROR")
+            self.log("  Verify installation: dbench --version", "ERROR")
             return False
         return True
     

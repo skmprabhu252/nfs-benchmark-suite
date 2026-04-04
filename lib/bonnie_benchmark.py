@@ -65,9 +65,16 @@ class BonnieTestTool(BaseTestTool):
             bool: True if bonnie++ is available
         """
         if not self._check_command("bonnie++"):
-            self.log("bonnie++ command not found. Install bonnie++ package.", "ERROR")
-            self.log("On Ubuntu/Debian: sudo apt-get install bonnie++", "ERROR")
-            self.log("On RHEL/CentOS: sudo yum install bonnie++", "ERROR")
+            self.log("❌ bonnie++ command not found", "ERROR")
+            self.log("  bonnie++ is required for file system benchmarking", "ERROR")
+            self.log("", "ERROR")
+            self.log("  Quick Fix:", "ERROR")
+            self.log("  • Run: ./setup_and_verify.sh --auto", "ERROR")
+            self.log("", "ERROR")
+            self.log("  Manual Installation:", "ERROR")
+            self.log("  • Ubuntu/Debian: sudo apt-get install bonnie++", "ERROR")
+            self.log("  • RHEL/CentOS: sudo yum install bonnie++", "ERROR")
+            self.log("  Verify installation: bonnie++ -v", "ERROR")
             return False
         return True
     

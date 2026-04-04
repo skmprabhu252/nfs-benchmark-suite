@@ -66,9 +66,16 @@ class IOzoneTestTool(BaseTestTool):
             bool: True if iozone is available
         """
         if not self._check_command("iozone"):
-            self.log("iozone command not found. Install iozone3 package.", "ERROR")
-            self.log("On Ubuntu/Debian: sudo apt-get install iozone3", "ERROR")
-            self.log("On RHEL/CentOS: sudo yum install iozone3", "ERROR")
+            self.log("❌ iozone command not found", "ERROR")
+            self.log("  iozone is required for file system I/O testing", "ERROR")
+            self.log("", "ERROR")
+            self.log("  Quick Fix:", "ERROR")
+            self.log("  • Run: ./setup_and_verify.sh --auto", "ERROR")
+            self.log("", "ERROR")
+            self.log("  Manual Installation:", "ERROR")
+            self.log("  • Ubuntu/Debian: sudo apt-get install iozone3", "ERROR")
+            self.log("  • RHEL/CentOS: sudo yum install iozone3", "ERROR")
+            self.log("  Verify installation: iozone -v", "ERROR")
             return False
         return True
     

@@ -62,7 +62,11 @@ class DDTestTool(BaseTestTool):
         if not self._check_command("dd"):
             self.log("❌ dd command not found", "ERROR")
             self.log("  dd is required for sequential I/O testing", "ERROR")
-            self.log("  Installation:", "ERROR")
+            self.log("", "ERROR")
+            self.log("  Quick Fix:", "ERROR")
+            self.log("  • Run: ./setup_and_verify.sh --auto", "ERROR")
+            self.log("", "ERROR")
+            self.log("  Manual Installation:", "ERROR")
             self.log("  • Ubuntu/Debian: sudo apt-get install coreutils", "ERROR")
             self.log("  • RHEL/CentOS: sudo yum install coreutils", "ERROR")
             self.log("  • macOS: dd is pre-installed", "ERROR")

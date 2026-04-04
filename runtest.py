@@ -1999,11 +1999,11 @@ Configuration:
         print("  • Or use default configuration")
         sys.exit(1)
     elif args.quick_test:
-        config_file = Path(__file__).parent / "config_quick_test.yaml"
-        print(f"Using quick test profile: {config_file}")
+        config_file = Path(__file__).parent / "config" / "config_quick_test.yaml"
+        print(f"Using quick test profile: config/config_quick_test.yaml")
     elif args.long_test:
-        config_file = Path(__file__).parent / "config_long_test.yaml"
-        print(f"Using long test profile: {config_file}")
+        config_file = Path(__file__).parent / "config" / "config_long_test.yaml"
+        print(f"Using long test profile: config/config_long_test.yaml")
     
     # Validate mount path and configuration
     print("\n" + "=" * 60)

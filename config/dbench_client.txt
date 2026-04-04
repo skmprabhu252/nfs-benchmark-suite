@@ -1,62 +1,33 @@
-0 OPEN "\\file1.dat" 0x0 0
-0 STATUS 0 0
-0 WRITE 0 0 65536
-0 STATUS 0 65536
-0 CLOSE 0
-0 STATUS 0 0
-0 OPEN "\\file1.dat" 0x0 0
-0 STATUS 0 0
-0 READ 0 0 65536
-0 STATUS 0 65536
-0 CLOSE 0
-0 STATUS 0 0
-0 MKDIR "\\dir1" 0
-0 STATUS 0 0
-0 OPEN "\\dir1\\file2.dat" 0x0 0
-0 STATUS 0 0
-0 WRITE 0 0 32768
-0 STATUS 0 32768
-0 CLOSE 0
-0 STATUS 0 0
-0 UNLINK "\\dir1\\file2.dat"
-0 STATUS 0 0
-0 RMDIR "\\dir1"
-0 STATUS 0 0
-0 OPEN "\\file3.dat" 0x0 0
-0 STATUS 0 0
-0 WRITE 0 0 16384
-0 STATUS 0 16384
-0 WRITE 0 16384 16384
-0 STATUS 0 16384
-0 WRITE 0 32768 16384
-0 STATUS 0 16384
-0 CLOSE 0
-0 STATUS 0 0
-0 OPEN "\\file3.dat" 0x0 0
-0 STATUS 0 0
-0 READ 0 0 49152
-0 STATUS 0 49152
-0 CLOSE 0
-0 STATUS 0 0
-0 UNLINK "\\file3.dat"
-0 STATUS 0 0
-0 OPEN "\\file4.dat" 0x0 0
-0 STATUS 0 0
-0 WRITE 0 0 8192
-0 STATUS 0 8192
-0 CLOSE 0
-0 STATUS 0 0
-0 RENAME "\\file4.dat" "\\file5.dat"
-0 STATUS 0 0
-0 UNLINK "\\file5.dat"
-0 STATUS 0 0
-0 OPEN "\\file6.dat" 0x0 0
-0 STATUS 0 0
-0 WRITE 0 0 4096
-0 STATUS 0 4096
-0 FLUSH 0
-0 STATUS 0 0
-0 CLOSE 0
-0 STATUS 0 0
-0 UNLINK "\\file6.dat"
-0 STATUS 0 0
+0.000 NTCreateX "\\test.dat" 0x2019f 0x0
+0.000 Close "\\test.dat" 0x0 0x0
+0.001 Unlink "\\test.dat"
+0.001 NTCreateX "\\test.dat" 0x2019f 0x0
+0.001 WriteX 0 64 0 64
+0.001 Close "\\test.dat" 0x0 0x0
+0.002 NTCreateX "\\test.dat" 0x2019f 0x0
+0.002 ReadX 0 64 0 64
+0.002 Close "\\test.dat" 0x0 0x0
+0.003 Unlink "\\test.dat"
+0.003 NTCreateX "\\dir1" 0x0 0x0
+0.003 NTCreateX "\\dir1\\file1.dat" 0x2019f 0x0
+0.003 WriteX 0 1024 0 1024
+0.004 Close "\\dir1\\file1.dat" 0x0 0x0
+0.004 Unlink "\\dir1\\file1.dat"
+0.004 Rmdir "\\dir1"
+0.005 NTCreateX "\\test2.dat" 0x2019f 0x0
+0.005 WriteX 0 4096 0 4096
+0.005 Close "\\test2.dat" 0x0 0x0
+0.006 NTCreateX "\\test2.dat" 0x2019f 0x0
+0.006 ReadX 0 4096 0 4096
+0.006 Close "\\test2.dat" 0x0 0x0
+0.007 Unlink "\\test2.dat"
+0.007 NTCreateX "\\test3.dat" 0x2019f 0x0
+0.007 WriteX 0 8192 0 8192
+0.008 Flush "\\test3.dat"
+0.008 Close "\\test3.dat" 0x0 0x0
+0.008 Unlink "\\test3.dat"
+0.009 NTCreateX "\\test4.dat" 0x2019f 0x0
+0.009 WriteX 0 16384 0 16384
+0.009 Close "\\test4.dat" 0x0 0x0
+0.010 Rename "\\test4.dat" "\\test5.dat"
+0.010 Unlink "\\test5.dat"

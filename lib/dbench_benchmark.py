@@ -287,11 +287,27 @@ class DBenchTestTool(BaseTestTool):
         
         if loadfile_path:
             cmd.extend(['-c', loadfile_path])
+            self.log(f"Using loadfile: {loadfile_path}", "DEBUG")
+            # Log loadfile content
+            try:
+                with open(loadfile_path, 'r') as f:
+                    content = f.read()
+                self.log(f"Loadfile content:\n{content}", "DEBUG")
+            except Exception as e:
+                self.log(f"Could not read loadfile content: {e}", "WARNING")
         else:
             # If no loadfile found, use the suite's default
             default_loadfile = Path(__file__).parent.parent / 'config' / 'client.txt'
             if default_loadfile.exists():
                 cmd.extend(['-c', str(default_loadfile)])
+                self.log(f"Using default loadfile: {default_loadfile}", "DEBUG")
+                # Log loadfile content
+                try:
+                    with open(default_loadfile, 'r') as f:
+                        content = f.read()
+                    self.log(f"Loadfile content:\n{content}", "DEBUG")
+                except Exception as e:
+                    self.log(f"Could not read loadfile content: {e}", "WARNING")
             else:
                 self.log(f"Warning: No loadfile found, dbench may fail", "WARNING")
         

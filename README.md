@@ -4,6 +4,34 @@ Comprehensive NFS performance testing suite that measures 6 critical performance
 
 ---
 
+## Table of Contents
+
+- [Why Use This Tool?](#why-use-this-tool)
+- [Features](#features)
+- [Performance Dimensions Measured](#performance-dimensions-measured)
+- [Architecture](#architecture)
+- [Requirements](#requirements)
+- [Installation](#installation)
+  - [Install Dependencies](#install-dependencies)
+  - [Manual Compilation](#manual-compilation-if-package-installation-fails)
+  - [RDMA Requirements](#rdma-requirements-optional)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+  - [Two Test Modes](#two-test-modes)
+  - [Basic Usage](#basic-usage)
+  - [Common Scenarios](#common-scenarios)
+- [Configuration](#configuration)
+- [Understanding Results](#understanding-results)
+  - [Output Files](#output-files)
+  - [Generating Reports](#generating-reports)
+  - [Performance Baselines](#performance-baselines-10-gbe-network)
+  - [Historical Tracking](#historical-tracking)
+- [Best Practices](#best-practices)
+- [Troubleshooting](#troubleshooting)
+- [Author](#author)
+
+---
+
 ## Why Use This Tool?
 
 NFS performance can vary dramatically based on version, configuration, and workload. This suite helps you:

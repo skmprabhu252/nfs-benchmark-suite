@@ -10,8 +10,8 @@ Usage:
     # Quick test with NFSv3 (default)
     sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --quick-test
     
-    # Long test with all NFS versions
-    sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline --long-test
+    # Stress test with all NFS versions
+    sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline --stress-test
     
     # Test specific versions with test-id for comparison
     sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id prod --nfs-versions 3,4.2 --quick-test
@@ -1933,8 +1933,8 @@ Examples:
   # Quick test with NFSv3 (default) over TCP
   python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --quick-test
 
-  # Long test with all NFS versions over TCP with test-id
-  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline_2026 --long-test
+  # Stress test with all NFS versions over TCP with test-id
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline_2026 --stress-test
 
   # Test specific NFS versions with test-id for comparison
   python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id prod_test --nfs-versions 3,4.2 --quick-test
@@ -1942,8 +1942,8 @@ Examples:
   # Test with RDMA transport
   python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --transport rdma --quick-test
 
-  # Long test with RDMA for specific versions with test-id
-  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id rdma_eval --nfs-versions 4.1,4.2 --transport rdma --long-test
+  # Stress test with RDMA for specific versions with test-id
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id rdma_eval --nfs-versions 4.1,4.2 --transport rdma --stress-test
 
   # Test each version separately with same test-id (for flexible comparison)
   python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline --nfs-versions 3 --quick-test
@@ -1960,8 +1960,8 @@ Test Profiles:
                 Default: NFSv3 only
                 With --nfs-versions: Tests specified versions
   
-  --long-test:  Comprehensive benchmark (~4-8 hours per version)
-                Default: All versions (v3, v4.0, v4.1, v4.2)
+  --stress-test:  Comprehensive benchmark (~4-8 hours per version)
+                  Default: All versions (v3, v4.0, v4.1, v4.2)
                 With --nfs-versions: Tests specified versions
 
 NFS Versions:
@@ -1992,7 +1992,7 @@ Note: This script must run as root for NFS mount operations.
     parser.add_argument(
         '--nfs-versions',
         default=None,
-        help='Comma-separated NFS versions to test (e.g., 3,4.2). Default: 3 for quick-test, all for long-test'
+        help='Comma-separated NFS versions to test (e.g., 3,4.2). Default: 3 for quick-test, all for stress-test'
     )
     
     parser.add_argument(
@@ -2063,9 +2063,9 @@ Note: This script must run as root for NFS mount operations.
     )
     
     parser.add_argument(
-        '--long-test',
+        '--stress-test',
         action='store_true',
-        help='Run long test profile (~60 minutes, uses config_long_test.yaml)'
+        help='Run stress test profile (~60 minutes, uses config_stress_test.yaml)'
     )
     
     parser.add_argument(
@@ -2084,22 +2084,22 @@ Note: This script must run as root for NFS mount operations.
     
     # Determine config file based on test profile
     config_file = args.config
-    if args.quick_test and args.long_test:
-        print("❌ Error: Cannot specify both --quick-test and --long-test")
+    if args.quick_test and args.stress_test:
+        print("❌ Error: Cannot specify both --quick-test and --stress-test")
         print("  Choose one test profile:")
         print("  • --quick-test: Fast tests (~15 minutes per version)")
-        print("  • --long-test: Comprehensive tests (~4-8 hours per version)")
+        print("  • --stress-test: Comprehensive tests (~4-8 hours per version)")
         sys.exit(1)
     elif args.quick_test:
         config_file = Path(__file__).parent / "config" / "config_quick_test.yaml"
         print(f"Using quick test profile: config/config_quick_test.yaml")
-    elif args.long_test:
-        config_file = Path(__file__).parent / "config" / "config_long_test.yaml"
-        print(f"Using long test profile: config/config_long_test.yaml")
+    elif args.stress_test:
+        config_file = Path(__file__).parent / "config" / "config_stress_test.yaml"
+        print(f"Using stress test profile: config/config_stress_test.yaml")
     else:
-        print("❌ Error: Must specify either --quick-test or --long-test")
+        print("❌ Error: Must specify either --quick-test or --stress-test")
         print("  • --quick-test: Fast validation (~15 minutes per version)")
-        print("  • --long-test: Comprehensive benchmark (~4-8 hours per version)")
+        print("  • --stress-test: Comprehensive benchmark (~4-8 hours per version)")
         sys.exit(1)
     
     # Validate configuration file
@@ -2131,9 +2131,9 @@ Note: This script must run as root for NFS mount operations.
         if args.quick_test:
             nfs_versions = ['3']  # Quick test: NFSv3 only
             print("Using default NFS version for quick-test: NFSv3")
-        else:  # long_test
-            nfs_versions = ['3', '4.0', '4.1', '4.2']  # Long test: all versions
-            print("Using default NFS versions for long-test: v3, v4.0, v4.1, v4.2")
+        else:  # stress_test
+            nfs_versions = ['3', '4.0', '4.1', '4.2']  # Stress test: all versions
+            print("Using default NFS versions for stress-test: v3, v4.0, v4.1, v4.2")
     
     print(f"\nNFS versions to test: {', '.join(['v' + v for v in nfs_versions])}")
     print(f"Transport: {args.transport.upper()}")

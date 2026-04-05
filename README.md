@@ -120,8 +120,8 @@ pip3 install --user -r requirements.txt
 # Quick test - NFSv3 with TCP (default, ~15 minutes)
 sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline --quick-test
 
-# Long test - All versions with TCP (v3, v4.0, v4.1, v4.2, ~16-32 hours)
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id prod_2026 --long-test
+# Stress test - All versions with TCP (v3, v4.0, v4.1, v4.2, ~16-32 hours)
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id prod_2026 --stress-test
 
 # Test specific NFS versions with test-id for comparison
 sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id eval --nfs-versions 3,4.2 --quick-test
@@ -166,8 +166,8 @@ python3 generate_html_report.py --test-id comparison
 # Quick test with RDMA
 sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --transport rdma --quick-test
 
-# Long test all versions with RDMA
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --transport rdma --long-test
+# Stress test all versions with RDMA
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --transport rdma --stress-test
 ```
 
 **Production Benchmark Workflow:**
@@ -176,7 +176,7 @@ sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --tr
 sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id prod_baseline --quick-test
 
 # 2. If successful, run comprehensive benchmark
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id prod_baseline --long-test
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id prod_baseline --stress-test
 
 # 3. Generate comparison report
 python3 generate_html_report.py --test-id prod_baseline
@@ -429,7 +429,7 @@ runtest.py (Main Orchestrator)
 ## Configuration Files
 
 - `config/config_quick_test.yaml` - Quick test (15 min)
-- `config/config_long_test.yaml` - Long test (4-8 hours)
+- `config/config_stress_test.yaml` - Stress test (4-8 hours)
 - `config/test_config.yaml` - Default balanced (30 min)
 
 ---

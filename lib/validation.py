@@ -310,7 +310,7 @@ class ConfigValidator:
                 f"  Provide a valid configuration file path\n"
                 f"  Example configs:\n"
                 f"  • config/config_quick_test.yaml\n"
-                f"  • config/config_long_test.yaml\n"
+                f"  • config/config_stress_test.yaml\n"
                 f"  • config/test_config.yaml"
             )
         

@@ -108,8 +108,8 @@ Successfully implemented automatic NFS mounting with multi-version and multi-tra
 # Quick test - NFSv3 with TCP
 sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --quick-test
 
-# Long test - All versions with TCP
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --long-test
+# Stress test - All versions with TCP
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --stress-test
 
 # Test specific versions
 sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --nfs-versions 3,4.2 --quick-test

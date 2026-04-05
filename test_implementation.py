@@ -363,13 +363,13 @@ class TestParameterValidation(unittest.TestCase):
         
         self.assertEqual(nfs_versions, ['3'])
     
-    def test_default_versions_long_test(self):
-        """Test default versions for long-test"""
-        # Simulate long-test default
+    def test_default_versions_stress_test(self):
+        """Test default versions for stress-test"""
+        # Simulate stress-test default
         nfs_versions_arg = None
-        is_long_test = True
+        is_stress_test = True
         
-        if is_long_test:
+        if is_stress_test:
             nfs_versions = nfs_versions_arg.split(',') if nfs_versions_arg else ['3', '4.0', '4.1', '4.2']
         
         self.assertEqual(len(nfs_versions), 4)

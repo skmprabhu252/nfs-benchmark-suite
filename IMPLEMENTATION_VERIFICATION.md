@@ -273,8 +273,8 @@ if os.geteuid() != 0:
 
 ✅ **Test Profile Validation:** Lines 2087-2105
 ```python
-if args.quick_test and args.long_test:
-    print("❌ Error: Cannot specify both --quick-test and --long-test")
+if args.quick_test and args.stress_test:
+    print("❌ Error: Cannot specify both --quick-test and --stress-test")
     sys.exit(1)
 ```
 
@@ -376,7 +376,7 @@ aggregated = {
 ✅ **Required Parameters:** `runtest.py` lines 1976-1985
 - `--server-ip` (required)
 - `--mount-path` (required)
-- `--quick-test` or `--long-test` (one required)
+- `--quick-test` or `--stress-test` (one required)
 
 ✅ **Optional Parameters:**
 - `--test-id` (optional)
@@ -392,7 +392,7 @@ if args.quick_test:
 
 ✅ **Long Test Default:** `runtest.py` lines 2113-2115
 ```python
-elif args.long_test:
+elif args.stress_test:
     nfs_versions = args.nfs_versions.split(',') if args.nfs_versions else ['3', '4.0', '4.1', '4.2']
 ```
 

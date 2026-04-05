@@ -36,7 +36,7 @@ This document summarizes the implementation of the improved design for the NFS B
 ```bash
 # All versions with same test-id
 sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export \
-  --test-id baseline_2026 --long-test
+  --test-id baseline_2026 --stress-test
 
 # Individual versions with same test-id
 sudo python3 runtest.py --test-id baseline --nfs-versions 3 --quick-test
@@ -181,7 +181,7 @@ def aggregate_test_results(json_files: List[str]) -> Dict[str, Any]:
 ```bash
 # 1. Run tests with test-id
 sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data \
-  --test-id baseline_2026 --long-test
+  --test-id baseline_2026 --stress-test
 
 # Creates files:
 # - nfs_performance_baseline_2026_nfsv3_tcp_20260405_010000.json
@@ -318,12 +318,12 @@ python3 generate_html_report.py --test-id test3
 **Example migration:**
 ```bash
 # Old way
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --long-test
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --stress-test
 python3 generate_html_report.py nfs_performance_multiversion_*.json
 
 # New way
 sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data \
-  --test-id baseline --long-test
+  --test-id baseline --stress-test
 python3 generate_html_report.py --test-id baseline
 ```
 

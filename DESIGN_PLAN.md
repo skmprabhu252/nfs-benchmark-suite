@@ -22,17 +22,17 @@ python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --quick-t
 # Quick test - NFSv3 with RDMA
 python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --transport rdma --quick-test
 
-# Long test - All versions (v3, v4.0, v4.1, v4.2) with TCP
-python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --long-test
+# Stress test - All versions (v3, v4.0, v4.1, v4.2) with TCP
+python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --stress-test
 
-# Long test - All versions with RDMA
-python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --transport rdma --long-test
+# Stress test - All versions with RDMA
+python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --transport rdma --stress-test
 
 # Specify specific versions with TCP
 python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --nfs-versions 3,4.2 --quick-test
 
 # Specify specific versions with RDMA
-python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --nfs-versions 4.1,4.2 --transport rdma --long-test
+python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --nfs-versions 4.1,4.2 --transport rdma --stress-test
 ```
 
 ### 2. **Mount Point Structure**
@@ -183,7 +183,7 @@ MOUNT_OPTIONS_RDMA = {
 **Test Errors:**
 - Complete current version tests
 - Unmount current version
-- Continue with next version (if long-test)
+- Continue with next version (if stress-test)
 - Mark failed version in results
 
 **Cleanup Errors:**
@@ -255,7 +255,7 @@ MOUNT_OPTIONS_RDMA = {
    - Update `validation.py`
 
 3. **Phase 3: Version Support** (Medium Priority)
-   - Implement version iteration for long-test
+   - Implement version iteration for stress-test
    - Add version-specific result handling
    - Update result aggregation
 

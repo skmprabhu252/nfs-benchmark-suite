@@ -1,6 +1,6 @@
-# NFS Performance Long Test Configuration
-# Designed to complete in approximately 4-8 hours
-# Comprehensive benchmark testing with extensive data sizes and long runtimes
+# NFS Performance Stress Test Configuration
+# Designed to complete in approximately 30 minutes per test
+# Comprehensive benchmark testing with extensive data sizes and consistent 30-minute runtimes
 # This is the actual benchmark test for production performance analysis
 
 # DD Test Configuration
@@ -139,7 +139,7 @@ fio_tests:
     ioengine: "libaio"
     iodepth: 32
     direct: 1
-    runtime: 3600             # 60 minutes
+    runtime: 1800             # 30 minutes
     randrepeat: 0
   
   random_write_4k:
@@ -151,7 +151,7 @@ fio_tests:
     ioengine: "libaio"
     iodepth: 32
     direct: 1
-    runtime: 3600             # 60 minutes
+    runtime: 1800             # 30 minutes
     randrepeat: 0
   
   mixed_randrw_70_30:
@@ -164,7 +164,7 @@ fio_tests:
     ioengine: "libaio"
     iodepth: 16
     direct: 1
-    runtime: 3600             # 60 minutes
+    runtime: 1800             # 30 minutes
     randrepeat: 0
   
   metadata_operations:
@@ -190,7 +190,7 @@ fio_tests:
     runtime: 1800             # 30 minutes
     lat_percentiles: 1
 
-# Bonnie++ Test Configuration (Long Test Profile)
+# Bonnie++ Test Configuration (Stress Test Profile)
 bonnie_tests:
   enabled: true
   
@@ -199,7 +199,7 @@ bonnie_tests:
     file_size: "64g"             # Very large file for benchmark
     ram_size: "16384"            # Tell bonnie++ to assume 16GB RAM
     num_files: "128:0:0:128"     # Many files for metadata
-    timeout: 14400               # 4 hours
+    timeout: 1800                # 30 minutes
   
   fast_test:
     enabled: true
@@ -207,7 +207,7 @@ bonnie_tests:
     ram_size: "8192"             # Tell bonnie++ to assume 8GB RAM
     num_files: "64:0:0:64"
     fast_mode: true
-    timeout: 7200                # 2 hours
+    timeout: 1800                # 30 minutes
   
   file_operations:
     enabled: true
@@ -215,8 +215,8 @@ bonnie_tests:
     ram_size: "4096"             # Tell bonnie++ to assume 4GB RAM
     num_files: "256:0:0:256"     # Many files for extensive metadata testing
     # processes: 8               # Disabled - causes issues with CSV output in some bonnie++ versions
-# dbench Test Configuration (Long Test Profile)
-# Estimated time: ~2-3 hours
+# dbench Test Configuration (Stress Test Profile)
+# Estimated time: ~30 minutes per test
 dbench_tests:
   enabled: true
   
@@ -231,7 +231,7 @@ dbench_tests:
   light_client_load:
     enabled: true
     num_clients: 2
-    duration: 600                 # 10 minutes
+    duration: 1800                # 30 minutes
     loadfile: "nfs_3.load"
     target_rate: 0
   
@@ -252,7 +252,7 @@ dbench_tests:
   scalability_test:
     enabled: true
     client_counts: [1, 2, 4, 8, 16, 32, 64, 128]  # Extended range
-    duration_per_count: 600       # 10 minutes per count
+    duration_per_count: 1800      # 30 minutes per count
     loadfile: "nfs_3.load"
     target_rate: 0
   
@@ -267,7 +267,7 @@ dbench_tests:
   sustained_load:
     enabled: true
     num_clients: 32               # Sustained high load
-    duration: 7200                # 2 hours
+    duration: 1800                # 30 minutes
     loadfile: "nfs_3.load"
     target_rate: 0
     warmup: 300                   # 5 minute warmup
@@ -286,7 +286,7 @@ dbench_tests:
     loadfile: "nfs_3.load"
     target_rate: 0
 
-    timeout: 10800               # 3 hours
+    timeout: 1800                # 30 minutes
 
 # Test Execution Options
 execution:
@@ -309,20 +309,20 @@ baselines:
     random_write_iops: [15000, 30000]
     latency_avg_ms: [1, 2]
 
-# Long Test Profile - ACTUAL BENCHMARK TEST
-# Estimated completion time: 4-8 hours
+# Stress Test Profile - ACTUAL BENCHMARK TEST
+# Estimated completion time: ~30 minutes per test
 #
 # Test Duration Breakdown:
 # - DD Tests: ~5 minutes (4 tests × 5GB each - sanity check)
-# - FIO Tests: ~4.5 hours (sequential: 1 hour, random: 2 hours, mixed: 1 hour, metadata: 30 min, latency: 30 min)
-# - IOzone Tests: ~1-2 hours (varies by test type and file size)
-# - Bonnie++ Tests: ~6-8 hours (comprehensive: 4 hours, fast: 2 hours, file ops: 1-2 hours)
-# - dbench Tests: ~2-3 hours (scalability + sustained load)
+# - FIO Tests: ~30 minutes per test (all tests set to 1800 seconds)
+# - IOzone Tests: ~30-60 minutes (varies by test type and file size)
+# - Bonnie++ Tests: ~30 minutes per test (all timeouts set to 1800 seconds)
+# - dbench Tests: ~30 minutes per test (all durations set to 1800 seconds)
 #
-# Total Data Written: ~500GB-1TB (depending on test completion)
+# Total Data Written: ~200-400GB (depending on test completion)
 #
 # This configuration provides:
-# - Statistical significance through extended runtimes
+# - Consistent 30-minute runtime for all tests
 # - Comprehensive performance characterization
 # - Stress testing under sustained load
 # - Detailed scalability analysis

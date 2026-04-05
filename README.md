@@ -30,6 +30,40 @@ NFS performance can vary dramatically based on version, configuration, and workl
 
 ---
 
+## Performance Dimensions Measured
+
+### 1. Throughput (MB/s)
+Sequential data transfer rate for large files. Critical for bulk operations, backups, and media streaming.
+- **Tools:** DD, FIO (sequential), IOzone, Bonnie++
+- **Quick test:** 500MB-2GB files | **Stress test:** 8GB-64GB files, 30-minute runtime
+
+### 2. IOPS (Operations/Second)
+Random I/O performance with small blocks (4K). Essential for databases and VMs.
+- **Tools:** FIO (random 4K), IOzone (random I/O)
+- **Quick test:** 60 seconds | **Stress test:** 30-minute runtime
+
+### 3. Latency (milliseconds)
+Response time for I/O operations. Critical for interactive applications and real-time systems.
+- **Tools:** FIO (latency test), dbench (single client)
+- **Quick test:** 30 seconds | **Stress test:** 30-minute runtime
+
+### 4. Metadata Operations/Second
+File creation, deletion, stat, rename operations. Important for build systems and applications with many small files.
+- **Tools:** FIO (metadata), IOzone, Bonnie++, dbench
+- **Quick test:** 1K-8K files | **Stress test:** 50K-256K files, 30-minute runtime
+
+### 5. Cache Effects
+Performance difference between cached and direct I/O. Helps understand and tune client-side caching.
+- **Tools:** DD (cached vs direct), IOzone, FIO (direct vs buffered)
+- **Quick test:** 500MB-1GB files | **Stress test:** 16GB-32GB files, 30-minute runtime
+
+### 6. Concurrency Scaling
+Performance scaling with multiple concurrent clients. Essential for multi-user environments and capacity planning.
+- **Tools:** IOzone (scaling), FIO (numjobs), dbench (scalability)
+- **Quick test:** 2-8 threads | **Stress test:** 8-128 threads, 30-minute runtime
+
+---
+
 ## Architecture
 
 ```
@@ -60,45 +94,12 @@ runtest.py (Main Orchestrator)
 
 ## Requirements
 
-### System Requirements
 - **OS:** Linux (kernel 4.x+)
 - **Python:** 3.6+
 - **Access:** Root/sudo (for NFS mount operations)
 - **Network:** 1 Gbps+ recommended (10 GbE for production benchmarks)
 - **Disk Space:** 100GB (quick test) or 2TB (stress test)
 - **NFS Server:** Configured exports with appropriate permissions
-
-### Performance Dimensions Measured
-
-#### 1. Throughput (MB/s)
-Sequential data transfer rate for large files. Critical for bulk operations, backups, and media streaming.
-- **Tools:** DD, FIO (sequential), IOzone, Bonnie++
-- **Quick test:** 500MB-2GB files | **Stress test:** 8GB-64GB files, 30-minute runtime
-
-#### 2. IOPS (Operations/Second)
-Random I/O performance with small blocks (4K). Essential for databases and VMs.
-- **Tools:** FIO (random 4K), IOzone (random I/O)
-- **Quick test:** 60 seconds | **Stress test:** 30-minute runtime
-
-#### 3. Latency (milliseconds)
-Response time for I/O operations. Critical for interactive applications and real-time systems.
-- **Tools:** FIO (latency test), dbench (single client)
-- **Quick test:** 30 seconds | **Stress test:** 30-minute runtime
-
-#### 4. Metadata Operations/Second
-File creation, deletion, stat, rename operations. Important for build systems and applications with many small files.
-- **Tools:** FIO (metadata), IOzone, Bonnie++, dbench
-- **Quick test:** 1K-8K files | **Stress test:** 50K-256K files, 30-minute runtime
-
-#### 5. Cache Effects
-Performance difference between cached and direct I/O. Helps understand and tune client-side caching.
-- **Tools:** DD (cached vs direct), IOzone, FIO (direct vs buffered)
-- **Quick test:** 500MB-1GB files | **Stress test:** 16GB-32GB files, 30-minute runtime
-
-#### 6. Concurrency Scaling
-Performance scaling with multiple concurrent clients. Essential for multi-user environments and capacity planning.
-- **Tools:** IOzone (scaling), FIO (numjobs), dbench (scalability)
-- **Quick test:** 2-8 threads | **Stress test:** 8-128 threads, 30-minute runtime
 
 ---
 
@@ -338,13 +339,6 @@ mount -t nfs -o vers=4.2,rsize=1048576,wsize=1048576,hard,async,noatime server:/
 - `nfs_performance_{test_id}_nfsv42_tcp_YYYYMMDD_HHMMSS.json` - NFSv4.2 results
 - `nfs_performance_test_YYYYMMDD_HHMMSS.log` - Detailed execution logs
 - HTML Report - Interactive charts and analysis (generate with `generate_html_report.py --test-id {test_id}`)
-
-**Benefits of Separate Files:**
-- Run each version independently
-- Compare any combination of versions later
-- Better for CI/CD pipelines
-- Easier historical tracking per version
-- Can re-run failed versions without re-running all
 
 ### Individual Result File Structure
 ```json

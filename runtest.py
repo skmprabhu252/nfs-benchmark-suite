@@ -27,6 +27,7 @@ from typing import Dict, Any
 
 # Import validation utilities
 from lib.validation import validate_mount_and_config, ValidationError
+from lib.nfs_mount_manager import NFSMountManager, NFSMountError
 import signal
 import threading
 import logging
@@ -1908,60 +1909,76 @@ class NFSPerformanceTest:
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description='NFS Benchmark Suite Script with Configurable Parameters',
+        description='NFS Benchmark Suite Script with Automatic NFS Mounting',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Run quick test profile (~15 minutes)
-  python3 runtest.py --mount-path /mnt/nfs1 --quick-test
+  # Quick test with NFSv3 (default) over TCP
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --quick-test
   
-  # Run long test profile (~60 minutes)
-  python3 runtest.py --mount-path /mnt/nfs1 --long-test
+  # Long test with all NFS versions over TCP
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --long-test
   
-  # Run all tests with default config
-  python3 runtest.py --mount-path /mnt/nfs1
+  # Test specific NFS versions
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --nfs-versions 3,4.2 --quick-test
   
-  # Run with custom configuration
-  python3 runtest.py --mount-path /mnt/nfs1 --config my_config.yaml
+  # Test with RDMA transport
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --transport rdma --quick-test
   
-  # Skip DD tests
-  python3 runtest.py --mount-path /mnt/nfs1 --skip-dd
+  # Long test with RDMA for specific versions
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --nfs-versions 4.1,4.2 --transport rdma --long-test
   
-  # Skip FIO tests
-  python3 runtest.py --mount-path /mnt/nfs1 --skip-fio
+  # Skip specific tests
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --skip-dd --skip-bonnie --quick-test
   
-  # Skip IOzone tests
-  python3 runtest.py --mount-path /mnt/nfs1 --skip-iozone
-  
-  # Skip Bonnie++ tests
-  python3 runtest.py --mount-path /mnt/nfs1 --skip-bonnie
-  
-  # Skip dbench tests
-  python3 runtest.py --mount-path /mnt/nfs1 --skip-dbench
-  
-  # Cleanup only
-  python3 runtest.py --mount-path /mnt/nfs1 --cleanup-only
-  
-  # Verbose mode
-  python3 runtest.py --mount-path /mnt/nfs1 --verbose
+  # Custom configuration
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --config my_config.yaml --quick-test
 
 Test Profiles:
-  --quick-test: Reduced file sizes and shorter runtimes (~15 minutes)
-  --long-test:  Full-scale testing with comprehensive coverage (~60 minutes)
+  --quick-test: Fast validation (~15 minutes per version)
+                Default: NFSv3 only
+                With --nfs-versions: Tests specified versions
+  
+  --long-test:  Comprehensive benchmark (~4-8 hours per version)
+                Default: All versions (v3, v4.0, v4.1, v4.2)
+                With --nfs-versions: Tests specified versions
 
-Configuration:
-  Edit test_config.yaml to customize test parameters including:
-  - Block sizes, file sizes, and test durations
-  - Number of parallel jobs and queue depths
-  - I/O engines and flags
-  - Enable/disable individual tests
+NFS Versions:
+  Supported: 3, 4.0, 4.1, 4.2
+  Specify with: --nfs-versions 3,4.2 (comma-separated, no spaces)
+
+Transport:
+  --transport tcp:  Standard NFS over TCP (default)
+  --transport rdma: NFS over RDMA (requires RDMA hardware)
+
+Note: This script must run as root for NFS mount operations.
+      Run with: sudo python3 runtest.py ...
         """
+    )
+    
+    parser.add_argument(
+        '--server-ip',
+        required=True,
+        help='NFS server IP address (e.g., 192.168.1.100)'
     )
     
     parser.add_argument(
         '--mount-path',
         required=True,
-        help='NFS mount path (e.g., /mnt/nfs1)'
+        help='NFS export path on server (e.g., /export/data)'
+    )
+    
+    parser.add_argument(
+        '--nfs-versions',
+        default=None,
+        help='Comma-separated NFS versions to test (e.g., 3,4.2). Default: 3 for quick-test, all for long-test'
+    )
+    
+    parser.add_argument(
+        '--transport',
+        default='tcp',
+        choices=['tcp', 'rdma'],
+        help='Transport protocol: tcp (default) or rdma'
     )
     
     parser.add_argument(
@@ -2032,14 +2049,19 @@ Configuration:
     
     args = parser.parse_args()
     
+    # Check if running as root
+    if os.geteuid() != 0:
+        print("❌ Error: This script must run as root for NFS mount operations")
+        print("  Run with: sudo python3 runtest.py ...")
+        sys.exit(1)
+    
     # Determine config file based on test profile
     config_file = args.config
     if args.quick_test and args.long_test:
         print("❌ Error: Cannot specify both --quick-test and --long-test")
         print("  Choose one test profile:")
-        print("  • --quick-test: Fast tests (~15 minutes)")
-        print("  • --long-test: Comprehensive tests (~60 minutes)")
-        print("  • Or use default configuration")
+        print("  • --quick-test: Fast tests (~15 minutes per version)")
+        print("  • --long-test: Comprehensive tests (~4-8 hours per version)")
         sys.exit(1)
     elif args.quick_test:
         config_file = Path(__file__).parent / "config" / "config_quick_test.yaml"
@@ -2047,68 +2069,177 @@ Configuration:
     elif args.long_test:
         config_file = Path(__file__).parent / "config" / "config_long_test.yaml"
         print(f"Using long test profile: config/config_long_test.yaml")
+    else:
+        print("❌ Error: Must specify either --quick-test or --long-test")
+        print("  • --quick-test: Fast validation (~15 minutes per version)")
+        print("  • --long-test: Comprehensive benchmark (~4-8 hours per version)")
+        sys.exit(1)
     
-    # Validate mount path and configuration
-    print("\n" + "=" * 60)
-    print("Validating inputs...")
-    print("=" * 60)
+    # Validate configuration file
+    if config_file:
+        try:
+            from lib.validation import ConfigValidator
+            ConfigValidator.validate(str(config_file))
+            print(f"✅ Configuration validated: {config_file}")
+        except ValidationError as e:
+            print(f"\n{e}\n")
+            sys.exit(1)
     
+    # Parse NFS versions
+    if args.nfs_versions:
+        try:
+            nfs_versions = [v.strip() for v in args.nfs_versions.split(',')]
+            # Validate versions
+            for version in nfs_versions:
+                if version not in NFSMountManager.SUPPORTED_VERSIONS:
+                    print(f"❌ Error: Unsupported NFS version: {version}")
+                    print(f"  Supported versions: {', '.join(NFSMountManager.SUPPORTED_VERSIONS)}")
+                    sys.exit(1)
+        except Exception as e:
+            print(f"❌ Error parsing --nfs-versions: {e}")
+            print("  Format: --nfs-versions 3,4.2 (comma-separated, no spaces)")
+            sys.exit(1)
+    else:
+        # Default versions based on test mode
+        if args.quick_test:
+            nfs_versions = ['3']  # Quick test: NFSv3 only
+            print("Using default NFS version for quick-test: NFSv3")
+        else:  # long_test
+            nfs_versions = ['3', '4.0', '4.1', '4.2']  # Long test: all versions
+            print("Using default NFS versions for long-test: v3, v4.0, v4.1, v4.2")
+    
+    print(f"\nNFS versions to test: {', '.join(['v' + v for v in nfs_versions])}")
+    print(f"Transport: {args.transport.upper()}")
+    print(f"Estimated total time: {len(nfs_versions)} version(s) × {'~15 min' if args.quick_test else '~4-8 hours'}")
+    
+    # Initialize NFS Mount Manager
     try:
-        # Determine minimum space based on test profile
-        min_space_gb = 50.0 if args.quick_test else 100.0
-        
-        # Validate mount path and config
-        validated_path, mount_info, validated_config = validate_mount_and_config(
-            args.mount_path,
-            str(config_file) if config_file else None,
-            min_space_gb=min_space_gb
+        mount_manager = NFSMountManager(
+            server_ip=args.server_ip,
+            mount_path=args.mount_path,
+            transport=args.transport
         )
         
-        # Print validation results
-        print(f"✅ Mount path validated: {validated_path}")
-        print(f"  • NFS Server: {mount_info.get('server', 'unknown')}")
-        print(f"  • Mount Point: {mount_info.get('mount_point', 'unknown')}")
-        print(f"  • Free Space: {mount_info.get('free_space_gb', 0):.1f}GB")
-        print(f"  • Total Space: {mount_info.get('total_space_gb', 0):.1f}GB")
-        print(f"  • Used: {mount_info.get('used_percent', 0):.1f}%")
+        # Run all validations
+        mount_manager.validate_all()
         
-        if validated_config:
-            print(f"✅ Configuration validated: {config_file}")
-        
-        print("=" * 60 + "\n")
-        
-    except ValidationError as e:
+    except NFSMountError as e:
         print(f"\n{e}\n")
         sys.exit(1)
     except Exception as e:
         print(f"\n❌ Validation failed: {e}\n")
         sys.exit(1)
     
-    # Create and run test
-    test = NFSPerformanceTest(
-        mount_path=str(validated_path),
-        config_file=config_file,
-        skip_dd=args.skip_dd,
-        skip_fio=args.skip_fio,
-        skip_iozone=args.skip_iozone,
-        skip_bonnie=args.skip_bonnie,
-        skip_dbench=args.skip_dbench,
-        cleanup_only=args.cleanup_only,
-        verbose=args.verbose
-    )
+    # Store all results by version
+    all_results = {
+        'test_metadata': {
+            'server_ip': args.server_ip,
+            'mount_path': args.mount_path,
+            'transport': args.transport,
+            'test_mode': 'quick' if args.quick_test else 'long',
+            'versions_tested': nfs_versions,
+            'timestamp': datetime.now().isoformat()
+        },
+        'results_by_version': {}
+    }
     
-    test.run()
-    
-    # Save to historical data (if not cleanup-only)
-    if not args.cleanup_only and not args.no_save_history:
+    # Run tests for each NFS version
+    for version_idx, nfs_version in enumerate(nfs_versions, 1):
+        print(f"\n{'='*80}")
+        print(f"Testing NFS v{nfs_version} with {args.transport.upper()} transport")
+        print(f"Version {version_idx} of {len(nfs_versions)}")
+        print(f"{'='*80}\n")
+        
+        mount_point = None
         try:
-            hist = HistoricalComparison()
-            timestamp = hist.save_result(test.results)
-            print(f"\n✅ Results saved to history: {timestamp}")
-            print(f"   Use generate_html_report.py to view historical comparison")
+            # Create mount point
+            mount_point = mount_manager.create_mount_point(nfs_version)
+            
+            # Mount NFS
+            mount_manager.mount_nfs(nfs_version, mount_point)
+            
+            # Run tests on this mount
+            print(f"\n{'='*80}")
+            print(f"Running benchmark tests on NFS v{nfs_version}")
+            print(f"{'='*80}\n")
+            
+            test = NFSPerformanceTest(
+                mount_path=str(mount_point),
+                config_file=config_file,
+                skip_dd=args.skip_dd,
+                skip_fio=args.skip_fio,
+                skip_iozone=args.skip_iozone,
+                skip_bonnie=args.skip_bonnie,
+                skip_dbench=args.skip_dbench,
+                cleanup_only=args.cleanup_only,
+                verbose=args.verbose
+            )
+            
+            test.run()
+            
+            # Store results with version tag
+            version_key = f"nfsv{nfs_version}_{args.transport}"
+            all_results['results_by_version'][version_key] = test.results
+            
+            print(f"\n{'='*80}")
+            print(f"✅ Completed tests for NFS v{nfs_version}")
+            print(f"{'='*80}\n")
+            
         except Exception as e:
-            print(f"\n⚠️  Failed to save to history: {e}")
-            print("   Test results are still saved to JSON file")
+            print(f"\n❌ Error testing NFS v{nfs_version}: {e}")
+            version_key = f"nfsv{nfs_version}_{args.transport}"
+            all_results['results_by_version'][version_key] = {
+                'status': 'failed',
+                'error': str(e)
+            }
+        
+        finally:
+            # Always unmount after testing this version
+            if mount_point:
+                mount_manager.unmount_nfs(mount_point, force=True)
+                mount_manager.cleanup_mount_point(mount_point)
+    
+    # Final cleanup
+    mount_manager.cleanup_all(force=True)
+    
+    # Save combined results
+    if not args.cleanup_only:
+        try:
+            # Save to JSON file
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            result_file = f"nfs_performance_multiversion_{timestamp}.json"
+            with open(result_file, 'w') as f:
+                json.dump(all_results, f, indent=2)
+            print(f"\n✅ Results saved to: {result_file}")
+            
+            # Save to historical data if not disabled
+            if not args.no_save_history:
+                try:
+                    hist = HistoricalComparison()
+                    hist_timestamp = hist.save_result(all_results)
+                    print(f"✅ Results saved to history: {hist_timestamp}")
+                    print(f"   Use generate_html_report.py to view historical comparison")
+                except Exception as e:
+                    print(f"⚠️  Failed to save to history: {e}")
+                    print("   Test results are still saved to JSON file")
+        except Exception as e:
+            print(f"\n⚠️  Failed to save results: {e}")
+    
+    # Print summary
+    print(f"\n{'='*80}")
+    print(f"Test Summary")
+    print(f"{'='*80}")
+    print(f"Server: {args.server_ip}:{args.mount_path}")
+    print(f"Transport: {args.transport.upper()}")
+    print(f"Versions tested: {len(nfs_versions)}")
+    for version in nfs_versions:
+        version_key = f"nfsv{version}_{args.transport}"
+        status = all_results['results_by_version'].get(version_key, {}).get('status', 'unknown')
+        if status == 'failed':
+            print(f"  • NFS v{version}: ❌ FAILED")
+        else:
+            print(f"  • NFS v{version}: ✅ COMPLETED")
+    print(f"{'='*80}\n")
 
 
 if __name__ == '__main__':

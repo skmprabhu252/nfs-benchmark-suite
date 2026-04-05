@@ -907,8 +907,9 @@ class NetworkIntelligence:
 class NFSPerformanceTest:
     """Main class for NFS performance testing"""
     
-    def __init__(self, mount_path, config_file=None, skip_dd=False, skip_fio=False, skip_iozone=False, skip_bonnie=False, skip_dbench=False, cleanup_only=False, verbose=False):
+    def __init__(self, mount_path, config_file=None, skip_dd=False, skip_fio=False, skip_iozone=False, skip_bonnie=False, skip_dbench=False, cleanup_only=False, verbose=False, nfs_version=None):
         self.mount_path = Path(mount_path)
+        self.nfs_version = nfs_version  # Store NFS version (e.g., '3', '4.0', '4.1', '4.2')
         self.skip_dd = skip_dd
         self.skip_fio = skip_fio
         self.skip_iozone = skip_iozone
@@ -1527,6 +1528,11 @@ class NFSPerformanceTest:
         """Run dbench performance tests using DBenchTestTool"""
         if self.skip_dbench:
             self.log("Skipping dbench tests", "INFO")
+            return
+        
+        # dbench only works with NFSv3 - skip for NFSv4 versions
+        if self.nfs_version and self.nfs_version != '3':
+            self.log(f"Skipping dbench tests - only supported on NFSv3 (current version: v{self.nfs_version})", "INFO")
             return
         
         # Check if dbench tests are enabled in config
@@ -2199,7 +2205,8 @@ Note: This script must run as root for NFS mount operations.
                 skip_bonnie=args.skip_bonnie,
                 skip_dbench=args.skip_dbench,
                 cleanup_only=args.cleanup_only,
-                verbose=args.verbose
+                verbose=args.verbose,
+                nfs_version=nfs_version  # Pass NFS version to test instance
             )
             
             test.run()

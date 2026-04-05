@@ -32,12 +32,12 @@ python3 generate_html_report.py --test-id baseline
 **Configuration:** Small files (500MB-2GB), low concurrency (2-8 threads)
 **Default:** Tests NFSv3 only (use `--nfs-versions` to test specific versions)
 
-### Long Test (~4-8 hours per version)
+### Stress Test (~30 minutes per version)
 **Purpose:** Production benchmarking and capacity planning
 **Use for:** Performance baselines, SLA verification, capacity planning
 **Resources:** 1-2 TB disk space per version, ~500GB-1TB data written
-**Configuration:** Large files (8GB-64GB), high concurrency (8-128 threads)
-**Default:** Tests all versions (v3, v4.0, v4.1, v4.2) - total time: 16-32 hours
+**Configuration:** Large files (8GB-64GB), high concurrency (8-128 threads), **all tests run for 30 minutes**
+**Default:** Tests all versions (v3, v4.0, v4.1, v4.2) - total time: ~2 hours
 
 Both modes measure the same 6 performance dimensions, but with different scale and duration. The tool automatically mounts each NFS version, runs tests, and unmounts before testing the next version.
 
@@ -48,32 +48,32 @@ Both modes measure the same 6 performance dimensions, but with different scale a
 ### 1. Throughput (MB/s)
 Sequential data transfer rate for large files. Critical for bulk operations, backups, and media streaming.
 - **Tools:** DD, FIO (sequential), IOzone, Bonnie++
-- **Quick test:** 500MB-2GB files | **Long test:** 8GB-64GB files
+- **Quick test:** 500MB-2GB files | **Stress test:** 8GB-64GB files, 30-minute runtime
 
 ### 2. IOPS (Operations/Second)
 Random I/O performance with small blocks (4K). Essential for databases and VMs.
 - **Tools:** FIO (random 4K), IOzone (random I/O)
-- **Quick test:** 60 seconds | **Long test:** 60 minutes
+- **Quick test:** 60 seconds | **Stress test:** 30-minute runtime
 
 ### 3. Latency (milliseconds)
 Response time for I/O operations. Critical for interactive applications and real-time systems.
 - **Tools:** FIO (latency test), dbench (single client)
-- **Quick test:** 30 seconds | **Long test:** 30 minutes
+- **Quick test:** 30 seconds | **Stress test:** 30-minute runtime
 
 ### 4. Metadata Operations/Second
 File creation, deletion, stat, rename operations. Important for build systems and applications with many small files.
 - **Tools:** FIO (metadata), IOzone, Bonnie++, dbench
-- **Quick test:** 1K-8K files | **Long test:** 50K-256K files
+- **Quick test:** 1K-8K files | **Stress test:** 50K-256K files, 30-minute runtime
 
 ### 5. Cache Effects
 Performance difference between cached and direct I/O. Helps understand and tune client-side caching.
 - **Tools:** DD (cached vs direct), IOzone, FIO (direct vs buffered)
-- **Quick test:** 500MB-1GB files | **Long test:** 16GB-32GB files
+- **Quick test:** 500MB-1GB files | **Stress test:** 16GB-32GB files, 30-minute runtime
 
 ### 6. Concurrency Scaling
 Performance scaling with multiple concurrent clients. Essential for multi-user environments and capacity planning.
 - **Tools:** IOzone (scaling), FIO (numjobs), dbench (scalability)
-- **Quick test:** 2-8 threads | **Long test:** 8-128 threads
+- **Quick test:** 2-8 threads | **Stress test:** 8-128 threads, 30-minute runtime
 
 ---
 
@@ -247,26 +247,28 @@ The tool automatically compares results with previous runs:
 
 ---
 
-## New Features
+## Key Features
 
 ### Automatic NFS Mounting
-The tool now automatically handles NFS mounting and unmounting:
 - **No pre-mounting required** - Just provide server IP and export path
 - **Automatic validation** - Checks server reachability, NFS service, and export availability
 - **Version-specific mounting** - Automatically mounts with optimal options for each NFS version
 - **Automatic cleanup** - Unmounts and removes mount points after testing
 
 ### Multi-Version Testing
-Test multiple NFS versions in a single run:
 - **Quick-test default**: NFSv3 only (fast validation)
-- **Long-test default**: All versions (v3, v4.0, v4.1, v4.2) for comprehensive comparison
+- **Stress-test default**: All versions (v3, v4.0, v4.1, v4.2) for comprehensive comparison
 - **Custom selection**: Use `--nfs-versions 3,4.2` to test specific versions
 - **Automatic comparison**: Results include performance comparison across all tested versions
 
 ### Transport Protocol Support
-Choose between TCP and RDMA transports:
 - **TCP (default)**: Standard NFS over TCP/IP networks
 - **RDMA**: High-performance NFS over RDMA-capable networks (InfiniBand, RoCE)
+
+### Standardized Test Duration
+- **Stress tests**: All tests now run for a consistent **30-minute duration** for reliable, comparable results
+- **Quick tests**: Optimized for fast validation (15 minutes)
+- **Predictable runtime**: Stress test completes in ~30 minutes per NFS version (~2 hours for all versions)
 
 ### RDMA Requirements
 To use `--transport rdma`, you need:
@@ -429,7 +431,7 @@ runtest.py (Main Orchestrator)
 ## Configuration Files
 
 - `config/config_quick_test.yaml` - Quick test (15 min)
-- `config/config_stress_test.yaml` - Stress test (4-8 hours)
+- `config/config_stress_test.yaml` - Stress test (30 min per version, all tests standardized)
 - `config/test_config.yaml` - Default balanced (30 min)
 
 ---

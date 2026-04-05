@@ -247,28 +247,16 @@ The tool automatically compares results with previous runs:
 
 ---
 
-## Key Features
+## Features
 
-### Automatic NFS Mounting
-- **No pre-mounting required** - Just provide server IP and export path
-- **Automatic validation** - Checks server reachability, NFS service, and export availability
-- **Version-specific mounting** - Automatically mounts with optimal options for each NFS version
-- **Automatic cleanup** - Unmounts and removes mount points after testing
-
-### Multi-Version Testing
-- **Quick-test default**: NFSv3 only (fast validation)
-- **Stress-test default**: All versions (v3, v4.0, v4.1, v4.2) for comprehensive comparison
-- **Custom selection**: Use `--nfs-versions 3,4.2` to test specific versions
-- **Automatic comparison**: Results include performance comparison across all tested versions
-
-### Transport Protocol Support
-- **TCP (default)**: Standard NFS over TCP/IP networks
-- **RDMA**: High-performance NFS over RDMA-capable networks (InfiniBand, RoCE)
-
-### Standardized Test Duration
-- **Stress tests**: All tests now run for a consistent **30-minute duration** for reliable, comparable results
-- **Quick tests**: Optimized for fast validation (15 minutes)
-- **Predictable runtime**: Stress test completes in ~30 minutes per NFS version (~2 hours for all versions)
+- **Automatic NFS Mounting** - No pre-mounting required; just provide server IP and export path. Automatically validates server, mounts with optimal options, and cleans up after testing
+- **Multi-Version Testing** - Test NFSv3, v4.0, v4.1, and v4.2 in a single run with automatic performance comparison
+- **Two Test Modes** - Quick test (15 min) for validation, Stress test (30 min per version) for production benchmarking
+- **Standardized Test Duration** - All stress tests run for consistent 30-minute duration for reliable, comparable results
+- **Transport Protocol Support** - TCP (default) and RDMA for high-performance networks (InfiniBand, RoCE)
+- **Comprehensive Metrics** - Measures 6 critical dimensions: Throughput, IOPS, Latency, Metadata Ops, Cache Effects, and Concurrency Scaling
+- **Historical Tracking** - Automatic comparison with previous test runs to identify performance regressions
+- **Interactive HTML Reports** - Generate visual reports with charts and analysis using `generate_html_report.py`
 
 ### RDMA Requirements
 To use `--transport rdma`, you need:

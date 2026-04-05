@@ -168,6 +168,31 @@ pip3 install --user -r requirements.txt
 ./setup_and_verify.sh --auto
 ```
 
+### Manual Compilation (If Package Installation Fails)
+
+If `setup_and_verify.sh` fails or packages are unavailable in your distribution, compile from source:
+
+**IOzone:**
+```bash
+wget http://www.iozone.org/src/current/iozone3_506.tar
+tar -xf iozone3_506.tar && cd iozone3_506/src/current
+make linux && sudo cp iozone /usr/local/bin/
+```
+
+**Bonnie++:**
+```bash
+git clone https://github.com/russellcoker/bonnie-plus-plus.git
+cd bonnie-plus-plus
+./configure && make && sudo make install
+```
+
+**dbench:**
+```bash
+git clone https://github.com/sahlberg/dbench.git
+cd dbench
+./autogen.sh && ./configure && make && sudo make install
+```
+
 ### RDMA Requirements (Optional)
 
 To use `--transport rdma` for high-performance networks:

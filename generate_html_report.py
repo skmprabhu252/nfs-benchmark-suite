@@ -195,6 +195,103 @@ def generate_html_report(results, output_file=None):
         return generate_single_version_report(results, output_file)
 
 
+def generate_multi_version_report(results, output_file):
+    """Generate HTML report for multi-version aggregated results."""
+    
+    test_metadata = results.get('test_metadata', {})
+    results_by_version = results.get('results_by_version', {})
+    
+    if not results_by_version:
+        logger.error("No version results found in aggregated data")
+        return None
+    
+    # Extract first version's results for charts (or combine all)
+    first_version_key = list(results_by_version.keys())[0]
+    first_version_results = results_by_version[first_version_key]
+    
+    # Generate comparison HTML for multiple versions
+    version_comparison_html = "<div class='section'><h2>📊 Version Comparison</h2>"
+    version_comparison_html += "<div class='version-grid'>"
+    
+    for version_key, version_results in results_by_version.items():
+        version_comparison_html += f"""
+        <div class='version-card'>
+            <h3>{version_key.replace('_', ' ').upper()}</h3>
+            <p>Results available for this version</p>
+        </div>
+        """
+    
+    version_comparison_html += "</div></div>"
+    
+    # Use first version's data for detailed sections
+    dd_tests = first_version_results.get('dd_tests', {})
+    fio_tests = first_version_results.get('fio_tests', {})
+    iozone_tests = first_version_results.get('iozone_tests', {})
+    bonnie_tests = first_version_results.get('bonnie_tests', {})
+    dbench_tests = first_version_results.get('dbench_tests', {})
+    
+    # Generate charts if plotly is available
+    charts_html = ""
+    if PLOTLY_AVAILABLE and (dd_tests or fio_tests or iozone_tests or bonnie_tests or dbench_tests):
+        try:
+            charts_html = generate_charts(dd_tests, fio_tests, iozone_tests, bonnie_tests, dbench_tests)
+        except Exception as e:
+            logger.warning(f"Chart generation failed: {e}")
+    
+    # Generate HTML
+    html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFS Benchmark Suite - Multi-Version Report</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; }}
+        .container {{ max-width: 1400px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+        .header h1 {{ font-size: 2.5em; margin-bottom: 10px; }}
+        .section {{ background: white; padding: 30px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        .section h2 {{ color: #667eea; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e5e7eb; }}
+        .version-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }}
+        .version-card {{ background: #f9fafb; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; }}
+        .version-card h3 {{ color: #667eea; margin-bottom: 10px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 NFS Benchmark Suite</h1>
+            <p>Multi-Version Performance Report</p>
+            <p>Test ID: {test_metadata.get('test_id', 'N/A')} | Versions: {len(results_by_version)}</p>
+        </div>
+        
+        {version_comparison_html}
+        {charts_html}
+        
+        <div class="section">
+            <h2>📋 Test Details</h2>
+            <p><strong>Server:</strong> {test_metadata.get('server_ip', 'N/A')}</p>
+            <p><strong>Mount Path:</strong> {test_metadata.get('mount_path', 'N/A')}</p>
+            <p><strong>Transport:</strong> {test_metadata.get('transport', 'tcp').upper()}</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+    
+    # Write to file
+    try:
+        with open(output_file, 'w') as f:
+            f.write(html_content)
+        logger.info(f"Multi-version HTML report generated: {output_file}")
+        return str(output_file)
+    except Exception as e:
+        logger.error(f"Failed to write HTML report: {e}")
+        return None
+
+
 def generate_single_version_report(results, output_file):
     """Generate HTML report for single-version results (backward compatibility)."""
     

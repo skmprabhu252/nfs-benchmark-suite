@@ -165,7 +165,7 @@ class MountPathValidator:
             # If we can't read /proc/mounts, try mount command
             try:
                 import subprocess
-                result = subprocess.run(['mount'], capture_output=True, text=True, timeout=5)
+                result = subprocess.run(['mount'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=5)
                 if result.returncode == 0:
                     for line in result.stdout.splitlines():
                         if str(path) in line and 'nfs' in line.lower():

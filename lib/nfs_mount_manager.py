@@ -122,8 +122,9 @@ class NFSMountManager:
             # Ping with 3 packets, 2 second timeout
             result = subprocess.run(
                 ['ping', '-c', '3', '-W', '2', self.server_ip],
-                capture_output=True,
-                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
                 timeout=10
             )
             
@@ -169,8 +170,9 @@ class NFSMountManager:
             # Use showmount to check NFS exports
             result = subprocess.run(
                 ['showmount', '-e', self.server_ip],
-                capture_output=True,
-                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
                 timeout=30
             )
             
@@ -224,8 +226,9 @@ class NFSMountManager:
             # Get list of exports
             result = subprocess.run(
                 ['showmount', '-e', self.server_ip],
-                capture_output=True,
-                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
                 timeout=30,
                 check=True
             )
@@ -288,8 +291,9 @@ class NFSMountManager:
         try:
             result = subprocess.run(
                 ['lsmod'],
-                capture_output=True,
-                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
                 timeout=5
             )
             
@@ -420,8 +424,9 @@ class NFSMountManager:
         try:
             result = subprocess.run(
                 mount_cmd,
-                capture_output=True,
-                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
                 timeout=60,
                 check=True
             )
@@ -478,8 +483,9 @@ class NFSMountManager:
             try:
                 result = subprocess.run(
                     ['mount'],
-                    capture_output=True,
-                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
                     timeout=5
                 )
                 return str(mount_point) in result.stdout
@@ -507,8 +513,9 @@ class NFSMountManager:
             # Try normal unmount first
             result = subprocess.run(
                 ['umount', str(mount_point)],
-                capture_output=True,
-                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
                 timeout=30
             )
             
@@ -524,8 +531,9 @@ class NFSMountManager:
                 print(f"⚠️  Normal unmount failed, trying force unmount...")
                 result = subprocess.run(
                     ['umount', '-f', str(mount_point)],
-                    capture_output=True,
-                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
                     timeout=30
                 )
                 

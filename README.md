@@ -338,27 +338,40 @@ mount -t nfs -o vers=4.2,rsize=1048576,wsize=1048576,hard,async,noatime server:/
 - `nfs_performance_{test_id}_nfsv3_tcp_YYYYMMDD_HHMMSS.json` - NFSv3 results
 - `nfs_performance_{test_id}_nfsv42_tcp_YYYYMMDD_HHMMSS.json` - NFSv4.2 results
 - `nfs_performance_test_YYYYMMDD_HHMMSS.log` - Detailed execution logs
-- HTML Report - Interactive charts and analysis (generate with `generate_html_report.py --test-id {test_id}`)
+- HTML Report - Interactive charts and analysis
 
-### Individual Result File Structure
-```json
-{
-  "test_metadata": {
-    "server_ip": "192.168.1.100",
-    "mount_path": "/export/data",
-    "transport": "tcp",
-    "test_id": "baseline"
-  },
-  "nfs_version": "3",
-  "transport": "tcp",
-  "results": {
-    "dd_tests": { /* DD test results */ },
-    "fio_tests": { /* FIO test results */ },
-    "iozone_tests": { /* IOzone test results */ },
-    "bonnie_tests": { /* Bonnie++ test results */ },
-    "dbench_tests": { /* dbench test results */ }
-  }
-}
+### Generating Reports
+
+Generate interactive HTML reports with charts and performance analysis:
+
+**By Test ID (Recommended):**
+```bash
+# Generate report for all versions with same test-id
+python3 generate_html_report.py --test-id baseline
+
+# This finds all files matching: nfs_performance_baseline_*.json
+# and creates: nfs_performance_baseline_report.html
+```
+
+**Single File:**
+```bash
+# Generate report from a specific JSON file
+python3 generate_html_report.py nfs_performance_baseline_nfsv3_tcp_20260405_120000.json
+
+# Creates: nfs_performance_baseline_nfsv3_tcp_20260405_120000_report.html
+```
+
+**Report Features:**
+- Interactive charts for all 6 performance dimensions
+- Version comparison (when using --test-id with multiple versions)
+- Historical trend analysis
+- Performance regression detection
+- Executive summary with key findings
+- Detailed metrics tables
+
+**Requirements:**
+```bash
+pip3 install plotly  # For interactive charts
 ```
 
 ### Performance Baselines (10 GbE Network)

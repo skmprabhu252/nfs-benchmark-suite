@@ -32,62 +32,104 @@ NFS performance can vary dramatically based on version, configuration, and workl
 
 ## Performance Dimensions Measured
 
-### 1. Throughput (MB/s)
-Sequential data transfer rate for large files. Critical for bulk operations, backups, and media streaming.
-- **Tools:** DD, FIO (sequential), IOzone, Bonnie++
-- **Quick test:** 500MB-2GB files | **Stress test:** 8GB-64GB files, 30-minute runtime
-
-### 2. IOPS (Operations/Second)
-Random I/O performance with small blocks (4K). Essential for databases and VMs.
-- **Tools:** FIO (random 4K), IOzone (random I/O)
-- **Quick test:** 60 seconds | **Stress test:** 30-minute runtime
-
-### 3. Latency (milliseconds)
-Response time for I/O operations. Critical for interactive applications and real-time systems.
-- **Tools:** FIO (latency test), dbench (single client)
-- **Quick test:** 30 seconds | **Stress test:** 30-minute runtime
-
-### 4. Metadata Operations/Second
-File creation, deletion, stat, rename operations. Important for build systems and applications with many small files.
-- **Tools:** FIO (metadata), IOzone, Bonnie++, dbench
-- **Quick test:** 1K-8K files | **Stress test:** 50K-256K files, 30-minute runtime
-
-### 5. Cache Effects
-Performance difference between cached and direct I/O. Helps understand and tune client-side caching.
-- **Tools:** DD (cached vs direct), IOzone, FIO (direct vs buffered)
-- **Quick test:** 500MB-1GB files | **Stress test:** 16GB-32GB files, 30-minute runtime
-
-### 6. Concurrency Scaling
-Performance scaling with multiple concurrent clients. Essential for multi-user environments and capacity planning.
-- **Tools:** IOzone (scaling), FIO (numjobs), dbench (scalability)
-- **Quick test:** 2-8 threads | **Stress test:** 8-128 threads, 30-minute runtime
+| Dimension | Description | Tools | Quick Test | Stress Test |
+|-----------|-------------|-------|------------|-------------|
+| **Throughput (MB/s)** | Sequential data transfer rate for large files. Critical for bulk operations, backups, and media streaming | DD, FIO (sequential), IOzone, Bonnie++ | 500MB-2GB files | 8GB-64GB files, 30-min runtime |
+| **IOPS (Ops/sec)** | Random I/O performance with small blocks (4K). Essential for databases and VMs | FIO (random 4K), IOzone (random I/O) | 60 seconds | 30-minute runtime |
+| **Latency (ms)** | Response time for I/O operations. Critical for interactive applications and real-time systems | FIO (latency test), dbench (single client) | 30 seconds | 30-minute runtime |
+| **Metadata Ops/sec** | File creation, deletion, stat, rename operations. Important for build systems and applications with many small files | FIO (metadata), IOzone, Bonnie++, dbench | 1K-8K files | 50K-256K files, 30-min runtime |
+| **Cache Effects** | Performance difference between cached and direct I/O. Helps understand and tune client-side caching | DD (cached vs direct), IOzone, FIO (direct vs buffered) | 500MB-1GB files | 16GB-32GB files, 30-min runtime |
+| **Concurrency Scaling** | Performance scaling with multiple concurrent clients. Essential for multi-user environments and capacity planning | IOzone (scaling), FIO (numjobs), dbench (scalability) | 2-8 threads | 8-128 threads, 30-min runtime |
 
 ---
 
 ## Architecture
 
+### High-Level Architecture
+
 ```
-runtest.py (Main Orchestrator)
-    │
-    ├── Input Validation (mount, config, space, permissions)
-    │
-    ├── Benchmark Modules
-    │   ├── DD (basic sequential I/O)
-    │   ├── FIO (comprehensive I/O testing)
-    │   ├── IOzone (filesystem operations)
-    │   ├── Bonnie++ (file operations)
-    │   └── dbench (client simulation)
-    │
-    ├── Metrics Collection
-    │   ├── System metrics
-    │   ├── NFS metrics
-    │   └── Network stats
-    │
-    └── Analysis & Reporting
-        ├── Performance analyzer
-        ├── Historical comparison
-        ├── HTML report generator
-        └── Executive summary
+┌─────────────────────────────────────────────────────────────────┐
+│                         runtest.py                              │
+│                    (Main Test Orchestrator)                     │
+└────────────┬────────────────────────────────────────────────────┘
+             │
+             ├─────────────────────────────────────────────────────┐
+             │                                                     │
+             v                                                     v
+┌────────────────────────┐                        ┌────────────────────────┐
+│   Input Validation     │                        │   Metrics Collection   │
+│  ─────────────────     │                        │  ──────────────────    │
+│  • Mount Path Check    │                        │  • System Metrics      │
+│  • Config Validation   │                        │  • NFS Metrics         │
+│  • Space Check         │                        │  • Network Stats       │
+│  • Permission Check    │                        │  • xprt Statistics     │
+└────────────┬───────────┘                        └───────────┬────────────┘
+             │                                                │
+             v                                                │
+┌────────────────────────────────────────────────────────────┴────┐
+│                    Benchmark Modules                            │
+│  ─────────────────────────────────────────────────────────      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
+│  │    DD    │  │   FIO    │  │  IOzone  │  │ Bonnie++ │       │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘       │
+│  ┌──────────┐                                                   │
+│  │  dbench  │  All inherit from BaseTestTool                   │
+│  └──────────┘                                                   │
+└────────────┬────────────────────────────────────────────────────┘
+             │
+             v
+┌─────────────────────────────────────────────────────────────────┐
+│                    Analysis & Reporting                         │
+│  ─────────────────────────────────────────────────────────      │
+│  • Performance Analyzer (Root Cause Detection)                  │
+│  • Historical Comparison (Regression Detection)                 │
+│  • HTML Report Generator (Interactive Charts)                   │
+│  • Executive Summary (Intelligent Insights)                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Data Flow
+
+```
+┌──────────────┐
+│ User Input   │
+│ (CLI Args)   │
+└──────┬───────┘
+       │
+       v
+┌──────────────────────┐
+│ Validation Layer     │
+│ • Mount Path         │
+│ • Configuration      │
+│ • Prerequisites      │
+└──────┬───────────────┘
+       │
+       v
+┌──────────────────────┐
+│ Test Execution       │
+│ ┌────────────────┐   │
+│ │ Start Metrics  │   │
+│ │ Run Test       │   │
+│ │ Stop Metrics   │   │
+│ │ Collect Results│   │
+│ └────────────────┘   │
+└──────┬───────────────┘
+       │
+       v
+┌──────────────────────┐
+│ Analysis Layer       │
+│ • Performance        │
+│ • Historical         │
+│ • Root Cause         │
+└──────┬───────────────┘
+       │
+       v
+┌──────────────────────┐
+│ Output Generation    │
+│ • JSON Results       │
+│ • HTML Report        │
+│ • Console Summary    │
+└──────────────────────┘
 ```
 
 ---
@@ -194,19 +236,18 @@ python3 generate_html_report.py --test-id baseline
 
 ### Two Test Modes
 
-#### Quick Test (~15 minutes per version)
-**Purpose:** Validation and smoke testing  
-**Use for:** Initial setup, CI/CD, troubleshooting, verifying changes  
-**Resources:** 50-100 GB disk space, ~20-30 GB data written  
-**Configuration:** Small files (500MB-2GB), low concurrency (2-8 threads)  
-**Default:** Tests NFSv3 only (use `--nfs-versions` to test specific versions)
-
-#### Stress Test (~30 minutes per version)
-**Purpose:** Production benchmarking and capacity planning  
-**Use for:** Performance baselines, SLA verification, capacity planning  
-**Resources:** 1-2 TB disk space per version, ~500GB-1TB data written  
-**Configuration:** Large files (8GB-64GB), high concurrency (8-128 threads), **all tests run for 30 minutes**  
-**Default:** Tests all versions (v3, v4.0, v4.1, v4.2) - total time: ~2 hours
+| Aspect | Quick Test | Stress Test |
+|--------|------------|-------------|
+| **Duration** | ~15 minutes per version | ~30 minutes per version |
+| **Purpose** | Validation and smoke testing | Production benchmarking and capacity planning |
+| **Use Cases** | Initial setup, CI/CD, troubleshooting, verifying changes | Performance baselines, SLA verification, capacity planning |
+| **Disk Space** | 50-100 GB | 1-2 TB per version |
+| **Data Written** | ~20-30 GB | ~500GB-1TB |
+| **File Sizes** | Small (500MB-2GB) | Large (8GB-64GB) |
+| **Concurrency** | Low (2-8 threads) | High (8-128 threads) |
+| **Test Duration** | Variable (30-60 seconds per test) | **Standardized 30 minutes per test** |
+| **Default Versions** | NFSv3 only | All versions (v3, v4.0, v4.1, v4.2) |
+| **Total Time** | ~15 minutes | ~2 hours (all versions) |
 
 Both modes measure the same 6 performance dimensions, but with different scale and duration. The tool automatically mounts each NFS version, runs tests, and unmounts before testing the next version.
 
@@ -361,18 +402,7 @@ python3 generate_html_report.py nfs_performance_baseline_nfsv3_tcp_20260405_1200
 # Creates: nfs_performance_baseline_nfsv3_tcp_20260405_120000_report.html
 ```
 
-**Report Features:**
-- Interactive charts for all 6 performance dimensions
-- Version comparison (when using --test-id with multiple versions)
-- Historical trend analysis
-- Performance regression detection
-- Executive summary with key findings
-- Detailed metrics tables
-
-**Requirements:**
-```bash
-pip3 install plotly  # For interactive charts
-```
+The generated HTML report includes interactive charts for all 6 performance dimensions, version comparison (when using --test-id with multiple versions), historical trend analysis, performance regression detection, executive summary with key findings, and detailed metrics tables.
 
 ### Performance Baselines (10 GbE Network)
 

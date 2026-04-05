@@ -39,6 +39,8 @@ class HistoricalComparison:
         """
         Save current test result to history.
         
+        Supports both single-version and multi-version result formats.
+        
         Args:
             result: Test result dictionary
             
@@ -48,25 +50,46 @@ class HistoricalComparison:
         # Generate timestamp with microseconds to prevent collisions
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
         
-        # Extract key metrics for quick access
-        key_metrics = self._extract_key_metrics(result)
+        # Check if this is multi-version format
+        is_multi_version = 'test_metadata' in result and 'results_by_version' in result
         
-        # Create history entry
-        test_run = result.get('test_run', {})
-        summary = result.get('summary', {})
-        
-        entry = {
-            'timestamp': timestamp,
-            'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'mount_path': test_run.get('mount_path', 'unknown'),
-            'config': test_run.get('config_file', 'unknown'),
-            'summary': {
-                'total_tests': summary.get('tests_passed', 0) + summary.get('tests_failed', 0),
-                'passed': summary.get('tests_passed', 0),
-                'failed': summary.get('tests_failed', 0)
-            },
-            'key_metrics': key_metrics
-        }
+        if is_multi_version:
+            # Multi-version format
+            metadata = result.get('test_metadata', {})
+            entry = {
+                'timestamp': timestamp,
+                'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'server_ip': metadata.get('server_ip', 'unknown'),
+                'mount_path': metadata.get('mount_path', 'unknown'),
+                'transport': metadata.get('transport', 'tcp'),
+                'test_mode': metadata.get('test_mode', 'unknown'),
+                'versions_tested': metadata.get('versions_tested', []),
+                'is_multi_version': True,
+                'key_metrics_by_version': {}
+            }
+            
+            # Extract key metrics for each version
+            for version_key, version_results in result.get('results_by_version', {}).items():
+                entry['key_metrics_by_version'][version_key] = self._extract_key_metrics(version_results)
+        else:
+            # Single-version format (backward compatibility)
+            key_metrics = self._extract_key_metrics(result)
+            test_run = result.get('test_run', {})
+            summary = result.get('summary', {})
+            
+            entry = {
+                'timestamp': timestamp,
+                'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'mount_path': test_run.get('mount_path', 'unknown'),
+                'config': test_run.get('config_file', 'unknown'),
+                'is_multi_version': False,
+                'summary': {
+                    'total_tests': summary.get('tests_passed', 0) + summary.get('tests_failed', 0),
+                    'passed': summary.get('tests_passed', 0),
+                    'failed': summary.get('tests_failed', 0)
+                },
+                'key_metrics': key_metrics
+            }
         
         # Save full result to individual file
         result_file = self.results_dir / f'{timestamp}.json'

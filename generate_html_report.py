@@ -3,19 +3,27 @@
 Generate HTML Report from NFS Benchmark Suite Results
 
 This script converts JSON test results into an interactive HTML report with charts.
+Supports both single file and multi-file (test-id based) report generation.
 
 Usage:
+    # Single file
     python generate_html_report.py <json_file>
     python generate_html_report.py nfs_performance_test_20240403_120000.json
+    
+    # Multiple files by test-id
+    python generate_html_report.py --test-id baseline_2026
+    python generate_html_report.py --test-id prod_test
 """
 
 import json
 import sys
 import os
 import logging
+import argparse
+import glob
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 # Import performance analyzer
 try:
@@ -62,6 +70,78 @@ def load_results(json_file):
         sys.exit(1)
 
 
+def find_test_id_files(test_id: str, directory: str = ".") -> List[str]:
+    """
+    Find all JSON files matching a test-id pattern.
+    
+    Args:
+        test_id: Test identifier to search for
+        directory: Directory to search in (default: current directory)
+        
+    Returns:
+        List of matching file paths
+    """
+    pattern = f"nfs_performance_{test_id}_*.json"
+    files = glob.glob(os.path.join(directory, pattern))
+    return sorted(files)
+
+
+def aggregate_test_results(json_files: List[str]) -> Dict[str, Any]:
+    """
+    Aggregate multiple JSON result files into a multi-version format.
+    
+    Args:
+        json_files: List of JSON file paths to aggregate
+        
+    Returns:
+        Aggregated results in multi-version format
+    """
+    if not json_files:
+        raise ValueError("No JSON files provided for aggregation")
+    
+    # Load all results
+    all_results = []
+    for json_file in json_files:
+        try:
+            with open(json_file, 'r') as f:
+                result = json.load(f)
+                all_results.append((json_file, result))
+        except Exception as e:
+            logger.warning(f"Failed to load {json_file}: {e}")
+            continue
+    
+    if not all_results:
+        raise ValueError("No valid JSON files could be loaded")
+    
+    # Create aggregated structure
+    aggregated = {
+        'test_metadata': {},
+        'results_by_version': {}
+    }
+    
+    # Use metadata from first file as base
+    first_file, first_result = all_results[0]
+    if 'test_metadata' in first_result:
+        aggregated['test_metadata'] = first_result['test_metadata'].copy()
+    
+    # Aggregate results by version
+    for json_file, result in all_results:
+        # Extract version and transport info
+        nfs_version = result.get('nfs_version')
+        transport = result.get('transport', 'tcp')
+        
+        if nfs_version:
+            version_key = f"nfsv{nfs_version}_{transport}"
+            aggregated['results_by_version'][version_key] = result.get('results', {})
+            logger.info(f"Loaded {version_key} from {os.path.basename(json_file)}")
+    
+    if not aggregated['results_by_version']:
+        raise ValueError("No version results found in JSON files")
+    
+    logger.info(f"Aggregated {len(aggregated['results_by_version'])} version results")
+    return aggregated
+
+
 def _safe_generate_html(func, *args, section_name="Section", **kwargs):
     """
     Safely execute HTML generation function with error handling.
@@ -89,7 +169,11 @@ def _safe_generate_html(func, *args, section_name="Section", **kwargs):
 
 
 def generate_html_report(results, output_file=None):
-    """Generate HTML report from test results"""
+    """
+    Generate HTML report from test results.
+    
+    Supports both single-version and multi-version result formats.
+    """
     
     # Create report directory if it doesn't exist
     report_dir = Path("report")
@@ -101,6 +185,18 @@ def generate_html_report(results, output_file=None):
     else:
         # Ensure output_file is in report directory
         output_file = report_dir / Path(output_file).name
+    
+    # Detect result format
+    is_multi_version = 'test_metadata' in results and 'results_by_version' in results
+    
+    if is_multi_version:
+        return generate_multi_version_report(results, output_file)
+    else:
+        return generate_single_version_report(results, output_file)
+
+
+def generate_single_version_report(results, output_file):
+    """Generate HTML report for single-version results (backward compatibility)."""
     
     # Extract data with None-safe defaults
     test_run = results.get('test_run') or {}
@@ -1815,40 +1911,76 @@ def generate_dbench_tests_html(dbench_tests):
 
 
 def main():
-    if len(sys.argv) < 2:
-        logger.error("Usage: python3 generate_html_report.py <json_file>")
-        logger.info("Example: python3 generate_html_report.py nfs_performance_test_20240403_120000.json")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description='Generate HTML report from NFS benchmark results',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''
+Examples:
+  # Generate report from single JSON file
+  python3 generate_html_report.py nfs_performance_nfsv3_tcp_20240403_120000.json
+  
+  # Generate report from all files with test-id
+  python3 generate_html_report.py --test-id baseline_2026
+  
+  # Generate report from all files with test-id in specific directory
+  python3 generate_html_report.py --test-id prod_test --directory ./results
+        '''
+    )
     
-    json_file = sys.argv[1]
+    # Create mutually exclusive group for file or test-id
+    input_group = parser.add_mutually_exclusive_group(required=True)
+    input_group.add_argument(
+        'json_file',
+        nargs='?',
+        help='Path to single JSON results file'
+    )
+    input_group.add_argument(
+        '--test-id',
+        help='Test identifier to aggregate multiple result files'
+    )
     
-    # Show help if requested
-    if json_file in ['--help', '-h', 'help']:
-        print("\nNFS Benchmark Suite - HTML Report Generator")
-        print("=" * 50)
-        print("\nUsage:")
-        print("  python3 generate_html_report.py <json_file>")
-        print("\nDescription:")
-        print("  Converts JSON test results into an interactive HTML report with charts.")
-        print("\nArguments:")
-        print("  <json_file>    Path to the JSON results file")
-        print("\nExample:")
-        print("  python3 generate_html_report.py nfs_performance_test_20240403_120000.json")
-        print("\nOutput:")
-        print("  Creates an HTML file: nfs_performance_report_<timestamp>.html")
-        print("\nRequirements:")
-        print("  - Python 3.6+")
-        print("  - plotly (optional, for charts): pip3 install plotly")
-        print()
-        sys.exit(0)
+    parser.add_argument(
+        '--directory',
+        default='.',
+        help='Directory to search for JSON files (default: current directory)'
+    )
     
-    if not os.path.exists(json_file):
-        logger.error(f"File not found: {json_file}")
-        sys.exit(1)
+    args = parser.parse_args()
     
-    logger.info(f"Loading results from: {json_file}")
-    results = load_results(json_file)
+    # Handle test-id based aggregation
+    if args.test_id:
+        logger.info(f"Searching for files with test-id: {args.test_id}")
+        json_files = find_test_id_files(args.test_id, args.directory)
+        
+        if not json_files:
+            logger.error(f"No files found matching test-id: {args.test_id}")
+            logger.info(f"Searched in: {os.path.abspath(args.directory)}")
+            logger.info(f"Pattern: nfs_performance_{args.test_id}_*.json")
+            sys.exit(1)
+        
+        logger.info(f"Found {len(json_files)} matching files:")
+        for f in json_files:
+            logger.info(f"  - {os.path.basename(f)}")
+        
+        logger.info("Aggregating results...")
+        try:
+            results = aggregate_test_results(json_files)
+        except Exception as e:
+            logger.error(f"Failed to aggregate results: {e}")
+            sys.exit(1)
     
+    # Handle single file
+    else:
+        json_file = args.json_file
+        
+        if not os.path.exists(json_file):
+            logger.error(f"File not found: {json_file}")
+            sys.exit(1)
+        
+        logger.info(f"Loading results from: {json_file}")
+        results = load_results(json_file)
+    
+    # Generate report
     logger.info("Generating HTML report...")
     output_file = generate_html_report(results)
     

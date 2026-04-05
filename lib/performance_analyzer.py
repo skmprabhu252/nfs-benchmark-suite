@@ -16,6 +16,8 @@ class PerformanceAnalyzer:
         """
         Initialize analyzer with test results.
         
+        Supports both single-version and multi-version result formats.
+        
         Args:
             results: Complete test results dictionary
         """
@@ -23,14 +25,78 @@ class PerformanceAnalyzer:
         self.insights = []
         self.recommendations = []
         self.severity_counts = {'critical': 0, 'warning': 0, 'info': 0}
+        
+        # Detect result format
+        self.is_multi_version = 'test_metadata' in results and 'results_by_version' in results
+        
+        # For multi-version, we'll analyze each version separately
+        if self.is_multi_version:
+            self.metadata = results.get('test_metadata', {})
+            self.versions = results.get('results_by_version', {})
+        else:
+            self.metadata = None
+            self.versions = None
     
     def analyze(self) -> Dict[str, Any]:
         """
         Perform comprehensive analysis of test results.
         
+        Supports both single-version and multi-version formats.
+        
         Returns:
             dict: Analysis summary with insights and recommendations
         """
+        if self.is_multi_version:
+            return self._analyze_multi_version()
+        else:
+            return self._analyze_single_version()
+    
+    def _analyze_multi_version(self) -> Dict[str, Any]:
+        """Analyze multi-version test results."""
+        # Add multi-version specific insights
+        self._add_insight('info', 'Multi-Version Test',
+                        f"Tested {len(self.versions)} NFS version(s): {', '.join(self.versions.keys())}",
+                        f"Transport: {self.metadata.get('transport', 'tcp').upper()}")
+        
+        # Analyze each version
+        version_analyses = {}
+        for version_key, version_results in self.versions.items():
+            # Temporarily set results to this version for analysis
+            original_results = self.results
+            self.results = version_results
+            self.is_multi_version = False  # Temporarily treat as single version
+            
+            try:
+                version_analysis = self._analyze_single_version()
+                version_analyses[version_key] = version_analysis
+            except Exception as e:
+                self._add_insight('warning', f'Analysis Error - {version_key}',
+                                f'Failed to analyze {version_key}: {str(e)}',
+                                'Check test results format.')
+            
+            # Restore
+            self.results = original_results
+            self.is_multi_version = True
+        
+        # Compare versions
+        try:
+            self._compare_versions()
+        except Exception as e:
+            self._add_insight('warning', 'Version Comparison Error',
+                            f'Failed to compare versions: {str(e)}',
+                            'Check test results format.')
+        
+        return {
+            'insights': self.insights,
+            'recommendations': self.recommendations,
+            'severity_counts': self.severity_counts,
+            'overall_health': self._calculate_health_score(),
+            'version_analyses': version_analyses,
+            'is_multi_version': True
+        }
+    
+    def _analyze_single_version(self) -> Dict[str, Any]:
+        """Analyze single-version test results."""
         # Analyze different aspects with error handling
         try:
             self._analyze_overall_performance()
@@ -85,8 +151,159 @@ class PerformanceAnalyzer:
             'insights': self.insights,
             'recommendations': self.recommendations,
             'severity_counts': self.severity_counts,
-            'overall_health': self._calculate_health_score()
+            'overall_health': self._calculate_health_score(),
+            'is_multi_version': False
         }
+    
+    def _compare_versions(self):
+        """Compare performance across NFS versions and transports."""
+        if not self.versions or len(self.versions) < 2:
+            return
+        
+        # Extract key metrics from each version
+        version_metrics = {}
+        for version_key, version_results in self.versions.items():
+            metrics = {}
+            
+            # Extract throughput metrics
+            if 'dd_tests' in version_results:
+                dd = version_results['dd_tests']
+                if 'sequential_write' in dd:
+                    metrics['write_mbps'] = dd['sequential_write'].get('throughput_mbps', 0)
+                if 'sequential_read' in dd:
+                    metrics['read_mbps'] = dd['sequential_read'].get('throughput_mbps', 0)
+            
+            # Extract IOPS metrics
+            if 'fio_tests' in version_results:
+                fio = version_results['fio_tests']
+                if 'random_read' in fio:
+                    metrics['rand_read_iops'] = fio['random_read'].get('iops', 0)
+                if 'random_write' in fio:
+                    metrics['rand_write_iops'] = fio['random_write'].get('iops', 0)
+                    
+            # Extract latency metrics
+            if 'fio_tests' in version_results:
+                fio = version_results['fio_tests']
+                if 'random_read' in fio:
+                    metrics['latency_ms'] = fio['random_read'].get('avg_latency_ms', 0)
+            
+            version_metrics[version_key] = metrics
+        
+        # Parse version keys to separate NFS version and transport
+        # Format: nfsv{version}_{transport}
+        version_transport_map = {}
+        for version_key in version_metrics.keys():
+            parts = version_key.split('_')
+            if len(parts) >= 2:
+                nfs_version = parts[0]  # e.g., nfsv3, nfsv4.2
+                transport = parts[1]     # e.g., tcp, rdma
+                version_transport_map[version_key] = {'version': nfs_version, 'transport': transport}
+        
+        # Compare NFS versions (same transport)
+        self._compare_by_nfs_version(version_metrics, version_transport_map)
+        
+        # Compare transports (same NFS version)
+        self._compare_by_transport(version_metrics, version_transport_map)
+        
+        # Find overall best performer
+        self._find_overall_best(version_metrics)
+    
+    def _compare_by_nfs_version(self, version_metrics, version_transport_map):
+        """Compare performance across different NFS versions with same transport."""
+        # Group by transport
+        by_transport = {}
+        for version_key, vt_info in version_transport_map.items():
+            transport = vt_info['transport']
+            if transport not in by_transport:
+                by_transport[transport] = {}
+            by_transport[transport][version_key] = version_metrics[version_key]
+        
+        # Compare within each transport group
+        for transport, versions in by_transport.items():
+            if len(versions) < 2:
+                continue
+                
+            for metric_name in ['write_mbps', 'read_mbps', 'rand_read_iops', 'rand_write_iops']:
+                values = {v: m.get(metric_name, 0) for v, m in versions.items() if m.get(metric_name, 0) > 0}
+                if len(values) >= 2:
+                    best_version = max(values, key=lambda k: values[k])
+                    best_value = values[best_version]
+                    worst_version = min(values, key=lambda k: values[k])
+                    worst_value = values[worst_version]
+                    
+                    if best_value > worst_value * 1.1:  # At least 10% difference
+                        improvement = ((best_value - worst_value) / worst_value) * 100
+                        self._add_insight('info', f'NFS Version Comparison ({transport.upper()}) - {metric_name}',
+                                        f'{best_version} performs {improvement:.1f}% better than {worst_version}',
+                                        f'Best: {best_value:.1f}, Worst: {worst_value:.1f}')
+    
+    def _compare_by_transport(self, version_metrics, version_transport_map):
+        """Compare performance across different transports with same NFS version."""
+        # Group by NFS version
+        by_nfs_version = {}
+        for version_key, vt_info in version_transport_map.items():
+            nfs_version = vt_info['version']
+            if nfs_version not in by_nfs_version:
+                by_nfs_version[nfs_version] = {}
+            by_nfs_version[nfs_version][version_key] = version_metrics[version_key]
+        
+        # Compare within each NFS version group
+        for nfs_version, transports in by_nfs_version.items():
+            if len(transports) < 2:
+                continue
+            
+            for metric_name in ['write_mbps', 'read_mbps', 'rand_read_iops', 'rand_write_iops', 'latency_ms']:
+                values = {v: m.get(metric_name, 0) for v, m in transports.items() if m.get(metric_name, 0) > 0}
+                if len(values) >= 2:
+                    if metric_name == 'latency_ms':
+                        # Lower is better for latency
+                        best_transport = min(values, key=lambda k: values[k])
+                        best_value = values[best_transport]
+                        worst_transport = max(values, key=lambda k: values[k])
+                        worst_value = values[worst_transport]
+                        
+                        if worst_value > best_value * 1.1:  # At least 10% difference
+                            improvement = ((worst_value - best_value) / worst_value) * 100
+                            transport_name = version_transport_map[best_transport]['transport'].upper()
+                            self._add_insight('info', f'Transport Comparison ({nfs_version}) - {metric_name}',
+                                            f'{transport_name} has {improvement:.1f}% lower latency',
+                                            f'Best: {best_value:.2f}ms, Worst: {worst_value:.2f}ms')
+                    else:
+                        # Higher is better for throughput/IOPS
+                        best_transport = max(values, key=lambda k: values[k])
+                        best_value = values[best_transport]
+                        worst_transport = min(values, key=lambda k: values[k])
+                        worst_value = values[worst_transport]
+                        
+                        if best_value > worst_value * 1.1:  # At least 10% difference
+                            improvement = ((best_value - worst_value) / worst_value) * 100
+                            transport_name = version_transport_map[best_transport]['transport'].upper()
+                            self._add_insight('info', f'Transport Comparison ({nfs_version}) - {metric_name}',
+                                            f'{transport_name} performs {improvement:.1f}% better',
+                                            f'Best: {best_value:.1f}, Worst: {worst_value:.1f}')
+    
+    def _find_overall_best(self, version_metrics):
+        """Find overall best performing configuration."""
+        # Calculate aggregate score for each configuration
+        scores = {}
+        for version_key, metrics in version_metrics.items():
+            score = 0
+            # Weight different metrics
+            score += metrics.get('write_mbps', 0) * 1.0
+            score += metrics.get('read_mbps', 0) * 1.0
+            score += metrics.get('rand_read_iops', 0) * 0.01  # Scale down IOPS
+            score += metrics.get('rand_write_iops', 0) * 0.01
+            # Penalize high latency
+            latency = metrics.get('latency_ms', 0)
+            if latency > 0:
+                score -= latency * 10
+            scores[version_key] = score
+        
+        if scores:
+            best_config = max(scores, key=lambda k: scores[k])
+            self._add_insight('info', 'Overall Best Configuration',
+                            f'{best_config} provides the best overall performance',
+                            f'Consider using this configuration for production workloads')
     
     def _analyze_overall_performance(self):
         """Analyze overall test performance."""

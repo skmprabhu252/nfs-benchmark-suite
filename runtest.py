@@ -2,18 +2,35 @@
 """
 NFS Benchmark Suite Script
 
-This script performs comprehensive DD and FIO tests on NFS mounts to evaluate
-performance across various workload patterns. Results are automatically saved
-to timestamped JSON log files.
+This script performs comprehensive performance tests on NFS servers with automatic
+mounting and multi-version support. Tests multiple NFS versions (v3, v4.0, v4.1, v4.2)
+and transports (TCP, RDMA). Results are saved to separate JSON files per version.
 
 Usage:
-    python3 runtest.py --mount-path /mnt/nfs1
-    python3 runtest.py --mount-path /mnt/nfs1 --config custom_config.yaml
-    python3 runtest.py --mount-path /mnt/nfs1 --skip-dd
-    python3 runtest.py --mount-path /mnt/nfs1 --skip-fio
-    python3 runtest.py --mount-path /mnt/nfs1 --skip-bonnie
-    python3 runtest.py --mount-path /mnt/nfs1 --skip-dbench
-    python3 runtest.py --mount-path /mnt/nfs1 --cleanup-only
+    # Quick test with NFSv3 (default)
+    sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --quick-test
+    
+    # Long test with all NFS versions
+    sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline --long-test
+    
+    # Test specific versions with test-id for comparison
+    sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id prod --nfs-versions 3,4.2 --quick-test
+    
+    # Test with RDMA transport
+    sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --transport rdma --quick-test
+    
+    # Test versions independently (flexible comparison)
+    sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id compare --nfs-versions 3 --quick-test
+    sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id compare --nfs-versions 4.2 --quick-test
+    
+    # Skip specific tests
+    sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --skip-dd --skip-bonnie --quick-test
+    
+    # Custom configuration
+    sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --config my_config.yaml --quick-test
+
+Note: This script requires root privileges for NFS mount operations.
+      Run with: sudo python3 runtest.py ...
 """
 
 import argparse
@@ -1915,22 +1932,26 @@ def main():
 Examples:
   # Quick test with NFSv3 (default) over TCP
   python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --quick-test
-  
-  # Long test with all NFS versions over TCP
-  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --long-test
-  
-  # Test specific NFS versions
-  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --nfs-versions 3,4.2 --quick-test
-  
+
+  # Long test with all NFS versions over TCP with test-id
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline_2026 --long-test
+
+  # Test specific NFS versions with test-id for comparison
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id prod_test --nfs-versions 3,4.2 --quick-test
+
   # Test with RDMA transport
   python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --transport rdma --quick-test
-  
-  # Long test with RDMA for specific versions
-  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --nfs-versions 4.1,4.2 --transport rdma --long-test
-  
+
+  # Long test with RDMA for specific versions with test-id
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id rdma_eval --nfs-versions 4.1,4.2 --transport rdma --long-test
+
+  # Test each version separately with same test-id (for flexible comparison)
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline --nfs-versions 3 --quick-test
+  python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline --nfs-versions 4.2 --quick-test
+
   # Skip specific tests
   python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --skip-dd --skip-bonnie --quick-test
-  
+
   # Custom configuration
   python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --config my_config.yaml --quick-test
 
@@ -1979,6 +2000,12 @@ Note: This script must run as root for NFS mount operations.
         default='tcp',
         choices=['tcp', 'rdma'],
         help='Transport protocol: tcp (default) or rdma'
+    )
+    
+    parser.add_argument(
+        '--test-id',
+        default=None,
+        help='Test identifier for grouping related tests (e.g., baseline, production). Used in filename for easy comparison.'
     )
     
     parser.add_argument(
@@ -2202,26 +2229,67 @@ Note: This script must run as root for NFS mount operations.
     # Final cleanup
     mount_manager.cleanup_all(force=True)
     
-    # Save combined results
+    # Save results - separate file per version
     if not args.cleanup_only:
         try:
-            # Save to JSON file
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            result_file = f"nfs_performance_multiversion_{timestamp}.json"
-            with open(result_file, 'w') as f:
-                json.dump(all_results, f, indent=2)
-            print(f"\n✅ Results saved to: {result_file}")
+            saved_files = []
+            
+            # Generate test_id prefix
+            test_id_prefix = f"{args.test_id}_" if args.test_id else ""
+            
+            # Save each version to its own file
+            for version in nfs_versions:
+                version_key = f"nfsv{version}_{args.transport}"
+                version_results = all_results['results_by_version'].get(version_key)
+                
+                if version_results:
+                    # Create individual result structure
+                    individual_result = {
+                        'test_metadata': all_results['test_metadata'].copy(),
+                        'nfs_version': version,
+                        'transport': args.transport,
+                        'results': version_results
+                    }
+                    
+                    # Generate filename: nfs_performance_{test_id}_{version}_{transport}_{timestamp}.json
+                    version_str = str(version).replace('.', '')
+                    result_file = f"nfs_performance_{test_id_prefix}nfsv{version_str}_{args.transport}_{timestamp}.json"
+                    
+                    with open(result_file, 'w') as f:
+                        json.dump(individual_result, f, indent=2)
+                    
+                    saved_files.append(result_file)
+                    print(f"✅ Results saved: {result_file}")
+            
+            if saved_files:
+                print(f"\n✅ Total files saved: {len(saved_files)}")
+                if args.test_id:
+                    print(f"   Test ID: {args.test_id}")
+                    print(f"   To compare these results, use:")
+                    print(f"   python3 generate_html_report.py --test-id {args.test_id}")
             
             # Save to historical data if not disabled
-            if not args.no_save_history:
+            if not args.no_save_history and saved_files:
                 try:
                     hist = HistoricalComparison()
-                    hist_timestamp = hist.save_result(all_results)
-                    print(f"✅ Results saved to history: {hist_timestamp}")
+                    # Save each version result to history
+                    for version in nfs_versions:
+                        version_key = f"nfsv{version}_{args.transport}"
+                        version_results = all_results['results_by_version'].get(version_key)
+                        if version_results:
+                            individual_result = {
+                                'test_metadata': all_results['test_metadata'].copy(),
+                                'nfs_version': version,
+                                'transport': args.transport,
+                                'results': version_results
+                            }
+                            hist.save_result(individual_result)
+                    print(f"✅ Results saved to history")
                     print(f"   Use generate_html_report.py to view historical comparison")
                 except Exception as e:
                     print(f"⚠️  Failed to save to history: {e}")
-                    print("   Test results are still saved to JSON file")
+                    print("   Test results are still saved to JSON files")
         except Exception as e:
             print(f"\n⚠️  Failed to save results: {e}")
     

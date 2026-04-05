@@ -13,10 +13,10 @@ cd nfs-benchmark-suite
 ./setup_and_verify.sh --auto
 
 # 2. Run quick validation test (15 minutes) - NFSv3 with TCP
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --quick-test
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline --quick-test
 
 # 3. Generate HTML report
-python3 generate_html_report.py nfs_performance_multiversion_*.json
+python3 generate_html_report.py --test-id baseline
 ```
 
 **Note:** The tool now automatically mounts NFS and must run as root.
@@ -118,16 +118,20 @@ pip3 install --user -r requirements.txt
 
 ```bash
 # Quick test - NFSv3 with TCP (default, ~15 minutes)
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --quick-test
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline --quick-test
 
 # Long test - All versions with TCP (v3, v4.0, v4.1, v4.2, ~16-32 hours)
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --long-test
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id prod_2026 --long-test
 
-# Test specific NFS versions
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --nfs-versions 3,4.2 --quick-test
+# Test specific NFS versions with test-id for comparison
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id eval --nfs-versions 3,4.2 --quick-test
 
 # Test with RDMA transport (requires RDMA hardware)
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --transport rdma --quick-test
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id rdma_test --transport rdma --quick-test
+
+# Test each version separately (flexible comparison later)
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline --nfs-versions 3 --quick-test
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id baseline --nfs-versions 4.2 --quick-test
 ```
 
 ### Common Scenarios
@@ -144,14 +148,17 @@ sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --co
 sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --skip-bonnie --skip-dbench --quick-test
 ```
 
-**Compare NFS Versions (Automatic):**
+**Compare NFS Versions:**
 ```bash
-# The tool now automatically tests multiple versions and compares results
-# Quick test with specific versions
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --nfs-versions 3,4.2 --quick-test
+# Test multiple versions with same test-id for comparison
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id comparison --nfs-versions 3,4.2 --quick-test
 
-# Long test with all versions (automatic comparison)
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --long-test
+# Or test versions separately and compare later
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id comparison --nfs-versions 3 --quick-test
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id comparison --nfs-versions 4.2 --quick-test
+
+# Generate comparison report
+python3 generate_html_report.py --test-id comparison
 ```
 
 **Test with RDMA for High-Performance Networks:**
@@ -166,13 +173,13 @@ sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --tr
 **Production Benchmark Workflow:**
 ```bash
 # 1. Quick validation first
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --quick-test
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id prod_baseline --quick-test
 
 # 2. If successful, run comprehensive benchmark
-sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --long-test
+sudo python3 runtest.py --server-ip 192.168.1.100 --mount-path /export/data --test-id prod_baseline --long-test
 
 # 3. Generate comparison report
-python3 generate_html_report.py nfs_performance_multiversion_*.json
+python3 generate_html_report.py --test-id prod_baseline
 ```
 
 ---
@@ -180,24 +187,37 @@ python3 generate_html_report.py nfs_performance_multiversion_*.json
 ## Understanding Results
 
 ### Output Files
-- `nfs_performance_multiversion_YYYYMMDD_HHMMSS.json` - Raw performance data for all tested versions
-- `nfs_performance_test_YYYYMMDD_HHMMSS.log` - Detailed execution logs
-- HTML Report - Interactive charts and analysis (generate with `generate_html_report.py`)
 
-### Multi-Version Results Structure
+**New Format (Separate Files Per Version):**
+- `nfs_performance_{test_id}_nfsv3_tcp_YYYYMMDD_HHMMSS.json` - NFSv3 results
+- `nfs_performance_{test_id}_nfsv42_tcp_YYYYMMDD_HHMMSS.json` - NFSv4.2 results
+- `nfs_performance_test_YYYYMMDD_HHMMSS.log` - Detailed execution logs
+- HTML Report - Interactive charts and analysis (generate with `generate_html_report.py --test-id {test_id}`)
+
+**Benefits of Separate Files:**
+- Run each version independently
+- Compare any combination of versions later
+- Better for CI/CD pipelines
+- Easier historical tracking per version
+- Can re-run failed versions without re-running all
+
+### Individual Result File Structure
 ```json
 {
   "test_metadata": {
     "server_ip": "192.168.1.100",
     "mount_path": "/export/data",
     "transport": "tcp",
-    "versions_tested": ["3", "4.0", "4.1", "4.2"]
+    "test_id": "baseline"
   },
-  "results_by_version": {
-    "nfsv3_tcp": { /* all test results */ },
-    "nfsv4.0_tcp": { /* all test results */ },
-    "nfsv4.1_tcp": { /* all test results */ },
-    "nfsv4.2_tcp": { /* all test results */ }
+  "nfs_version": "3",
+  "transport": "tcp",
+  "results": {
+    "dd_tests": { /* DD test results */ },
+    "fio_tests": { /* FIO test results */ },
+    "iozone_tests": { /* IOzone test results */ },
+    "bonnie_tests": { /* Bonnie++ test results */ },
+    "dbench_tests": { /* dbench test results */ }
   }
 }
 ```

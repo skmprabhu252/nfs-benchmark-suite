@@ -55,7 +55,7 @@ NFS performance can vary dramatically based on version, configuration, and workl
 - **Comprehensive Metrics** - Measures 6 critical dimensions: Throughput, IOPS, Latency, Metadata Ops, Cache Effects, and Concurrency Scaling
 - **Historical Tracking** - Automatic comparison with previous test runs to identify performance regressions
 - **Interactive HTML Reports** - Generate visual reports with charts and analysis using `generate_html_report.py`
-- **Automated Performance Analysis** - AI-powered insights, recommendations, and health scoring with `--enable-analysis` flag
+- **Automated Performance Analysis** - Deep NFS metrics analysis with RPC statistics, transport layer health, root cause identification, and intelligent version comparisons with `--enable-analysis` flag
 - **Flexible Report Views** - Choose between tool-based (organized by benchmark tool) or dimension-based (organized by performance dimension) report layouts
 - **Test-ID Comparison** - Compare two different test runs side-by-side (e.g., different OS versions, before/after optimization, different hardware)
 
@@ -500,6 +500,11 @@ python3 generate_html_report.py --test-id baseline_rhel8 --compare-with baseline
 - **Smart Recommendations** - Actionable suggestions for performance improvements
 - **Severity Classification** - Critical, warning, and info-level insights
 - **Comparison Analysis** - Detects improvements and regressions between test-ids
+- **Deep NFS Metrics Analysis** - RPC statistics, retransmissions, timeouts, transport layer health
+- **Root Cause Identification** - Correlates NFS metrics with performance to identify bottlenecks
+- **Version Comparison Intelligence** - Explains WHY one NFS version performs better with protocol-level insights
+- **Network Health Analysis** - Send/receive balance, queue depths, connection stability
+- **Performance Correlation** - Links low throughput to specific issues (network, server, or client)
 
 The generated HTML report includes interactive charts for all 6 performance dimensions, version comparison (when using --test-id with multiple versions), test-id comparison (when using --compare-with for different configurations), historical trend analysis, performance regression detection, executive summary with key findings, and detailed metrics tables. Reports are organized by performance dimension by default; use `--report-style tool-based` to organize by benchmark tool instead.
 

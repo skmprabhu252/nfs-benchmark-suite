@@ -330,7 +330,7 @@ class PerformanceAnalyzer:
                 )
     
     def _analyze_nfs_metrics(self):
-        """Analyze NFS-specific metrics across all tests."""
+        """Analyze NFS-specific metrics across all tests with deep RPC and transport analysis."""
         # Collect all NFS metrics from tests
         all_nfs_metrics = []
         
@@ -341,7 +341,8 @@ class PerformanceAnalyzer:
                     all_nfs_metrics.append({
                         'test_type': test_type,
                         'test_name': test_name,
-                        'metrics': test_data['nfs_metrics']
+                        'metrics': test_data['nfs_metrics'],
+                        'throughput_mbps': test_data.get('throughput_mbps') or test_data.get('write_bandwidth_mbps', 0)
                     })
         
         if not all_nfs_metrics:
@@ -353,14 +354,373 @@ class PerformanceAnalyzer:
             )
             return
         
-        # Analyze xprt statistics
+        # Enhanced NFS metrics analysis
+        self._analyze_rpc_statistics(all_nfs_metrics)
+        self._analyze_transport_layer(all_nfs_metrics)
         self._analyze_xprt_stats(all_nfs_metrics)
-        
-        # Analyze per-operation performance
         self._analyze_operation_performance(all_nfs_metrics)
-        
-        # Check for NFS issues
         self._check_nfs_issues(all_nfs_metrics)
+        self._correlate_metrics_with_performance(all_nfs_metrics)
+    
+    def _analyze_rpc_statistics(self, all_nfs_metrics: List[Dict]):
+        """
+        Deep analysis of RPC statistics to identify protocol-level issues.
+        
+        Analyzes:
+        - Retransmission rates and patterns
+        - Timeout occurrences
+        - Invalid replies (protocol errors)
+        - RPC call efficiency
+        """
+        total_retrans = 0
+        total_calls = 0
+        total_timeouts = 0
+        total_invalid = 0
+        high_retrans_tests = []
+        timeout_tests = []
+        
+        for metric_data in all_nfs_metrics:
+            metrics = metric_data['metrics']
+            
+            # Get RPC statistics from rates or deltas
+            rpc_rates = metrics.get('rates', {}).get('rpc', {})
+            rpc_deltas = metrics.get('deltas', {}).get('rpc', {})
+            
+            # Extract RPC metrics
+            retrans = rpc_deltas.get('retransmissions', 0)
+            calls = rpc_deltas.get('calls', 0)
+            timeouts = rpc_deltas.get('timeouts', 0)
+            invalid = rpc_deltas.get('invalid_replies', 0)
+            
+            total_retrans += retrans
+            total_calls += calls
+            total_timeouts += timeouts
+            total_invalid += invalid
+            
+            # Calculate retransmission percentage for this test
+            if calls > 0:
+                retrans_pct = (retrans / calls) * 100
+                if retrans_pct > 1.0:  # More than 1% retransmissions
+                    high_retrans_tests.append({
+                        'test': metric_data['test_name'],
+                        'retrans_pct': retrans_pct,
+                        'retrans': retrans,
+                        'calls': calls
+                    })
+            
+            # Check for timeouts
+            if timeouts > 0:
+                timeout_rate = (timeouts / calls * 100) if calls > 0 else 0
+                timeout_tests.append({
+                    'test': metric_data['test_name'],
+                    'timeouts': timeouts,
+                    'timeout_rate': timeout_rate
+                })
+        
+        # Analyze overall RPC health
+        if total_calls > 0:
+            overall_retrans_pct = (total_retrans / total_calls) * 100
+            overall_timeout_pct = (total_timeouts / total_calls) * 100
+            
+            # Critical: High retransmission rate
+            if overall_retrans_pct > 5.0:
+                self._add_insight(
+                    'critical',
+                    'High RPC Retransmission Rate',
+                    f'RPC retransmission rate is {overall_retrans_pct:.2f}% ({total_retrans:,} retransmissions out of {total_calls:,} calls). '
+                    'This indicates severe network instability or packet loss.',
+                    'Immediate action: 1) Check network for packet loss (ping, mtr), '
+                    '2) Verify network equipment (switches, routers), '
+                    '3) Check for network congestion, '
+                    '4) Consider increasing timeo mount option, '
+                    '5) Verify MTU settings match across network path.'
+                )
+            elif overall_retrans_pct > 1.0:
+                self._add_insight(
+                    'warning',
+                    'Elevated RPC Retransmission Rate',
+                    f'RPC retransmission rate is {overall_retrans_pct:.2f}% ({total_retrans:,} retransmissions out of {total_calls:,} calls). '
+                    'This suggests network reliability issues.',
+                    'Recommended: 1) Monitor network quality, '
+                    '2) Check for intermittent connectivity issues, '
+                    '3) Review network path for bottlenecks, '
+                    '4) Consider tuning timeo/retrans mount options.'
+                )
+            elif overall_retrans_pct > 0.1:
+                self._add_insight(
+                    'info',
+                    'Low RPC Retransmission Rate',
+                    f'RPC retransmission rate is {overall_retrans_pct:.2f}% ({total_retrans:,} retransmissions out of {total_calls:,} calls). '
+                    'Network reliability is acceptable but could be improved.',
+                    'Monitor network quality and consider optimizations if performance is critical.'
+                )
+            
+            # Critical: Timeouts detected
+            if overall_timeout_pct > 1.0:
+                self._add_insight(
+                    'critical',
+                    'RPC Timeouts Detected',
+                    f'RPC timeout rate is {overall_timeout_pct:.2f}% ({total_timeouts:,} timeouts out of {total_calls:,} calls). '
+                    'This indicates NFS server unresponsiveness or extreme network latency.',
+                    'Immediate action: 1) Check NFS server load and responsiveness, '
+                    '2) Verify server is not overloaded (CPU, memory, I/O), '
+                    '3) Check network latency (ping times), '
+                    '4) Review NFS server logs for errors, '
+                    '5) Consider increasing nfsd thread count on server.'
+                )
+            elif overall_timeout_pct > 0.1:
+                self._add_insight(
+                    'warning',
+                    'Occasional RPC Timeouts',
+                    f'RPC timeout rate is {overall_timeout_pct:.2f}% ({total_timeouts:,} timeouts out of {total_calls:,} calls). '
+                    'Server occasionally fails to respond in time.',
+                    'Recommended: 1) Monitor NFS server performance, '
+                    '2) Check for load spikes, '
+                    '3) Review timeo mount option (current timeout threshold).'
+                )
+        
+        # Check for invalid replies (protocol errors)
+        if total_invalid > 0:
+            invalid_rate = (total_invalid / total_calls * 100) if total_calls > 0 else 0
+            self._add_insight(
+                'critical',
+                'Invalid RPC Replies Detected',
+                f'Detected {total_invalid:,} invalid RPC replies ({invalid_rate:.2f}% of calls). '
+                'This indicates protocol errors, corruption, or version mismatches.',
+                'Immediate action: 1) Verify NFS version compatibility between client and server, '
+                '2) Check for network corruption (bad cables, faulty NICs), '
+                '3) Review NFS server logs for protocol errors, '
+                '4) Ensure consistent NFS version across all mounts.'
+            )
+        
+        # Report per-test high retransmission rates
+        if high_retrans_tests:
+            worst_test = max(high_retrans_tests, key=lambda x: x['retrans_pct'])
+            self._add_insight(
+                'warning',
+                'Test-Specific Retransmission Issues',
+                f"Test '{worst_test['test']}' had highest retransmission rate: {worst_test['retrans_pct']:.2f}% "
+                f"({worst_test['retrans']:,} retransmissions). "
+                f"{len(high_retrans_tests)} test(s) exceeded 1% retransmission threshold.",
+                'Correlate high retransmission tests with workload patterns to identify triggers.'
+            )
+    
+    def _analyze_transport_layer(self, all_nfs_metrics: List[Dict]):
+        """
+        Analyze transport layer (xprt) statistics for connection and queue health.
+        
+        Analyzes:
+        - Send/Receive balance
+        - Queue depths and bottlenecks
+        - Connection stability
+        - Bad transaction IDs
+        """
+        connection_issues = []
+        queue_issues = []
+        bad_xid_tests = []
+        
+        for metric_data in all_nfs_metrics:
+            metrics = metric_data['metrics']
+            test_name = metric_data['test_name']
+            
+            # Get transport statistics
+            end_xprt = metrics.get('end_metrics', {}).get('mountstats', {}).get('xprt', {})
+            start_xprt = metrics.get('start_metrics', {}).get('mountstats', {}).get('xprt', {})
+            
+            # Calculate deltas
+            sends = end_xprt.get('sends', 0) - start_xprt.get('sends', 0)
+            recvs = end_xprt.get('recvs', 0) - start_xprt.get('recvs', 0)
+            bad_xids = end_xprt.get('bad_xids', 0) - start_xprt.get('bad_xids', 0)
+            connects = end_xprt.get('connect_count', 0) - start_xprt.get('connect_count', 0)
+            
+            # Queue depths
+            sending_queue = end_xprt.get('sending_queue', 0)
+            pending_queue = end_xprt.get('pending_queue', 0)
+            
+            # Analyze send/receive balance
+            if sends > 100 and recvs > 100:  # Only analyze if significant traffic
+                ratio = sends / recvs if recvs > 0 else 0
+                if ratio > 1.15 or ratio < 0.85:
+                    imbalance_pct = abs((ratio - 1.0) * 100)
+                    connection_issues.append({
+                        'test': test_name,
+                        'sends': sends,
+                        'recvs': recvs,
+                        'ratio': ratio,
+                        'imbalance_pct': imbalance_pct
+                    })
+            
+            # Check for bad XIDs
+            if bad_xids > 0:
+                bad_xid_tests.append({
+                    'test': test_name,
+                    'bad_xids': bad_xids
+                })
+            
+            # Analyze queue depths
+            if sending_queue > 0 or pending_queue > 0:
+                if sending_queue > pending_queue * 2:
+                    queue_issues.append({
+                        'test': test_name,
+                        'type': 'client_queuing',
+                        'sending': sending_queue,
+                        'pending': pending_queue
+                    })
+                elif pending_queue > sending_queue * 2:
+                    queue_issues.append({
+                        'test': test_name,
+                        'type': 'server_delay',
+                        'sending': sending_queue,
+                        'pending': pending_queue
+                    })
+            
+            # Check connection stability
+            if connects > 5:
+                connection_issues.append({
+                    'test': test_name,
+                    'reconnects': connects,
+                    'type': 'instability'
+                })
+        
+        # Report send/receive imbalance
+        if connection_issues:
+            imbalance_issues = [c for c in connection_issues if 'ratio' in c]
+            if imbalance_issues:
+                worst = max(imbalance_issues, key=lambda x: x['imbalance_pct'])
+                self._add_insight(
+                    'warning',
+                    'RPC Send/Receive Imbalance',
+                    f"Test '{worst['test']}' shows {worst['imbalance_pct']:.1f}% imbalance "
+                    f"(sends: {worst['sends']:,}, recvs: {worst['recvs']:,}, ratio: {worst['ratio']:.2f}). "
+                    'This may indicate packet loss or retransmissions.',
+                    'Check network for: 1) Packet loss, 2) Asymmetric routing, '
+                    '3) Firewall issues, 4) Network congestion.'
+                )
+            
+            # Report connection instability
+            reconnect_issues = [c for c in connection_issues if c.get('type') == 'instability']
+            if reconnect_issues:
+                worst = max(reconnect_issues, key=lambda x: x['reconnects'])
+                self._add_insight(
+                    'warning',
+                    'Frequent NFS Reconnections',
+                    f"Test '{worst['test']}' had {worst['reconnects']} reconnections. "
+                    'Frequent reconnections indicate network instability.',
+                    'Investigate: 1) Network connectivity issues, 2) Firewall timeouts, '
+                    '3) NFS server restarts, 4) Network equipment problems.'
+                )
+        
+        # Report bad XIDs
+        if bad_xid_tests:
+            total_bad_xids = sum(t['bad_xids'] for t in bad_xid_tests)
+            self._add_insight(
+                'critical',
+                'Bad Transaction IDs Detected',
+                f'Detected {total_bad_xids} bad transaction IDs across {len(bad_xid_tests)} test(s). '
+                'This indicates RPC transaction ID mismatches, possibly due to network issues or server problems.',
+                'Immediate action: 1) Check network stability and packet ordering, '
+                '2) Verify NFS server is not overloaded, '
+                '3) Check for duplicate IP addresses, '
+                '4) Review firewall/NAT configuration.'
+            )
+        
+        # Report queue issues
+        if queue_issues:
+            client_queue_issues = [q for q in queue_issues if q['type'] == 'client_queuing']
+            server_delay_issues = [q for q in queue_issues if q['type'] == 'server_delay']
+            
+            if client_queue_issues:
+                worst = max(client_queue_issues, key=lambda x: x['sending'])
+                self._add_insight(
+                    'warning',
+                    'Client-Side RPC Queuing',
+                    f"Test '{worst['test']}' shows high client-side queue depth "
+                    f"(sending: {worst['sending']:,}, pending: {worst['pending']:,}). "
+                    'Client is generating requests faster than they can be sent.',
+                    'Consider: 1) Reducing client-side parallelism, '
+                    '2) Checking network bandwidth, '
+                    '3) Tuning TCP send buffer sizes.'
+                )
+            
+            if server_delay_issues:
+                worst = max(server_delay_issues, key=lambda x: x['pending'])
+                self._add_insight(
+                    'warning',
+                    'Server Response Delays',
+                    f"Test '{worst['test']}' shows high pending queue depth "
+                    f"(sending: {worst['sending']:,}, pending: {worst['pending']:,}). "
+                    'Server is slow to respond to RPC requests.',
+                    'Check: 1) NFS server load (CPU, I/O), '
+                    '2) Server-side queue depths, '
+                    '3) Storage backend performance, '
+                    '4) Increase nfsd thread count if needed.'
+                )
+    
+    def _correlate_metrics_with_performance(self, all_nfs_metrics: List[Dict]):
+        """
+        Correlate NFS metrics with performance to identify root causes.
+        
+        Identifies patterns like:
+        - Low throughput + high retransmissions = network issue
+        - Low throughput + high latency = server issue
+        - Low throughput + normal metrics = client bottleneck
+        """
+        # Collect performance and metrics data
+        perf_data = []
+        for metric_data in all_nfs_metrics:
+            throughput = metric_data.get('throughput_mbps', 0)
+            if throughput == 0:
+                continue
+            
+            metrics = metric_data['metrics']
+            rpc_deltas = metrics.get('deltas', {}).get('rpc', {})
+            
+            retrans = rpc_deltas.get('retransmissions', 0)
+            calls = rpc_deltas.get('calls', 0)
+            retrans_pct = (retrans / calls * 100) if calls > 0 else 0
+            
+            # Get latency if available
+            rates = metrics.get('rates', {})
+            xprt_rates = rates.get('xprt', {})
+            
+            perf_data.append({
+                'test': metric_data['test_name'],
+                'throughput': throughput,
+                'retrans_pct': retrans_pct,
+                'retrans': retrans,
+                'calls': calls
+            })
+        
+        if not perf_data:
+            return
+        
+        # Calculate average throughput
+        avg_throughput = sum(p['throughput'] for p in perf_data) / len(perf_data)
+        
+        # Find low-performing tests
+        low_perf_tests = [p for p in perf_data if p['throughput'] < avg_throughput * 0.7]
+        
+        for test in low_perf_tests:
+            # Correlate with retransmissions
+            if test['retrans_pct'] > 2.0:
+                self._add_insight(
+                    'warning',
+                    f"Performance Issue Root Cause: {test['test']}",
+                    f"Low throughput ({test['throughput']:.1f} MB/s) correlates with high retransmissions ({test['retrans_pct']:.2f}%). "
+                    'Network reliability is likely the bottleneck.',
+                    'Priority: Fix network issues first. Check for packet loss, congestion, or faulty equipment.'
+                )
+            elif test['retrans_pct'] < 0.5:
+                self._add_insight(
+                    'info',
+                    f"Performance Analysis: {test['test']}",
+                    f"Low throughput ({test['throughput']:.1f} MB/s) with minimal retransmissions ({test['retrans_pct']:.2f}%). "
+                    'Network is healthy; bottleneck is likely server-side or client-side.',
+                    'Investigate: 1) NFS server performance (CPU, I/O), '
+                    '2) Client-side limitations, '
+                    '3) Storage backend performance, '
+                    '4) NFS mount options (rsize/wsize).'
+                )
     
     def _analyze_xprt_stats(self, all_nfs_metrics: List[Dict]):
         """Analyze transport layer statistics."""

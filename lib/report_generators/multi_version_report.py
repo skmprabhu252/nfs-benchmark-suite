@@ -422,6 +422,48 @@ class MultiVersionReportGenerator(BaseReportGenerator):
                 chart_html or ""
             )
         
+    
+    def _generate_analysis_section(self, data: Dict[str, Any]) -> str:
+        """
+        Override to provide aggregated analysis for multi-version reports.
+        Deduplicates insights and recommendations across versions.
+        """
+        if not self.enable_analysis:
+            return ""
+        
+        try:
+            from ..performance_analyzer import PerformanceAnalyzer
+            from .templates import get_analysis_section_html, get_analysis_error_html
+            
+            # Analyze each version separately
+            analyses = []
+            results_by_version = data.get('results_by_version', {})
+            
+            for version_key, version_results in results_by_version.items():
+                try:
+                    analyzer = PerformanceAnalyzer(version_results)
+                    analysis = analyzer.analyze()
+                    analyses.append(analysis)
+                except Exception as e:
+                    self.logger.warning(f"Failed to analyze {version_key}: {e}")
+            
+            if not analyses:
+                return ""
+            
+            # Aggregate analyses to avoid repetition
+            aggregated_analysis = self._aggregate_multi_analysis(analyses)
+            
+            # Filter by analysis level if needed
+            if self.analysis_level == 'basic':
+                aggregated_analysis = self._filter_basic_analysis(aggregated_analysis)
+            
+            # Render aggregated analysis HTML
+            return get_analysis_section_html(aggregated_analysis, self.report_style)
+            
+        except Exception as e:
+            self.logger.error(f"Multi-version analysis failed: {e}", exc_info=True)
+            from .templates import get_analysis_error_html
+            return get_analysis_error_html(str(e))
         return sections_html
 
 # Made with Bob

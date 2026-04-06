@@ -9,7 +9,7 @@ import json
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 
 
@@ -222,5 +222,122 @@ class BaseReportGenerator(ABC):
             'overall_health': analysis.get('overall_health', 0),
             'is_multi_version': analysis.get('is_multi_version', False)
         }
+    
+    def _aggregate_multi_analysis(self, analyses: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Aggregate multiple analysis results into a summary.
+        Deduplicates insights and recommendations to avoid repetition.
+        
+        Args:
+            analyses: List of analysis results from different versions
+            
+        Returns:
+            Aggregated analysis summary
+        """
+        if not analyses:
+            return {}
+        
+        # Aggregate severity counts
+        total_critical = sum(a.get('severity_counts', {}).get('critical', 0) for a in analyses)
+        total_warning = sum(a.get('severity_counts', {}).get('warning', 0) for a in analyses)
+        total_info = sum(a.get('severity_counts', {}).get('info', 0) for a in analyses)
+        
+        # Calculate average health score
+        health_scores = []
+        for a in analyses:
+            health = a.get('overall_health', 0)
+            if isinstance(health, dict):
+                health_scores.append(health.get('score', 0))
+            else:
+                health_scores.append(health)
+        avg_health = sum(health_scores) / len(health_scores) if health_scores else 0
+        
+        # Deduplicate insights by title
+        seen_insights = {}
+        for analysis in analyses:
+            for insight in analysis.get('insights', []):
+                title = insight.get('title', '')
+                severity = insight.get('severity', 'info')
+                # Keep the highest severity version of each insight
+                if title not in seen_insights or self._severity_rank(severity) > self._severity_rank(seen_insights[title].get('severity', 'info')):
+                    seen_insights[title] = insight
+        
+        # Sort by severity and limit
+        unique_insights = sorted(
+            seen_insights.values(),
+            key=lambda x: self._severity_rank(x.get('severity', 'info')),
+            reverse=True
+        )[:10]  # Top 10 unique insights
+        
+        # Deduplicate recommendations by title
+        seen_recommendations = {}
+        for analysis in analyses:
+            for rec in analysis.get('recommendations', []):
+                if isinstance(rec, dict):
+                    title = rec.get('title', '')
+                    priority = rec.get('priority', 'low')
+                    # Keep the highest priority version
+                    if title not in seen_recommendations or self._priority_rank(priority) > self._priority_rank(seen_recommendations[title].get('priority', 'low')):
+                        seen_recommendations[title] = rec
+        
+        # Sort by priority
+        unique_recommendations = sorted(
+            seen_recommendations.values(),
+            key=lambda x: self._priority_rank(x.get('priority', 'low')),
+            reverse=True
+        )[:5]  # Top 5 unique recommendations
+        
+        return {
+            'insights': unique_insights,
+            'recommendations': unique_recommendations,
+            'severity_counts': {
+                'critical': total_critical,
+                'warning': total_warning,
+                'info': total_info
+            },
+            'overall_health': {
+                'score': avg_health,
+                'status': self._get_health_status(avg_health),
+                'color': self._get_health_color(avg_health)
+            },
+            'is_aggregated': True,
+            'versions_analyzed': len(analyses)
+        }
+    
+    def _severity_rank(self, severity: str) -> int:
+        """Return numeric rank for severity (higher = more severe)."""
+        ranks = {'critical': 3, 'warning': 2, 'info': 1}
+        return ranks.get(severity, 0)
+    
+    def _priority_rank(self, priority: str) -> int:
+        """Return numeric rank for priority (higher = more important)."""
+        ranks = {'high': 3, 'medium': 2, 'low': 1}
+        return ranks.get(priority, 0)
+    
+    def _get_health_status(self, score: float) -> str:
+        """Get health status from score."""
+        if score >= 90:
+            return 'excellent'
+        elif score >= 75:
+            return 'good'
+        elif score >= 60:
+            return 'fair'
+        elif score >= 40:
+            return 'poor'
+        else:
+            return 'critical'
+    
+    def _get_health_color(self, score: float) -> str:
+        """Get health color from score."""
+        if score >= 90:
+            return 'green'
+        elif score >= 75:
+            return 'lightgreen'
+        elif score >= 60:
+            return 'yellow'
+        elif score >= 40:
+            return 'orange'
+        else:
+            return 'red'
 
 # Made with Bob

@@ -177,7 +177,12 @@ def create_nfs_metrics(test_type="write"):
     }
 
 def create_comprehensive_test_data(test_id, nfs_version, transport="tcp"):
-    """Create comprehensive test data matching actual benchmark suite format."""
+    """Create comprehensive test data matching actual benchmark suite format.
+    
+    Note: This generates data in the format expected by report generators,
+    which includes nfs_version, transport, and test_metadata at the top level.
+    The actual benchmark suite output has a different structure without these fields.
+    """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
     # Performance boost for NFSv4.x

@@ -1606,22 +1606,62 @@ def get_comparison_analysis_html(test_id_1: str, analysis_1: Dict[str, Any],
         </div>
         """
     
-    # Combine top insights from both analyses (limit to 3 each)
-    all_insights = comparison_insights + analysis_1.get('insights', [])[:3] + analysis_2.get('insights', [])[:3]
-    insights_html = ''
-    if all_insights:
-        insights_html = f"""
-        <div style="margin-bottom: 30px;">
-            <h3 style="color: #667eea; margin-bottom: 15px;">🔍 Key Insights</h3>
-            {get_insights_grid_html(all_insights, report_style)}
-        </div>
-        """
+    # Combine insights from both analyses - show all for detailed comparison
+    insights_1 = analysis_1.get('insights', [])
+    insights_2 = analysis_2.get('insights', [])
     
-    # Combine recommendations (limit to 5, can't use set() on dicts)
-    recs_1 = analysis_1.get('recommendations', [])[:3]
-    recs_2 = analysis_2.get('recommendations', [])[:3]
-    all_recommendations = (recs_1 + recs_2)[:5]
-    recommendations_html = get_recommendations_html(all_recommendations)
+    # Create separate sections for each test-id's insights
+    insights_html = ''
+    if insights_1 or insights_2 or comparison_insights:
+        insights_html = '<div style="margin-bottom: 30px;">'
+        
+        # Comparison insights first (if any)
+        if comparison_insights:
+            insights_html += f"""
+            <h3 style="color: #667eea; margin-bottom: 15px;">📊 Comparison Insights</h3>
+            {get_insights_grid_html(comparison_insights, report_style)}
+            """
+        
+        # Test 1 insights
+        if insights_1:
+            insights_html += f"""
+            <h3 style="color: #667eea; margin-bottom: 15px; margin-top: 20px;">🔍 {test_id_1} Insights</h3>
+            {get_insights_grid_html(insights_1, report_style)}
+            """
+        
+        # Test 2 insights
+        if insights_2:
+            insights_html += f"""
+            <h3 style="color: #667eea; margin-bottom: 15px; margin-top: 20px;">🔍 {test_id_2} Insights</h3>
+            {get_insights_grid_html(insights_2, report_style)}
+            """
+        
+        insights_html += '</div>'
+    
+    # Combine recommendations from both analyses - show all
+    recs_1 = analysis_1.get('recommendations', [])
+    recs_2 = analysis_2.get('recommendations', [])
+    
+    # Create separate sections for each test-id's recommendations
+    recommendations_html = ''
+    if recs_1 or recs_2:
+        recommendations_html = '<div style="margin-bottom: 30px;">'
+        
+        # Test 1 recommendations
+        if recs_1:
+            recommendations_html += f"""
+            <h3 style="color: #667eea; margin-bottom: 15px;">💡 {test_id_1} Recommendations</h3>
+            {get_recommendations_html(recs_1)}
+            """
+        
+        # Test 2 recommendations
+        if recs_2:
+            recommendations_html += f"""
+            <h3 style="color: #667eea; margin-bottom: 15px; margin-top: 20px;">💡 {test_id_2} Recommendations</h3>
+            {get_recommendations_html(recs_2)}
+            """
+        
+        recommendations_html += '</div>'
     
     return f"""
     <div class="analysis-section">

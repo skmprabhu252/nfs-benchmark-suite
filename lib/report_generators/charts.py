@@ -64,7 +64,12 @@ class ChartGenerator:
             go.Bar(x=names, y=throughputs, marker_color='#667eea')
         ])
         fig.update_layout(
-            title='DD Test Throughput',
+            title={
+                'text': 'DD Test Throughput',
+                'font': {'size': 20, 'color': '#1f2937', 'family': 'Arial, sans-serif'},
+                'x': 0.5,
+                'xanchor': 'center'
+            },
             xaxis_title='Test Name',
             yaxis_title='Throughput (MB/s)',
             height=400
@@ -103,7 +108,12 @@ class ChartGenerator:
             go.Bar(name='Write IOPS', x=names, y=write_iops, marker_color='#ef4444')
         ])
         fig.update_layout(
-            title='FIO Test IOPS',
+            title={
+                'text': 'FIO Test IOPS',
+                'font': {'size': 20, 'color': '#1f2937', 'family': 'Arial, sans-serif'},
+                'x': 0.5,
+                'xanchor': 'center'
+            },
             xaxis_title='Test Name',
             yaxis_title='IOPS',
             barmode='group',
@@ -1132,7 +1142,12 @@ class ChartGenerator:
                 ))
         
         fig.update_layout(
-            title='📊 Throughput Performance Across NFS Versions',
+            title={
+                'text': '📊 Throughput Performance Across NFS Versions',
+                'font': {'size': 22, 'color': '#1f2937', 'family': 'Arial, sans-serif', 'weight': 'bold'},
+                'x': 0.5,
+                'xanchor': 'center'
+            },
             xaxis_title='Test',
             yaxis_title='Throughput (MB/s)',
             barmode='group',
@@ -1200,7 +1215,12 @@ class ChartGenerator:
                 ))
         
         fig.update_layout(
-            title='⚡ IOPS Performance Across NFS Versions',
+            title={
+                'text': '⚡ IOPS Performance Across NFS Versions',
+                'font': {'size': 22, 'color': '#1f2937', 'family': 'Arial, sans-serif', 'weight': 'bold'},
+                'x': 0.5,
+                'xanchor': 'center'
+            },
             xaxis_title='Test',
             yaxis_title='IOPS',
             barmode='group',
@@ -1259,7 +1279,12 @@ class ChartGenerator:
                 ))
         
         fig.update_layout(
-            title='⏱️ Latency Performance Across NFS Versions (Lower is Better)',
+            title={
+                'text': '⏱️ Latency Performance Across NFS Versions (Lower is Better)',
+                'font': {'size': 22, 'color': '#1f2937', 'family': 'Arial, sans-serif', 'weight': 'bold'},
+                'x': 0.5,
+                'xanchor': 'center'
+            },
             xaxis_title='Test',
             yaxis_title='Latency (ms)',
             barmode='group',

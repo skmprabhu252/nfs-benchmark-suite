@@ -2242,6 +2242,10 @@ Note: This script must run as root for NFS mount operations.
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             saved_files = []
             
+            # Create logs directory if it doesn't exist
+            log_dir = Path("logs")
+            log_dir.mkdir(exist_ok=True)
+            
             # Generate test_id prefix
             test_id_prefix = f"{args.test_id}_" if args.test_id else ""
             
@@ -2261,7 +2265,8 @@ Note: This script must run as root for NFS mount operations.
                     
                     # Generate filename: nfs_performance_{test_id}_{version}_{transport}_{timestamp}.json
                     version_str = str(version).replace('.', '')
-                    result_file = f"nfs_performance_{test_id_prefix}nfsv{version_str}_{args.transport}_{timestamp}.json"
+                    result_filename = f"nfs_performance_{test_id_prefix}nfsv{version_str}_{args.transport}_{timestamp}.json"
+                    result_file = log_dir / result_filename
                     
                     with open(result_file, 'w') as f:
                         json.dump(individual_result, f, indent=2)

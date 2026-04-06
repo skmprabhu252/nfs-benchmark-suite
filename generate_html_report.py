@@ -9,29 +9,29 @@ Supports three scenarios:
 3. Test-ID comparison report
 
 Report Styles:
-- tool-based (default): Organizes results by benchmark tool (DD, FIO, IOzone, Bonnie++, DBench)
-- dimension-based: Organizes by performance dimension (Throughput, IOPS, Latency, Metadata, Cache, Concurrency)
+- dimension-based (default): Organizes by performance dimension (Throughput, IOPS, Latency, Metadata, Cache, Concurrency)
+- tool-based: Organizes results by benchmark tool (DD, FIO, IOzone, Bonnie++, DBench)
 
 Usage:
-    # Single file (tool-based report, default)
+    # Single file (dimension-based report, default)
     python3 generate_html_report.py <json_file>
     python3 generate_html_report.py nfs_performance_test_20240403_120000.json
     
-    # Single file with dimension-based report
-    python3 generate_html_report.py nfs_performance_test_20240403_120000.json --report-style dimension-based
+    # Single file with tool-based report
+    python3 generate_html_report.py nfs_performance_test_20240403_120000.json --report-style tool-based
     
-    # Multiple files by test-id (tool-based, default)
+    # Multiple files by test-id (dimension-based, default)
     python3 generate_html_report.py --test-id baseline_2026
     python3 generate_html_report.py --test-id prod_test
     
-    # Multiple files with dimension-based report
-    python3 generate_html_report.py --test-id baseline_2026 --report-style dimension-based
+    # Multiple files with tool-based report
+    python3 generate_html_report.py --test-id baseline_2026 --report-style tool-based
     
-    # Compare two test-ids
+    # Compare two test-ids (dimension-based, default)
     python3 generate_html_report.py --test-id baseline_2026 --compare-with prod_2026
     
-    # Compare with dimension-based report
-    python3 generate_html_report.py --test-id baseline_2026 --compare-with prod_2026 --report-style dimension-based
+    # Compare with tool-based report
+    python3 generate_html_report.py --test-id baseline_2026 --compare-with prod_2026 --report-style tool-based
 """
 
 import sys
@@ -64,11 +64,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 Examples:
-  # Generate report from single JSON file (tool-based, default)
+  # Generate report from single JSON file (dimension-based, default)
   python3 generate_html_report.py nfs_performance_nfsv3_tcp_20240403_120000.json
   
-  # Generate dimension-based report (organized by performance dimensions)
-  python3 generate_html_report.py --test-id baseline_2026 --report-style dimension-based
+  # Generate tool-based report (organized by benchmark tools)
+  python3 generate_html_report.py --test-id baseline_2026 --report-style tool-based
   
   # Generate report from all files with test-id
   python3 generate_html_report.py --test-id baseline_2026
@@ -114,8 +114,8 @@ Examples:
     parser.add_argument(
         '--report-style',
         choices=['tool-based', 'dimension-based'],
-        default='tool-based',
-        help='Report organization style: tool-based (default, by benchmark tool) or dimension-based (by performance dimension)'
+        default='dimension-based',
+        help='Report organization style: dimension-based (default, by performance dimension) or tool-based (by benchmark tool)'
     )
     
     args = parser.parse_args()

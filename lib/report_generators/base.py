@@ -24,13 +24,13 @@ class BaseReportGenerator(ABC):
     report generators must implement.
     """
     
-    def __init__(self, output_dir: Path = None, report_style: str = 'tool-based'):
+    def __init__(self, output_dir: Path = None, report_style: str = 'dimension-based'):
         """
         Initialize the report generator.
         
         Args:
             output_dir: Directory for output files (default: ./report)
-            report_style: Report organization style - 'tool-based' or 'dimension-based' (default: 'tool-based')
+            report_style: Report organization style - 'dimension-based' or 'tool-based' (default: 'dimension-based')
         """
         self.output_dir = output_dir or Path("report")
         self.output_dir.mkdir(exist_ok=True)

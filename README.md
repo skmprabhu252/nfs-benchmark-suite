@@ -451,23 +451,24 @@ python3 generate_html_report.py --test-id baseline
 
 **Report Layout Options:**
 ```bash
-# Tool-based view (default) - organized by benchmark tool
-python3 generate_html_report.py --test-id baseline --report-style tool-based
+# Dimension-based view (default) - organized by performance dimension
+python3 generate_html_report.py --test-id baseline
 
-# Dimension-based view - organized by performance dimension
-python3 generate_html_report.py --test-id baseline --report-style dimension-based
+# Tool-based view - organized by benchmark tool
+python3 generate_html_report.py --test-id baseline --report-style tool-based
 ```
 
 **Compare Two Test IDs (Compare Different Configurations):**
 ```bash
 # Compare two different test runs (e.g., different OS versions, before/after optimization)
+# Uses dimension-based view by default
 python3 generate_html_report.py --test-id baseline_rhel8 --compare-with baseline_rhel9
 
 # Compare different NFS server versions
 python3 generate_html_report.py --test-id nfs_v1.0 --compare-with nfs_v2.0
 
-# Use dimension-based view for comparison
-python3 generate_html_report.py --test-id baseline_rhel8 --compare-with baseline_rhel9 --report-style dimension-based
+# Use tool-based view for comparison
+python3 generate_html_report.py --test-id baseline_rhel8 --compare-with baseline_rhel9 --report-style tool-based
 
 # This creates a side-by-side comparison report showing performance differences
 ```
@@ -480,7 +481,7 @@ python3 generate_html_report.py nfs_performance_baseline_nfsv3_tcp_20260405_1200
 # Creates: nfs_performance_baseline_nfsv3_tcp_20260405_120000_report.html
 ```
 
-The generated HTML report includes interactive charts for all 6 performance dimensions, version comparison (when using --test-id with multiple versions), test-id comparison (when using --compare-with for different configurations), historical trend analysis, performance regression detection, executive summary with key findings, and detailed metrics tables. Use `--report-style dimension-based` to organize results by performance dimension instead of by tool.
+The generated HTML report includes interactive charts for all 6 performance dimensions, version comparison (when using --test-id with multiple versions), test-id comparison (when using --compare-with for different configurations), historical trend analysis, performance regression detection, executive summary with key findings, and detailed metrics tables. Reports are organized by performance dimension by default; use `--report-style tool-based` to organize by benchmark tool instead.
 
 ### Performance Baselines (10 GbE Network)
 

@@ -749,3 +749,166 @@ def get_dimension_overview_html(test_results: Dict[str, Any]) -> str:
     return get_section_html("📊 Performance Dimensions Overview", cards_html)
 
 # Made with Bob
+
+    # ========== Multi-Version Dimension-Based Template Functions ==========
+    
+    def get_multi_version_dimension_section_html(dimension_key: str, 
+                                                 results_by_version: Dict[str, Dict],
+                                                 chart_html: str = "") -> str:
+        """
+        Generate dimension section for multi-version report.
+        
+        Shows one dimension across all NFS versions with comparison.
+        
+        Args:
+            dimension_key: Dimension key (e.g., 'throughput')
+            results_by_version: Results organized by NFS version
+            chart_html: Optional chart HTML
+            
+        Returns:
+            Complete dimension section HTML
+        """
+        dim_info = dimension_mapper.get_dimension_info(dimension_key)
+        
+        content = f"""
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #667eea; font-size: 1.5em; margin-bottom: 10px;">
+                {dim_info['icon']} {dim_info['name']}
+            </h3>
+            <p style="color: #666; font-size: 1em; line-height: 1.6;">
+                {dim_info['description']}
+            </p>
+        </div>
+        """
+        
+        # Add chart if provided
+        if chart_html:
+            content += f'<div class="chart-container">{chart_html}</div>'
+        
+        # Add version comparison table
+        versions = sorted(results_by_version.keys())
+        
+        # Extract dimension data for each version
+        version_summaries = {}
+        for version_key in versions:
+            version_results = results_by_version[version_key]
+            dimension_data = dimension_mapper.extract_dimension_data(version_results, dimension_key)
+            
+            # Find best value for this version in this dimension
+            best_value = 0
+            best_test = "N/A"
+            
+            for tool_key, tool_data in dimension_data.items():
+                tool_name = tool_key.replace('_tests', '').upper()
+                for test_name, test_data in tool_data.items():
+                    if not isinstance(test_data, dict) or test_data.get('status') != 'passed':
+                        continue
+                    
+                    # Extract relevant metric
+                    value = 0
+                    if dimension_key == 'throughput':
+                        value = (test_data.get('throughput_mbps') or 
+                                test_data.get('write_bandwidth_mbps') or 
+                                test_data.get('sequential_output_block_mbps') or 0)
+                    elif dimension_key == 'iops':
+                        value = max(test_data.get('write_iops', 0), test_data.get('read_iops', 0))
+                    elif dimension_key == 'latency':
+                        value = test_data.get('avg_latency_ms') or test_data.get('write_latency_ms', 0)
+                    
+                    if value > best_value:
+                        best_value = value
+                        best_test = f"{tool_name}: {test_name.replace('_', ' ').title()}"
+            
+            version_summaries[version_key] = {
+                'best_value': best_value,
+                'best_test': best_test
+            }
+        
+        # Create comparison table
+        if version_summaries:
+            content += '<h4 style="color: #667eea; margin-top: 20px; margin-bottom: 10px;">Version Comparison</h4>'
+            content += '<table><thead><tr><th>NFS Version</th><th>Best Performance</th><th>Test</th></tr></thead><tbody>'
+            
+            for version_key in versions:
+                summary = version_summaries[version_key]
+                version_display = version_key.replace('_', ' ').upper()
+                
+                # Format value based on dimension
+                if dimension_key == 'throughput':
+                    value_str = f"{summary['best_value']:.2f} MB/s"
+                elif dimension_key == 'iops':
+                    value_str = f"{summary['best_value']:,.0f} IOPS"
+                elif dimension_key == 'latency':
+                    value_str = f"{summary['best_value']:.2f} ms"
+                else:
+                    value_str = f"{summary['best_value']:.2f}"
+                
+                content += f"<tr><td><strong>{version_display}</strong></td><td>{value_str}</td><td>{summary['best_test']}</td></tr>"
+            
+            content += '</tbody></table>'
+        
+        return get_section_html(f"{dim_info['icon']} {dim_info['name']}", content)
+    
+    def get_multi_version_dimension_overview_html(results_by_version: Dict[str, Dict]) -> str:
+        """
+        Generate dimension overview for multi-version report.
+        
+        Shows summary cards comparing best performance across versions for each dimension.
+        
+        Args:
+            results_by_version: Results organized by NFS version
+            
+        Returns:
+            Dimension overview HTML
+        """
+        versions = sorted(results_by_version.keys())
+        
+        # Calculate best performance per dimension per version
+        dimension_comparison = {}
+        
+        for dimension_key in dimension_mapper.get_all_dimensions():
+            dimension_comparison[dimension_key] = {}
+            
+            for version_key in versions:
+                version_results = results_by_version[version_key]
+                summary = dimension_mapper.get_dimension_summary(version_results)
+                
+                if dimension_key in summary:
+                    dimension_comparison[dimension_key][version_key] = summary[dimension_key]['value']
+        
+        # Generate overview cards
+        cards_html = '<div class="summary-grid">'
+        
+        units = {
+            'throughput': 'MB/s',
+            'iops': 'ops/sec',
+            'latency': 'ms',
+            'metadata': 'ops/sec',
+            'cache_effects': 'MB/s',
+            'concurrency': 'MB/s'
+        }
+        
+        for dimension_key in dimension_mapper.get_all_dimensions():
+            dim_info = dimension_mapper.get_dimension_info(dimension_key)
+            dim_data = dimension_comparison.get(dimension_key, {})
+            
+            if not dim_data:
+                continue
+            
+            # Find best version for this dimension
+            best_version = max(dim_data.items(), key=lambda x: x[1]) if dim_data else (None, 0)
+            
+            if best_version[0]:
+                cards_html += f"""
+                <div class="metric-card">
+                    <h3>{dim_info['icon']} {dim_info['name']}</h3>
+                    <div class="value">{best_version[1]:.2f}<span class="unit">{units.get(dimension_key, '')}</span></div>
+                    <p style="font-size: 0.85em; color: #666; margin-top: 10px;">
+                        <strong>Best:</strong> {best_version[0].replace('_', ' ').upper()}
+                    </p>
+                </div>
+                """
+        
+        cards_html += '</div>'
+        
+        return get_section_html("📊 Performance Dimensions Overview", cards_html)

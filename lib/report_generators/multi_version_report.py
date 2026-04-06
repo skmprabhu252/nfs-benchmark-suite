@@ -122,6 +122,9 @@ class MultiVersionReportGenerator(BaseReportGenerator):
             'results_by_version': {}
         }
         
+        # Track all versions found
+        all_versions = []
+        
         # Load all results
         for json_file in json_files:
             try:
@@ -134,6 +137,10 @@ class MultiVersionReportGenerator(BaseReportGenerator):
                 if nfs_version:
                     version_key = f"nfsv{nfs_version}_{transport}"
                     
+                    # Track this version
+                    if nfs_version not in all_versions:
+                        all_versions.append(nfs_version)
+                    
                     # Extract test results (handle both old and new formats)
                     if 'results' in result and isinstance(result['results'], dict):
                         aggregated['results_by_version'][version_key] = result['results']
@@ -143,7 +150,7 @@ class MultiVersionReportGenerator(BaseReportGenerator):
                     
                     self.logger.info(f"Loaded {version_key} from {Path(json_file).name}")
                 
-                # Use metadata from first file
+                # Use metadata from first file as base
                 if not aggregated['test_metadata'] and 'test_metadata' in result:
                     aggregated['test_metadata'] = result['test_metadata'].copy()
                     aggregated['test_metadata']['test_id'] = self.test_id
@@ -154,6 +161,10 @@ class MultiVersionReportGenerator(BaseReportGenerator):
         
         if not aggregated['results_by_version']:
             raise ValueError("No valid version results found in JSON files")
+        
+        # Update versions_tested with all versions found
+        if aggregated['test_metadata']:
+            aggregated['test_metadata']['versions_tested'] = sorted(all_versions, key=lambda x: float(x) if '.' in x else int(x))
         
         self.logger.info(f"Aggregated {len(aggregated['results_by_version'])} version results")
         return aggregated

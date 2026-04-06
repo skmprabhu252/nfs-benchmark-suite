@@ -1,19 +1,16 @@
 {
-  "test_id": "multi_version_test",
-  "nfs_version": "3",
-  "transport": "tcp",
-  "timestamp": "20260406_105541",
-  "server_ip": "192.168.1.100",
-  "mount_path": "/export/test",
   "test_metadata": {
-    "test_id": "multi_version_test",
-    "nfs_version": "3",
-    "transport": "tcp",
-    "timestamp": "20260406_105541",
     "server_ip": "192.168.1.100",
     "mount_path": "/export/test",
-    "test_mode": "stress_test"
+    "transport": "tcp",
+    "test_mode": "stress_test",
+    "versions_tested": [
+      "3"
+    ],
+    "timestamp": "2026-04-06T11:23:10.321850"
   },
+  "nfs_version": "3",
+  "transport": "tcp",
   "results": {
     "dd_tests": {
       "write": {

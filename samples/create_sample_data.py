@@ -11,21 +11,16 @@ def create_comprehensive_test_data(test_id, nfs_version, transport="tcp"):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
     return {
-        "test_id": test_id,
-        "nfs_version": nfs_version,
-        "transport": transport,
-        "timestamp": timestamp,
-        "server_ip": "192.168.1.100",
-        "mount_path": "/export/test",
         "test_metadata": {
-            "test_id": test_id,
-            "nfs_version": nfs_version,
-            "transport": transport,
-            "timestamp": timestamp,
             "server_ip": "192.168.1.100",
             "mount_path": "/export/test",
-            "test_mode": "stress_test"
+            "transport": transport,
+            "test_mode": "stress_test",
+            "versions_tested": [nfs_version],
+            "timestamp": datetime.now().isoformat()
         },
+        "nfs_version": nfs_version,
+        "transport": transport,
         "results": {
             "dd_tests": {
                 "write": {"throughput_mbps": 850.5 + (10 if "4" in nfs_version else 0), "time_seconds": 12.3},
@@ -98,13 +93,19 @@ def create_comprehensive_test_data(test_id, nfs_version, transport="tcp"):
     }
 
 def main():
+    import os
+    
+    # Ensure logs directory exists
+    logs_dir = "logs"
+    os.makedirs(logs_dir, exist_ok=True)
+    
     print("Creating sample JSON files for dimension-based reporting tests...\n")
     
     # Scenario 1: Two test-IDs with all NFS versions (for comparison)
     print("1. Creating Test-ID 'baseline_2026' with all NFS versions...")
     for version in ["3", "4.0", "4.1", "4.2"]:
         data = create_comprehensive_test_data("baseline_2026", version)
-        filename = f"nfs_performance_baseline_2026_nfsv{version}_tcp_20260406_100000.json"
+        filename = f"{logs_dir}/nfs_performance_baseline_2026_nfsv{version}_tcp_20260406_100000.json"
         with open(filename, 'w') as f:
             json.dump(data, f, indent=2)
         print(f"   Created: {filename}")
@@ -116,7 +117,7 @@ def main():
         data["results"]["dd_tests"]["write"]["throughput_mbps"] += 50
         data["results"]["fio_tests"]["sequential_read"]["bandwidth_mbps"] += 80
         data["results"]["fio_tests"]["random_read_4k"]["iops"] += 2000
-        filename = f"nfs_performance_optimized_2026_nfsv{version}_tcp_20260406_110000.json"
+        filename = f"{logs_dir}/nfs_performance_optimized_2026_nfsv{version}_tcp_20260406_110000.json"
         with open(filename, 'w') as f:
             json.dump(data, f, indent=2)
         print(f"   Created: {filename}")
@@ -124,7 +125,7 @@ def main():
     # Scenario 2: Single version report
     print("\n3. Creating single version report (NFSv4.2 only)...")
     data = create_comprehensive_test_data("single_test", "4.2")
-    filename = "nfs_performance_single_test_nfsv4.2_tcp_20260406_120000.json"
+    filename = f"{logs_dir}/nfs_performance_single_test_nfsv4.2_tcp_20260406_120000.json"
     with open(filename, 'w') as f:
         json.dump(data, f, indent=2)
     print(f"   Created: {filename}")
@@ -133,7 +134,7 @@ def main():
     print("\n4. Creating multi-version report (Test-ID 'multi_version_test')...")
     for version in ["3", "4.1", "4.2"]:
         data = create_comprehensive_test_data("multi_version_test", version)
-        filename = f"nfs_performance_multi_version_test_nfsv{version}_tcp_20260406_130000.json"
+        filename = f"{logs_dir}/nfs_performance_multi_version_test_nfsv{version}_tcp_20260406_130000.json"
         with open(filename, 'w') as f:
             json.dump(data, f, indent=2)
         print(f"   Created: {filename}")

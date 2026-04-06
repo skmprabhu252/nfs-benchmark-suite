@@ -160,8 +160,8 @@ class ComparisonReportGenerator(BaseReportGenerator):
             )
             overview_html = comparison_grid_html
         
-        # Generate comparison analysis
-        analysis_html = self._generate_comparison_analysis(
+        # Generate comparison analysis (comparison-only, no individual test-id analysis)
+        analysis_html = self._generate_comparison_only_analysis(
             test_id_1, results_1, test_id_2, results_2
         )
         
@@ -430,6 +430,12 @@ class ComparisonReportGenerator(BaseReportGenerator):
                 test_id_1, analysis_1, test_id_2, analysis_2
             )
             
+            # Add enhanced comparison insights from ComparisonAnalyzer
+            enhanced_insights = self._generate_enhanced_comparison_insights(
+                test_id_1, results_1, test_id_2, results_2
+            )
+            comparison_insights.extend(enhanced_insights)
+            
             # Render comparison analysis HTML
             return get_comparison_analysis_html(
                 test_id_1, analysis_1,
@@ -442,6 +448,219 @@ class ComparisonReportGenerator(BaseReportGenerator):
             self.logger.error(f"Comparison analysis failed: {e}", exc_info=True)
             from .templates import get_analysis_error_html
             return get_analysis_error_html(str(e))
+    
+    def _generate_enhanced_comparison_insights(self, test_id_1: str, results_1: Dict[str, Any],
+                                               test_id_2: str, results_2: Dict[str, Any]) -> list:
+        """
+        Generate enhanced comparison insights using ComparisonAnalyzer.
+        
+        This is a new function that doesn't modify existing behavior.
+        
+        Args:
+            test_id_1: First test ID
+            results_1: Results for first test
+            test_id_2: Second test ID
+            results_2: Results for second test
+            
+        Returns:
+            List of enhanced comparison insights
+        """
+        try:
+            from ..performance_analyzer import ComparisonAnalyzer
+            
+            # Extract version data for ComparisonAnalyzer
+            testid1_versions = self._extract_version_metrics(results_1)
+            testid2_versions = self._extract_version_metrics(results_2)
+            
+            # Use ComparisonAnalyzer for cross-testid and within-testid comparisons
+            comparison_analyzer = ComparisonAnalyzer(
+                test_id_1, testid1_versions,
+                test_id_2, testid2_versions
+            )
+            comparison_analysis = comparison_analyzer.analyze()
+            
+            # Combine all insights
+            all_insights = []
+            
+            # Add cross-testid same-version insights (1a)
+            cross_testid_insights = comparison_analysis.get('cross_testid_insights', [])
+            # Filter out "No Common NFS Versions" warning if it's the only insight
+            if len(cross_testid_insights) == 1 and cross_testid_insights[0].get('title') == 'No Common NFS Versions':
+                # Don't add this warning - it's expected when comparing different transports
+                pass
+            else:
+                all_insights.extend(cross_testid_insights)
+            
+            # Add within-testid cross-version insights (1b)
+            testid1_version_insights = comparison_analysis.get('testid1_version_insights', [])
+            testid2_version_insights = comparison_analysis.get('testid2_version_insights', [])
+            
+            # Filter out "Single Version Only" info messages
+            testid1_version_insights = [i for i in testid1_version_insights if 'Single Version Only' not in i.get('title', '')]
+            testid2_version_insights = [i for i in testid2_version_insights if 'Single Version Only' not in i.get('title', '')]
+            
+            all_insights.extend(testid1_version_insights)
+            all_insights.extend(testid2_version_insights)
+            
+            return all_insights
+            
+        except Exception as e:
+            self.logger.warning(f"Enhanced comparison analysis failed: {e}")
+            return []
+    
+    def _generate_comparison_only_analysis(self, test_id_1: str, results_1: Dict[str, Any],
+                                          test_id_2: str, results_2: Dict[str, Any]) -> str:
+        """
+        Generate comparison analysis using ONLY ComparisonAnalyzer (no individual PerformanceAnalyzer).
+        
+        This method provides clean comparison insights without the critical/warning counts
+        or health scores from individual test-id analysis.
+        
+        Args:
+            test_id_1: First test ID
+            results_1: Results for first test
+            test_id_2: Second test ID
+            results_2: Results for second test
+            
+        Returns:
+            Comparison analysis HTML with only ComparisonAnalyzer insights (no health scores)
+        """
+        if not self.enable_analysis:
+            return ""
+        
+        try:
+            from ..performance_analyzer import ComparisonAnalyzer
+            from .templates import get_analysis_error_html, get_comparison_only_analysis_html
+            
+            # Extract version data for ComparisonAnalyzer
+            testid1_versions = self._extract_version_metrics(results_1)
+            testid2_versions = self._extract_version_metrics(results_2)
+            
+            # Use ComparisonAnalyzer for cross-testid and within-testid comparisons
+            comparison_analyzer = ComparisonAnalyzer(
+                test_id_1, testid1_versions,
+                test_id_2, testid2_versions
+            )
+            comparison_analysis = comparison_analyzer.analyze()
+            
+            # Get only comparison insights (no individual test-id analysis)
+            comparison_insights = []
+            
+            # Add cross-testid same-version insights (1a)
+            cross_testid_insights = comparison_analysis.get('cross_testid_insights', [])
+            # Filter out "No Common NFS Versions" warning if it's expected
+            for insight in cross_testid_insights:
+                if insight.get('title') != 'No Common NFS Versions':
+                    comparison_insights.append(insight)
+            
+            # Add within-testid cross-version insights (1b)
+            testid1_version_insights = comparison_analysis.get('testid1_version_insights', [])
+            testid2_version_insights = comparison_analysis.get('testid2_version_insights', [])
+            
+            # Filter out "Single Version Only" info messages
+            for insight in testid1_version_insights:
+                if 'Single Version Only' not in insight.get('title', ''):
+                    comparison_insights.append(insight)
+            
+            for insight in testid2_version_insights:
+                if 'Single Version Only' not in insight.get('title', ''):
+                    comparison_insights.append(insight)
+            
+            # Render using comparison-only template (no health scores)
+            return get_comparison_only_analysis_html(
+                comparison_insights,
+                self.report_style
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Comparison-only analysis failed: {e}", exc_info=True)
+            from .templates import get_analysis_error_html
+            return get_analysis_error_html(str(e))
+
+    
+    def _extract_version_metrics(self, results: Dict[str, Any]) -> Dict[str, Dict]:
+        """
+        Extract version-specific metrics for ComparisonAnalyzer.
+        
+        Args:
+            results: Multi-version test results
+            
+        Returns:
+            Dict of version data with extracted metrics
+        """
+        versions = {}
+        
+        # Get versions from results - use results_by_version key
+        versions_data = results.get('results_by_version', {})
+        
+        for version_key, version_data in versions_data.items():
+            # Parse nfs_version and transport from version_key (e.g., "nfsv3_tcp")
+            parts = version_key.rsplit('_', 1)
+            if len(parts) == 2:
+                nfs_version, transport = parts
+            else:
+                nfs_version = version_key
+                transport = 'tcp'
+            
+            # Extract metrics from this version
+            metrics = {}
+            
+            # Extract FIO metrics
+            fio_tests = version_data.get('fio_tests', {})
+            for test_name, test_data in fio_tests.items():
+                if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                    if 'read_bandwidth_mbps' in test_data:
+                        metrics[f'fio_{test_name}_read_mbps'] = test_data['read_bandwidth_mbps']
+                    if 'write_bandwidth_mbps' in test_data:
+                        metrics[f'fio_{test_name}_write_mbps'] = test_data['write_bandwidth_mbps']
+                    if 'read_iops' in test_data:
+                        metrics[f'fio_{test_name}_read_iops'] = test_data['read_iops']
+                    if 'write_iops' in test_data:
+                        metrics[f'fio_{test_name}_write_iops'] = test_data['write_iops']
+                    if 'avg_latency_ms' in test_data:
+                        metrics[f'fio_{test_name}_latency_ms'] = test_data['avg_latency_ms']
+            
+            # Extract IOzone metrics
+            iozone_tests = version_data.get('iozone_tests', {})
+            for test_name, test_data in iozone_tests.items():
+                if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                    if 'read_throughput_mbps' in test_data:
+                        metrics[f'iozone_{test_name}_read_mbps'] = test_data['read_throughput_mbps']
+                    if 'write_throughput_mbps' in test_data:
+                        metrics[f'iozone_{test_name}_write_mbps'] = test_data['write_throughput_mbps']
+            
+            # Extract DBench metrics
+            dbench_tests = version_data.get('dbench_tests', {})
+            for test_name, test_data in dbench_tests.items():
+                if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                    if 'throughput_mbps' in test_data:
+                        metrics[f'dbench_{test_name}_mbps'] = test_data['throughput_mbps']
+                    if 'operations_per_sec' in test_data:
+                        metrics[f'dbench_{test_name}_ops'] = test_data['operations_per_sec']
+            
+            # Extract Bonnie++ metrics
+            bonnie_tests = version_data.get('bonnie_tests', {})
+            for test_name, test_data in bonnie_tests.items():
+                if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                    if 'sequential_output_block_mbps' in test_data:
+                        metrics[f'bonnie_{test_name}_seq_out'] = test_data['sequential_output_block_mbps']
+                    if 'sequential_input_block_mbps' in test_data:
+                        metrics[f'bonnie_{test_name}_seq_in'] = test_data['sequential_input_block_mbps']
+            
+            # Extract DD metrics
+            dd_tests = version_data.get('dd_tests', {})
+            for test_name, test_data in dd_tests.items():
+                if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                    if 'throughput_mbps' in test_data:
+                        metrics[f'dd_{test_name}_mbps'] = test_data['throughput_mbps']
+            
+            versions[version_key] = {
+                'nfs_version': nfs_version,
+                'transport': transport,
+                'metrics': metrics
+            }
+        
+        return versions
     
     def _generate_comparison_insights(self, test_id_1: str, analysis_1: Dict[str, Any],
                                       test_id_2: str, analysis_2: Dict[str, Any]) -> list:

@@ -763,13 +763,13 @@ def main():
     print("python3 generate_html_report.py samples/logs/nfs_performance_single_test_nfsv4.2_tcp_20260406_120000.json")
     
     print("\n# Test 2: Multi-version report (dimension-based, default)")
-    print("python3 generate_html_report.py --test-id multi_version_test --log-dir samples/logs")
+    print("python3 generate_html_report.py --test-id multi_version_test --directory samples/logs")
     
     print("\n# Test 3: Comparison report (dimension-based, default)")
-    print("python3 generate_html_report.py --test-id baseline_2026 --compare-with optimized_2026 --log-dir samples/logs")
+    print("python3 generate_html_report.py --test-id baseline_2026 --compare-with optimized_2026 --directory samples/logs")
     
     print("\n# Test 4: Tool-based report (old style)")
-    print("python3 generate_html_report.py --test-id baseline_2026 --report-style tool-based --log-dir samples/logs")
+    print("python3 generate_html_report.py --test-id baseline_2026 --report-style tool-based --directory samples/logs")
     
     print("\n" + "="*80)
 

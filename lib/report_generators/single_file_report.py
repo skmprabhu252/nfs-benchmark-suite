@@ -45,15 +45,16 @@ class SingleFileReportGenerator(BaseReportGenerator):
     from a single test run with one NFS version.
     """
     
-    def __init__(self, json_file: Path, output_dir: Path = None):
+    def __init__(self, json_file: Path, output_dir: Path = None, report_style: str = 'tool-based'):
         """
         Initialize single file report generator.
         
         Args:
             json_file: Path to JSON results file
             output_dir: Optional output directory (default: ./report)
+            report_style: Report organization style - 'tool-based' or 'dimension-based' (default: 'tool-based')
         """
-        super().__init__(output_dir)
+        super().__init__(output_dir, report_style)
         self.json_file = Path(json_file)
         self.chart_generator = ChartGenerator()
     

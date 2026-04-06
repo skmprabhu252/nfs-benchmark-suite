@@ -34,8 +34,8 @@ class ComparisonReportGenerator(BaseReportGenerator):
     configurations, OS versions, or software versions.
     """
     
-    def __init__(self, test_id_1: str, test_id_2: str, 
-                 directory: Path = None, output_dir: Path = None):
+    def __init__(self, test_id_1: str, test_id_2: str,
+                 directory: Path = None, output_dir: Path = None, report_style: str = 'tool-based'):
         """
         Initialize comparison report generator.
         
@@ -44,8 +44,9 @@ class ComparisonReportGenerator(BaseReportGenerator):
             test_id_2: Second test identifier
             directory: Directory to search for JSON files (default: current directory)
             output_dir: Optional output directory (default: ./report)
+            report_style: Report organization style - 'tool-based' or 'dimension-based' (default: 'tool-based')
         """
-        super().__init__(output_dir)
+        super().__init__(output_dir, report_style)
         self.test_id_1 = test_id_1
         self.test_id_2 = test_id_2
         self.directory = Path(directory) if directory else Path(".")

@@ -8,17 +8,30 @@ Supports three scenarios:
 2. Multi-version aggregated report (by test-id)
 3. Test-ID comparison report
 
+Report Styles:
+- tool-based (default): Organizes results by benchmark tool (DD, FIO, IOzone, Bonnie++, DBench)
+- dimension-based: Organizes by performance dimension (Throughput, IOPS, Latency, Metadata, Cache, Concurrency)
+
 Usage:
-    # Single file
+    # Single file (tool-based report, default)
     python3 generate_html_report.py <json_file>
     python3 generate_html_report.py nfs_performance_test_20240403_120000.json
     
-    # Multiple files by test-id
+    # Single file with dimension-based report
+    python3 generate_html_report.py nfs_performance_test_20240403_120000.json --report-style dimension-based
+    
+    # Multiple files by test-id (tool-based, default)
     python3 generate_html_report.py --test-id baseline_2026
     python3 generate_html_report.py --test-id prod_test
     
+    # Multiple files with dimension-based report
+    python3 generate_html_report.py --test-id baseline_2026 --report-style dimension-based
+    
     # Compare two test-ids
     python3 generate_html_report.py --test-id baseline_2026 --compare-with prod_2026
+    
+    # Compare with dimension-based report
+    python3 generate_html_report.py --test-id baseline_2026 --compare-with prod_2026 --report-style dimension-based
 """
 
 import sys
@@ -51,8 +64,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 Examples:
-  # Generate report from single JSON file
+  # Generate report from single JSON file (tool-based, default)
   python3 generate_html_report.py nfs_performance_nfsv3_tcp_20240403_120000.json
+  
+  # Generate dimension-based report (organized by performance dimensions)
+  python3 generate_html_report.py --test-id baseline_2026 --report-style dimension-based
   
   # Generate report from all files with test-id
   python3 generate_html_report.py --test-id baseline_2026
@@ -95,6 +111,13 @@ Examples:
         help='Output directory for HTML reports (default: ./report)'
     )
     
+    parser.add_argument(
+        '--report-style',
+        choices=['tool-based', 'dimension-based'],
+        default='tool-based',
+        help='Report organization style: tool-based (default, by benchmark tool) or dimension-based (by performance dimension)'
+    )
+    
     args = parser.parse_args()
     
     # Determine which scenario and create appropriate generator
@@ -106,7 +129,8 @@ Examples:
             
             generator = SingleFileReportGenerator(
                 json_file=Path(args.json_file),
-                output_dir=Path(args.output_dir)
+                output_dir=Path(args.output_dir),
+                report_style=args.report_style
             )
         
         # Scenario 2: Test-ID comparison
@@ -118,7 +142,8 @@ Examples:
                 test_id_1=args.test_id,
                 test_id_2=args.compare_test_id,
                 directory=Path(args.directory),
-                output_dir=Path(args.output_dir)
+                output_dir=Path(args.output_dir),
+                report_style=args.report_style
             )
         
         # Scenario 3: Multi-version aggregation
@@ -129,7 +154,8 @@ Examples:
             generator = MultiVersionReportGenerator(
                 test_id=args.test_id,
                 directory=Path(args.directory),
-                output_dir=Path(args.output_dir)
+                output_dir=Path(args.output_dir),
+                report_style=args.report_style
             )
         
         else:

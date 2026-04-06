@@ -35,7 +35,7 @@ class MultiVersionReportGenerator(BaseReportGenerator):
     creates a unified report comparing performance across NFS versions.
     """
     
-    def __init__(self, test_id: str, directory: Path = None, output_dir: Path = None):
+    def __init__(self, test_id: str, directory: Path = None, output_dir: Path = None, report_style: str = 'tool-based'):
         """
         Initialize multi-version report generator.
         
@@ -43,8 +43,9 @@ class MultiVersionReportGenerator(BaseReportGenerator):
             test_id: Test identifier to search for
             directory: Directory to search for JSON files (default: current directory)
             output_dir: Optional output directory (default: ./report)
+            report_style: Report organization style - 'tool-based' or 'dimension-based' (default: 'tool-based')
         """
-        super().__init__(output_dir)
+        super().__init__(output_dir, report_style)
         self.test_id = test_id
         self.directory = Path(directory) if directory else Path(".")
         self.chart_generator = ChartGenerator()

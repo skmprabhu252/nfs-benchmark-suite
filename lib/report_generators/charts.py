@@ -478,6 +478,118 @@ class ChartGenerator:
         
         return fig.to_html(include_plotlyjs="cdn", full_html=False)
     
+    def create_multi_version_iozone_chart(self, results_by_version: Dict[str, Dict]) -> Optional[str]:
+        """
+        Create multi-version IOzone comparison chart.
+        
+        Args:
+            results_by_version: Results organized by NFS version
+            
+        Returns:
+            HTML string for chart or None if no data
+        """
+        if not self.plotly_available:
+            return None
+        
+        versions = sorted(results_by_version.keys())
+        iozone_data = {}
+        
+        for version_key, version_results in results_by_version.items():
+            iozone_tests = version_results.get('iozone_tests', {})
+            for test_name, test_data in iozone_tests.items():
+                if test_data.get('status') == 'passed':
+                    if test_name not in iozone_data:
+                        iozone_data[test_name] = {}
+                    # Use write throughput as primary metric
+                    tp = test_data.get('write_throughput_mbps', 0)
+                    if tp > 0:
+                        iozone_data[test_name][version_key] = tp
+        
+        if not iozone_data:
+            return None
+        
+        fig = go.Figure()
+        for version_key in versions:
+            test_names = []
+            throughputs = []
+            for test_name in iozone_data.keys():
+                if version_key in iozone_data[test_name]:
+                    test_names.append(test_name.replace('_', ' ').title())
+                    throughputs.append(iozone_data[test_name][version_key])
+            
+            if test_names:
+                fig.add_trace(go.Bar(
+                    name=version_key.replace('_', ' ').upper(),
+                    x=test_names,
+                    y=throughputs
+                ))
+        
+        fig.update_layout(
+            title='IOzone Test Throughput Comparison',
+            xaxis_title='Test Name',
+            yaxis_title='Write Throughput (MB/s)',
+            barmode='group',
+            height=400
+        )
+        
+        return fig.to_html(include_plotlyjs="cdn", full_html=False)
+    
+    def create_multi_version_bonnie_chart(self, results_by_version: Dict[str, Dict]) -> Optional[str]:
+        """
+        Create multi-version Bonnie++ comparison chart.
+        
+        Args:
+            results_by_version: Results organized by NFS version
+            
+        Returns:
+            HTML string for chart or None if no data
+        """
+        if not self.plotly_available:
+            return None
+        
+        versions = sorted(results_by_version.keys())
+        bonnie_data = {}
+        
+        for version_key, version_results in results_by_version.items():
+            bonnie_tests = version_results.get('bonnie_tests', {})
+            for test_name, test_data in bonnie_tests.items():
+                if test_data.get('status') == 'passed':
+                    if test_name not in bonnie_data:
+                        bonnie_data[test_name] = {}
+                    # Use sequential output block as primary metric
+                    tp = test_data.get('sequential_output_block_mbps', 0)
+                    if tp > 0:
+                        bonnie_data[test_name][version_key] = tp
+        
+        if not bonnie_data:
+            return None
+        
+        fig = go.Figure()
+        for version_key in versions:
+            test_names = []
+            throughputs = []
+            for test_name in bonnie_data.keys():
+                if version_key in bonnie_data[test_name]:
+                    test_names.append(test_name.replace('_', ' ').title())
+                    throughputs.append(bonnie_data[test_name][version_key])
+            
+            if test_names:
+                fig.add_trace(go.Bar(
+                    name=version_key.replace('_', ' ').upper(),
+                    x=test_names,
+                    y=throughputs
+                ))
+        
+        fig.update_layout(
+            title='Bonnie++ Test Throughput Comparison',
+            xaxis_title='Test Name',
+            yaxis_title='Sequential Output Block (MB/s)',
+            barmode='group',
+            height=400
+        )
+        
+        return fig.to_html(include_plotlyjs="cdn", full_html=False)
+    
     def generate_all_single_version_charts(self, test_results: Dict[str, Dict]) -> str:
         """
         Generate all charts for single-version report.
@@ -549,6 +661,16 @@ class ChartGenerator:
         fio_chart = self.create_multi_version_fio_chart(results_by_version)
         if fio_chart:
             charts_html += f'<div class="chart-container">{fio_chart}</div>'
+        
+        # IOzone comparison
+        iozone_chart = self.create_multi_version_iozone_chart(results_by_version)
+        if iozone_chart:
+            charts_html += f'<div class="chart-container">{iozone_chart}</div>'
+        
+        # Bonnie++ comparison
+        bonnie_chart = self.create_multi_version_bonnie_chart(results_by_version)
+        if bonnie_chart:
+            charts_html += f'<div class="chart-container">{bonnie_chart}</div>'
         
         # DBench comparison (NFSv3 only)
         dbench_chart = self.create_multi_version_dbench_chart(results_by_version)

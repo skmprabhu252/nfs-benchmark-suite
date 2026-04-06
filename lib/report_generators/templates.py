@@ -432,20 +432,69 @@ def get_base_styles() -> str:
             gap: 10px;
         }
         
-        .recommendations-list {
-            list-style: none;
-            padding: 0;
+        .recommendations-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
         
-        .recommendations-list li {
-            padding: 12px;
-            margin-bottom: 10px;
+        .recommendation-card {
             background: white;
-            border-radius: 6px;
-            border-left: 3px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .recommendation-header {
             display: flex;
-            align-items: start;
-            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .recommendation-header h4 {
+            margin: 0;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        
+        .priority-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .recommendation-card p {
+            color: #6b7280;
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        
+        .recommendation-actions {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0 0 0;
+        }
+        
+        .recommendation-actions li {
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            background: #f3f4f6;
+            border-radius: 4px;
+            border-left: 3px solid #667eea;
+            font-size: 14px;
+            color: #374151;
+        }
+        
+        .recommendation-actions li:before {
+            content: "✓ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 8px;
         }
         
         .recommendations-list li::before {
@@ -1419,12 +1468,12 @@ def get_insights_grid_html(insights: List[Dict[str, Any]], report_style: str) ->
     return f'<div class="insights-grid">{"".join(cards_html)}</div>'
 
 
-def get_recommendations_html(recommendations: List[str]) -> str:
+def get_recommendations_html(recommendations: List[Any]) -> str:
     """
     Generate recommendations section.
     
     Args:
-        recommendations: List of recommendation strings
+        recommendations: List of recommendation dictionaries or strings
         
     Returns:
         Recommendations section HTML
@@ -1432,14 +1481,49 @@ def get_recommendations_html(recommendations: List[str]) -> str:
     if not recommendations:
         return ''
     
-    recommendations_items = ''.join([f'<li>{rec}</li>' for rec in recommendations])
+    recommendations_html = []
+    for rec in recommendations:
+        if isinstance(rec, dict):
+            # Handle dict format from PerformanceAnalyzer
+            priority = rec.get('priority', 'low')
+            title = rec.get('title', 'Recommendation')
+            description = rec.get('description', '')
+            actions = rec.get('actions', [])
+            
+            # Priority badge
+            priority_colors = {
+                'high': '#ef4444',
+                'medium': '#f59e0b',
+                'low': '#3b82f6'
+            }
+            priority_color = priority_colors.get(priority, '#6b7280')
+            
+            actions_html = ''
+            if actions:
+                actions_items = ''.join([f'<li>{action}</li>' for action in actions])
+                actions_html = f'<ul class="recommendation-actions">{actions_items}</ul>'
+            
+            rec_html = f"""
+            <div class="recommendation-card">
+                <div class="recommendation-header">
+                    <h4>{title}</h4>
+                    <span class="priority-badge" style="background-color: {priority_color};">{priority.upper()}</span>
+                </div>
+                <p>{description}</p>
+                {actions_html}
+            </div>
+            """
+            recommendations_html.append(rec_html)
+        else:
+            # Handle string format (backward compatibility)
+            recommendations_html.append(f'<li>{rec}</li>')
     
     return f"""
     <div class="recommendations-section">
         <h3>🎯 Key Recommendations</h3>
-        <ul class="recommendations-list">
-            {recommendations_items}
-        </ul>
+        <div class="recommendations-container">
+            {"".join(recommendations_html)}
+        </div>
     </div>
     """
 

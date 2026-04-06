@@ -156,7 +156,10 @@ Examples:
         elif args.test_id and args.compare_test_id:
             logger.info(f"Scenario: Test-ID comparison")
             logger.info(f"Comparing: {args.test_id} vs {args.compare_test_id}")
-            logger.info(f"Analysis enabled: {analysis_level} level")
+            if enable_analysis:
+                logger.info(f"Analysis enabled: {analysis_level} level")
+            else:
+                logger.info("Analysis disabled")
             
             generator = ComparisonReportGenerator(
                 test_id_1=args.test_id,
@@ -172,7 +175,10 @@ Examples:
         elif args.test_id:
             logger.info(f"Scenario: Multi-version aggregation")
             logger.info(f"Test ID: {args.test_id}")
-            logger.info(f"Analysis enabled: {analysis_level} level")
+            if enable_analysis:
+                logger.info(f"Analysis enabled: {analysis_level} level")
+            else:
+                logger.info("Analysis disabled")
             
             generator = MultiVersionReportGenerator(
                 test_id=args.test_id,

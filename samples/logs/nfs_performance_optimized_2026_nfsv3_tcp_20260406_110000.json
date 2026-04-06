@@ -1,0 +1,98 @@
+{
+  "test_id": "optimized_2026",
+  "nfs_version": "3",
+  "transport": "tcp",
+  "timestamp": "20260406_105541",
+  "server_ip": "192.168.1.100",
+  "mount_path": "/export/test",
+  "test_metadata": {
+    "test_id": "optimized_2026",
+    "nfs_version": "3",
+    "transport": "tcp",
+    "timestamp": "20260406_105541",
+    "server_ip": "192.168.1.100",
+    "mount_path": "/export/test",
+    "test_mode": "stress_test"
+  },
+  "results": {
+    "dd_tests": {
+      "write": {
+        "throughput_mbps": 900.5,
+        "time_seconds": 12.3
+      },
+      "read": {
+        "throughput_mbps": 920.2,
+        "time_seconds": 11.1
+      },
+      "write_direct": {
+        "throughput_mbps": 780.3,
+        "time_seconds": 13.5
+      },
+      "read_direct": {
+        "throughput_mbps": 810.7,
+        "time_seconds": 12.8
+      }
+    },
+    "fio_tests": {
+      "sequential_read": {
+        "bandwidth_mbps": 980.5,
+        "iops": 230000,
+        "latency_ms": 0.45
+      },
+      "sequential_write": {
+        "bandwidth_mbps": 820.3,
+        "iops": 210000,
+        "latency_ms": 0.52
+      },
+      "random_read_4k": {
+        "bandwidth_mbps": 85.2,
+        "iops": 23800,
+        "latency_ms": 2.3
+      },
+      "random_write_4k": {
+        "bandwidth_mbps": 72.5,
+        "iops": 18560,
+        "latency_ms": 2.8
+      },
+      "latency_test": {
+        "avg_latency_ms": 1.5,
+        "p95_latency_ms": 3.2,
+        "p99_latency_ms": 5.8
+      }
+    },
+    "iozone_tests": {
+      "write": 850.2,
+      "rewrite": 880.5,
+      "read": 920.8,
+      "reread": 950.3,
+      "random_read": 780.5,
+      "random_write": 720.3,
+      "scaling_results": {
+        "2_threads": 1200.5,
+        "4_threads": 2100.3,
+        "8_threads": 3500.7,
+        "16_threads": 5200.2
+      }
+    },
+    "bonnie_tests": {
+      "sequential_output_char": 890.5,
+      "sequential_output_block": 920.3,
+      "sequential_input_char": 950.2,
+      "sequential_input_block": 980.7,
+      "random_seeks": 450.5,
+      "sequential_create": 8500,
+      "sequential_delete": 7200
+    },
+    "dbench_tests": {
+      "throughput_mbps": 520.3,
+      "operations_per_sec": 1250.5,
+      "latency_ms": 3.2,
+      "scalability_results": {
+        "1_client": 520.3,
+        "2_clients": 980.5,
+        "4_clients": 1750.2,
+        "8_clients": 2900.8
+      }
+    }
+  }
+}

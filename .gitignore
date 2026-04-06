@@ -30,6 +30,12 @@ test_results/
 logs/
 report/
 
+# Allow sample data
+!samples/logs/
+!samples/logs/*.json
+!samples/reports/
+!samples/reports/*.html
+
 # Backup files
 *.backup
 

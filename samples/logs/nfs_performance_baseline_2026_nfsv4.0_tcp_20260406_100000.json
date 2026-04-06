@@ -1,0 +1,98 @@
+{
+  "test_id": "baseline_2026",
+  "nfs_version": "4.0",
+  "transport": "tcp",
+  "timestamp": "20260406_105541",
+  "server_ip": "192.168.1.100",
+  "mount_path": "/export/test",
+  "test_metadata": {
+    "test_id": "baseline_2026",
+    "nfs_version": "4.0",
+    "transport": "tcp",
+    "timestamp": "20260406_105541",
+    "server_ip": "192.168.1.100",
+    "mount_path": "/export/test",
+    "test_mode": "stress_test"
+  },
+  "results": {
+    "dd_tests": {
+      "write": {
+        "throughput_mbps": 860.5,
+        "time_seconds": 12.3
+      },
+      "read": {
+        "throughput_mbps": 935.2,
+        "time_seconds": 11.1
+      },
+      "write_direct": {
+        "throughput_mbps": 788.3,
+        "time_seconds": 13.5
+      },
+      "read_direct": {
+        "throughput_mbps": 822.7,
+        "time_seconds": 12.8
+      }
+    },
+    "fio_tests": {
+      "sequential_read": {
+        "bandwidth_mbps": 920.5,
+        "iops": 235000,
+        "latency_ms": 0.4
+      },
+      "sequential_write": {
+        "bandwidth_mbps": 838.3,
+        "iops": 214000,
+        "latency_ms": 0.48000000000000004
+      },
+      "random_read_4k": {
+        "bandwidth_mbps": 90.2,
+        "iops": 22300,
+        "latency_ms": 2.0999999999999996
+      },
+      "random_write_4k": {
+        "bandwidth_mbps": 76.5,
+        "iops": 18960,
+        "latency_ms": 2.65
+      },
+      "latency_test": {
+        "avg_latency_ms": 1.4,
+        "p95_latency_ms": 3.0,
+        "p99_latency_ms": 5.5
+      }
+    },
+    "iozone_tests": {
+      "write": 862.2,
+      "rewrite": 895.5,
+      "read": 938.8,
+      "reread": 970.3,
+      "random_read": 790.5,
+      "random_write": 728.3,
+      "scaling_results": {
+        "2_threads": 1200.5,
+        "4_threads": 2100.3,
+        "8_threads": 3500.7,
+        "16_threads": 5200.2
+      }
+    },
+    "bonnie_tests": {
+      "sequential_output_char": 905.5,
+      "sequential_output_block": 938.3,
+      "sequential_input_char": 970.2,
+      "sequential_input_block": 1002.7,
+      "random_seeks": 475.5,
+      "sequential_create": 9000,
+      "sequential_delete": 7600
+    },
+    "dbench_tests": {
+      "throughput_mbps": 550.3,
+      "operations_per_sec": 1350.5,
+      "latency_ms": 2.9000000000000004,
+      "scalability_results": {
+        "1_client": 520.3,
+        "2_clients": 980.5,
+        "4_clients": 1750.2,
+        "8_clients": 2900.8
+      }
+    }
+  }
+}

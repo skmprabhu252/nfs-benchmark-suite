@@ -707,10 +707,15 @@ def create_comprehensive_test_data(test_id, nfs_version, transport="tcp"):
 
 def main():
     import os
+    from pathlib import Path
     
-    # Ensure logs directory exists
-    logs_dir = "samples/logs"
-    os.makedirs(logs_dir, exist_ok=True)
+    # Determine the correct logs directory based on current location
+    script_dir = Path(__file__).parent
+    logs_dir = script_dir / "logs"
+    logs_dir.mkdir(exist_ok=True)
+    
+    # Convert to string for compatibility
+    logs_dir = str(logs_dir)
     
     print("Creating sample JSON files matching actual benchmark suite format...\n")
     

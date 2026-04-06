@@ -497,62 +497,85 @@ class IOzoneTestTool(BaseTestTool):
         """
         metrics = {}
         
-        # IOzone output patterns
+        # IOzone tabular output pattern
         # Looking for lines like:
+        # "           10240    1024   1180396    941696   2600361   1945289"
+        # Format: kB  reclen  write  rewrite  read  reread  [random_read  random_write  bkwd_read  record_rewrite  stride_read  fwrite  frewrite  fread  freread]
+        
+        # Pattern for tabular data line (starts with whitespace, then numbers)
+        table_pattern = r'^\s+(\d+)\s+(\d+)\s+([\d.]+)(?:\s+([\d.]+))?(?:\s+([\d.]+))?(?:\s+([\d.]+))?(?:\s+([\d.]+))?(?:\s+([\d.]+))?(?:\s+([\d.]+))?(?:\s+([\d.]+))?(?:\s+([\d.]+))?(?:\s+([\d.]+))?(?:\s+([\d.]+))?(?:\s+([\d.]+))?(?:\s+([\d.]+))?'
+        
+        for match in re.finditer(table_pattern, output, re.MULTILINE):
+            # Extract values (all in KB/s according to IOzone output header)
+            file_size_kb = int(match.group(1))
+            record_size_kb = int(match.group(2))
+            
+            # Column 3: write throughput
+            if match.group(3):
+                write_kbps = float(match.group(3))
+                metrics['write_throughput_mbps'] = round(write_kbps / 1024, 2)
+            
+            # Column 4: rewrite throughput
+            if match.group(4):
+                rewrite_kbps = float(match.group(4))
+                metrics['rewrite_throughput_mbps'] = round(rewrite_kbps / 1024, 2)
+            
+            # Column 5: read throughput
+            if match.group(5):
+                read_kbps = float(match.group(5))
+                metrics['read_throughput_mbps'] = round(read_kbps / 1024, 2)
+            
+            # Column 6: reread throughput
+            if match.group(6):
+                reread_kbps = float(match.group(6))
+                metrics['reread_throughput_mbps'] = round(reread_kbps / 1024, 2)
+            
+            # Column 7: random read throughput
+            if match.group(7):
+                random_read_kbps = float(match.group(7))
+                metrics['random_read_throughput_mbps'] = round(random_read_kbps / 1024, 2)
+            
+            # Column 8: random write throughput
+            if match.group(8):
+                random_write_kbps = float(match.group(8))
+                metrics['random_write_throughput_mbps'] = round(random_write_kbps / 1024, 2)
+            
+            # Store file and record size for reference
+            metrics['file_size_kb'] = file_size_kb
+            metrics['record_size_kb'] = record_size_kb
+            
+            # Break after first data line (we only need one result row)
+            break
+        
+        # Fallback: Pattern for multi-threaded output
         # "Children see throughput for  8 initial writers  =  1234.56 KB/sec"
-        # "Children see throughput for  8 readers           =  5678.90 KB/sec"
-        
-        # Pattern for throughput lines
-        throughput_pattern = r'Children see throughput for\s+\d+\s+(?:initial\s+)?(\w+)\s+=\s+([\d.]+)\s+(\w+)/sec'
-        
-        for match in re.finditer(throughput_pattern, output):
-            operation = match.group(1).lower()
-            value = float(match.group(2))
-            unit = match.group(3).upper()
+        if not metrics:
+            throughput_pattern = r'Children see throughput for\s+\d+\s+(?:initial\s+)?(\w+)\s+=\s+([\d.]+)\s+(\w+)/sec'
             
-            # Convert to MB/s
-            if unit == 'KB':
-                value_mbps = value / 1024
-            elif unit == 'MB':
-                value_mbps = value
-            elif unit == 'GB':
-                value_mbps = value * 1024
-            else:
-                value_mbps = value
-            
-            # Map operation names to metric keys
-            if 'writer' in operation:
-                metrics['write_throughput_mbps'] = round(value_mbps, 2)
-            elif 'reader' in operation or 'read' in operation:
-                metrics['read_throughput_mbps'] = round(value_mbps, 2)
-            elif 'rewriter' in operation:
-                metrics['rewrite_throughput_mbps'] = round(value_mbps, 2)
-            elif 'rereader' in operation:
-                metrics['reread_throughput_mbps'] = round(value_mbps, 2)
-        
-        # Alternative pattern for single-threaded results
-        # "  Initial write  1234.56"
-        single_pattern = r'^\s+(Initial write|Read|Random read|Random write|Backward read|Record rewrite|Stride read|Fwrite|Frewrite|Fread|Freread)\s+([\d.]+)'
-        
-        for match in re.finditer(single_pattern, output, re.MULTILINE):
-            operation = match.group(1).lower()
-            value = float(match.group(2))
-            
-            # IOzone single-threaded output is in KB/s
-            value_mbps = value / 1024
-            
-            if 'initial write' in operation or operation == 'fwrite':
-                metrics['write_throughput_mbps'] = round(value_mbps, 2)
-            elif operation == 'read' or operation == 'fread':
-                metrics['read_throughput_mbps'] = round(value_mbps, 2)
-            elif 'random read' in operation:
-                metrics['random_read_throughput_mbps'] = round(value_mbps, 2)
-            elif 'random write' in operation:
-                metrics['random_write_throughput_mbps'] = round(value_mbps, 2)
-            elif 'rewrite' in operation or operation == 'frewrite':
-                metrics['rewrite_throughput_mbps'] = round(value_mbps, 2)
-            elif 'reread' in operation or operation == 'freread':
-                metrics['reread_throughput_mbps'] = round(value_mbps, 2)
+            for match in re.finditer(throughput_pattern, output):
+                operation = match.group(1).lower()
+                value = float(match.group(2))
+                unit = match.group(3).upper()
+                
+                # Convert to MB/s
+                if unit == 'KB':
+                    value_mbps = value / 1024
+                elif unit == 'MB':
+                    value_mbps = value
+                elif unit == 'GB':
+                    value_mbps = value * 1024
+                else:
+                    value_mbps = value
+                
+                # Map operation names to metric keys
+                if 'writer' in operation:
+                    metrics['write_throughput_mbps'] = round(value_mbps, 2)
+                elif 'reader' in operation or 'read' in operation:
+                    metrics['read_throughput_mbps'] = round(value_mbps, 2)
+                elif 'rewriter' in operation:
+                    metrics['rewrite_throughput_mbps'] = round(value_mbps, 2)
+                elif 'rereader' in operation:
+                    metrics['reread_throughput_mbps'] = round(value_mbps, 2)
         
         # If no metrics were parsed, add a note
         if not metrics:

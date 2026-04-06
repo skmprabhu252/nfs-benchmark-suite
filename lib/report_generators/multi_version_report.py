@@ -38,7 +38,9 @@ class MultiVersionReportGenerator(BaseReportGenerator):
     creates a unified report comparing performance across NFS versions.
     """
     
-    def __init__(self, test_id: str, directory: Path = None, output_dir: Path = None, report_style: str = 'tool-based'):
+    def __init__(self, test_id: str, directory: Path = None, output_dir: Path = None,
+                 report_style: str = 'tool-based', enable_analysis: bool = True,
+                 analysis_level: str = 'detailed'):
         """
         Initialize multi-version report generator.
         
@@ -47,8 +49,10 @@ class MultiVersionReportGenerator(BaseReportGenerator):
             directory: Directory to search for JSON files (default: current directory)
             output_dir: Optional output directory (default: ./report)
             report_style: Report organization style - 'tool-based' or 'dimension-based' (default: 'tool-based')
+            enable_analysis: Whether to include performance analysis (default: True)
+            analysis_level: Analysis detail level - 'basic', 'detailed', or 'comprehensive' (default: 'detailed')
         """
-        super().__init__(output_dir, report_style)
+        super().__init__(output_dir, report_style, enable_analysis, analysis_level)
         self.test_id = test_id
         self.directory = Path(directory) if directory else Path(".")
         self.chart_generator = ChartGenerator()
@@ -196,12 +200,16 @@ class MultiVersionReportGenerator(BaseReportGenerator):
             charts_html = self._generate_charts(results_by_version)
             details_html = self._generate_version_details(results_by_version)
         
+        # Generate analysis section (includes version comparisons)
+        analysis_html = self._generate_analysis_section(data)
+        
         # Combine all sections
         content = f"""
         <div class="container">
             {header_html}
             {overview_html}
             {charts_html}
+            {analysis_html}
             {details_html}
         </div>
         """

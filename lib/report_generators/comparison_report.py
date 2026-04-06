@@ -18,8 +18,11 @@ from .templates import (
     get_header_html,
     get_section_html,
     get_comparison_grid_html,
+    get_multi_version_dimension_overview_html,
+    get_multi_version_dimension_section_html,
 )
 from .charts import ChartGenerator
+from .dimension_mapper import DIMENSIONS
 
 
 logger = logging.getLogger(__name__)
@@ -45,24 +48,12 @@ class ComparisonReportGenerator(BaseReportGenerator):
             directory: Directory to search for JSON files (default: current directory)
             output_dir: Optional output directory (default: ./report)
             report_style: Report organization style - 'tool-based' or 'dimension-based' (default: 'tool-based')
-        
-        Note:
-            Dimension-based reporting is currently only supported for single-file reports.
-            Comparison reports will use tool-based style regardless of this parameter.
         """
         super().__init__(output_dir, report_style)
         self.test_id_1 = test_id_1
         self.test_id_2 = test_id_2
         self.directory = Path(directory) if directory else Path(".")
         self.chart_generator = ChartGenerator()
-        
-        # Log warning if dimension-based style requested
-        if report_style == 'dimension-based':
-            self.logger.warning(
-                "Dimension-based reporting is not yet implemented for comparison reports. "
-                "Using tool-based style instead."
-            )
-            self.report_style = 'tool-based'
     
     def generate(self) -> Path:
         """
@@ -135,28 +126,91 @@ class ComparisonReportGenerator(BaseReportGenerator):
         results_1 = data['results_1']
         results_2 = data['results_2']
         
-        # Generate sections
+        # Generate sections based on report style
         header_html = self._generate_header(test_id_1, test_id_2)
-        comparison_grid_html = self._generate_comparison_grid(
-            test_id_1, test_id_2, results_1, results_2
-        )
-        charts_html = self._generate_comparison_charts(results_1, results_2)
-        details_html = self._generate_comparison_details(
-            test_id_1, test_id_2, results_1, results_2
-        )
+        
+        if self.report_style == 'dimension-based':
+            # Dimension-based report
+            # Combine results for dimension-based view
+            combined_results = {}
+            for version_key, version_data in results_1.get('results_by_version', {}).items():
+                combined_results[f"{test_id_1}_{version_key}"] = version_data
+            for version_key, version_data in results_2.get('results_by_version', {}).items():
+                combined_results[f"{test_id_2}_{version_key}"] = version_data
+            
+            overview_html = get_multi_version_dimension_overview_html(combined_results)
+            charts_html = self._generate_dimension_charts(combined_results)
+            details_html = self._generate_dimension_sections(combined_results)
+        else:
+            # Tool-based report (default)
+            comparison_grid_html = self._generate_comparison_grid(
+                test_id_1, test_id_2, results_1, results_2
+            )
+            charts_html = self._generate_comparison_charts(results_1, results_2)
+            details_html = self._generate_comparison_details(
+                test_id_1, test_id_2, results_1, results_2
+            )
+            overview_html = comparison_grid_html
         
         # Combine all sections
         content = f"""
         <div class="container">
             {header_html}
-            {comparison_grid_html}
+            {overview_html}
             {charts_html}
             {details_html}
         </div>
         """
         
         # Wrap in base template
-        return get_base_template("NFS Benchmark Suite - Test-ID Comparison", content)
+        title = "NFS Benchmark Suite - Test-ID Comparison"
+        if self.report_style == 'dimension-based':
+            title += " - Dimension View"
+        return get_base_template(title, content)
+    
+    def _generate_dimension_charts(self, combined_results: Dict[str, Any]) -> str:
+        """
+        Generate dimension-based charts for comparison.
+        
+        Args:
+            combined_results: Combined results from both test-IDs
+            
+        Returns:
+            HTML string with dimension charts
+        """
+        charts_html = '<div class="section">\n'
+        charts_html += '<h2>Performance Dimension Charts</h2>\n'
+        
+        # Generate all multi-version dimension charts using chart generator
+        dimension_charts = self.chart_generator.generate_all_multi_version_dimension_charts(combined_results)
+        
+        for chart_html in dimension_charts:
+            charts_html += chart_html + '\n'
+        
+        charts_html += '</div>\n'
+        return charts_html
+    
+    def _generate_dimension_sections(self, combined_results: Dict[str, Any]) -> str:
+        """
+        Generate dimension-based detail sections for comparison.
+        
+        Args:
+            combined_results: Combined results from both test-IDs
+            
+        Returns:
+            HTML string with dimension sections
+        """
+        sections_html = ''
+        
+        # Iterate through all dimensions
+        for dimension_key, dimension_info in DIMENSIONS.items():
+            section_html = get_multi_version_dimension_section_html(
+                dimension_key, combined_results
+            )
+            if section_html:
+                sections_html += section_html + '\n'
+        
+        return sections_html
     
     def _generate_header(self, test_id_1: str, test_id_2: str) -> str:
         """

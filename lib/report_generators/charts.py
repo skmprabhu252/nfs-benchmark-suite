@@ -263,9 +263,10 @@ class ChartGenerator:
         
         for test_name, test_data in dbench_tests.items():
             if test_data.get('status') == 'passed':
-                if test_name == 'scalability_test' and 'client_results' in test_data:
-                    for client_data in test_data['client_results']:
-                        num_clients = client_data.get('num_clients', 0)
+                if test_name == 'scalability_test' and 'results' in test_data:
+                    # Scalability test has nested results by client count
+                    for client_count, client_data in test_data['results'].items():
+                        num_clients = client_data.get('num_clients', client_count)
                         names.append(f"{num_clients} clients")
                         throughputs.append(client_data.get('throughput_mbps', 0))
                 else:

@@ -225,7 +225,11 @@ def extract_dimension_data(results: Dict[str, Any], dimension: str) -> Dict[str,
                                 dimension_data[tool_key] = {}
                             if bonnie_test_name not in dimension_data[tool_key]:
                                 dimension_data[tool_key][bonnie_test_name] = {}
-                            dimension_data[tool_key][bonnie_test_name][test_name] = bonnie_test_data[test_name]
+                            # Create a dict with the metric value and inherit status from parent test
+                            dimension_data[tool_key][bonnie_test_name][test_name] = {
+                                'value': bonnie_test_data[test_name],
+                                'status': bonnie_test_data.get('status', 'unknown')
+                            }
         
         if tool_dimension_data:
             dimension_data[tool_key] = tool_dimension_data
@@ -278,10 +282,15 @@ def get_dimension_summary(results: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
                     # Look for any ops/sec metric
                     for key in test_data:
                         if 'per_sec' in key or 'ops' in key:
-                            value = test_data[key]
+                            metric_data = test_data[key]
+                            # Handle Bonnie++ metrics with 'value' structure
+                            if isinstance(metric_data, dict) and 'value' in metric_data:
+                                value = metric_data['value']
+                            else:
+                                value = metric_data
                             break
                 
-                if value and (best_value is None or value > best_value):
+                if value and isinstance(value, (int, float)) and (best_value is None or value > best_value):
                     best_value = value
                     best_source = f"{tool_key.replace('_tests', '').upper()}: {test_name.replace('_', ' ').title()}"
         

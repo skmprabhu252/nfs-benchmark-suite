@@ -1003,7 +1003,13 @@ def get_dimension_section_html(dimension_key: str, dimension_data: Dict[str, Any
     Returns:
         Complete dimension section HTML
     """
-    content = get_dimension_header_html(dimension_key)
+    # Add dimension description
+    dim_info = dimension_mapper.get_dimension_info(dimension_key)
+    content = f"""
+    <p style="color: #666; font-size: 1em; line-height: 1.6; margin-bottom: 20px;">
+        {dim_info['description']}
+    </p>
+    """
     
     # Add chart if provided
     if chart_html:
@@ -1031,7 +1037,27 @@ def get_dimension_section_html(dimension_key: str, dimension_data: Dict[str, Any
             if not isinstance(test_data, dict):
                 continue
             
-            status = test_data.get('status', 'unknown')
+            # Determine status - for cache comparison tests, derive from sub-tests
+            if 'cached' in test_data and 'direct' in test_data:
+                # Cache comparison test - check if both sub-tests passed
+                cached_status = test_data['cached'].get('status', 'unknown') if isinstance(test_data.get('cached'), dict) else 'unknown'
+                direct_status = test_data['direct'].get('status', 'unknown') if isinstance(test_data.get('direct'), dict) else 'unknown'
+                status = 'passed' if cached_status == 'passed' and direct_status == 'passed' else 'failed'
+            else:
+                # Check if this is a Bonnie++ metadata test (metrics have 'value' and 'status')
+                is_bonnie_metadata = False
+                bonnie_status = 'passed'
+                for key, value in test_data.items():
+                    if isinstance(value, dict) and 'value' in value and 'status' in value:
+                        is_bonnie_metadata = True
+                        if value['status'] != 'passed':
+                            bonnie_status = value['status']
+                            break
+                
+                if is_bonnie_metadata:
+                    status = bonnie_status
+                else:
+                    status = test_data.get('status', 'unknown')
             
             # Extract relevant metrics based on dimension
             metrics = {}
@@ -1060,7 +1086,13 @@ def get_dimension_section_html(dimension_key: str, dimension_data: Dict[str, Any
             elif dimension_key == 'metadata':
                 # Look for any ops/sec metrics
                 for key, value in test_data.items():
-                    if ('per_sec' in key or 'ops' in key) and isinstance(value, (int, float)):
+                    # Handle Bonnie++ metrics that have 'value' and 'status' structure
+                    if isinstance(value, dict) and 'value' in value:
+                        actual_value = value['value']
+                        if isinstance(actual_value, (int, float)):
+                            label = key.replace('_', ' ').replace('per sec', '/sec').title()
+                            metrics[label] = f"{actual_value:,.0f}"
+                    elif ('per_sec' in key or 'ops' in key) and isinstance(value, (int, float)):
                         label = key.replace('_', ' ').replace('per sec', '/sec').title()
                         metrics[label] = f"{value:,.0f}"
             
@@ -1157,15 +1189,11 @@ def get_multi_version_dimension_section_html(dimension_key: str,
         """
         dim_info = dimension_mapper.get_dimension_info(dimension_key)
         
+        # Add dimension description
         content = f"""
-        <div style="margin-bottom: 20px;">
-            <h3 style="color: #667eea; font-size: 1.5em; margin-bottom: 10px;">
-                {dim_info['icon']} {dim_info['name']}
-            </h3>
-            <p style="color: #666; font-size: 1em; line-height: 1.6;">
-                {dim_info['description']}
-            </p>
-        </div>
+        <p style="color: #666; font-size: 1em; line-height: 1.6; margin-bottom: 20px;">
+            {dim_info['description']}
+        </p>
         """
         
         # Add chart if provided

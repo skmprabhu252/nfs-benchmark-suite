@@ -1062,5 +1062,247 @@ class ChartGenerator:
         
         charts_html += '</div>'
         return charts_html
+    # ========== Multi-Version Dimension-Based Chart Methods ==========
+    
+    def create_multi_version_dimension_throughput_chart(self, results_by_version: Dict[str, Dict]) -> Optional[str]:
+        """
+        Create multi-version throughput comparison chart organized by dimension.
+        
+        Shows throughput tests from all tools, grouped by NFS version.
+        
+        Args:
+            results_by_version: Results organized by NFS version
+            
+        Returns:
+            HTML string for chart or None if no data
+        """
+        if not self.plotly_available:
+            return None
+        
+        versions = sorted(results_by_version.keys())
+        
+        # Extract throughput data for each version
+        version_data = {}
+        for version_key in versions:
+            version_results = results_by_version[version_key]
+            dimension_data = dimension_mapper.extract_dimension_data(version_results, 'throughput')
+            version_data[version_key] = dimension_data
+        
+        if not version_data:
+            return None
+        
+        # Collect all unique test names across all versions
+        all_tests = set()
+        for dim_data in version_data.values():
+            for tool_key, tool_data in dim_data.items():
+                for test_name in tool_data.keys():
+                    all_tests.add(f"{tool_key}:{test_name}")
+        
+        if not all_tests:
+            return None
+        
+        # Create traces for each version
+        fig = go.Figure()
+        for version_key in versions:
+            test_names = []
+            throughputs = []
+            
+            for test_key in sorted(all_tests):
+                tool_key, test_name = test_key.split(':', 1)
+                dim_data = version_data[version_key]
+                
+                if tool_key in dim_data and test_name in dim_data[tool_key]:
+                    test_data = dim_data[tool_key][test_name]
+                    if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                        # Extract throughput value
+                        tp = (test_data.get('throughput_mbps') or 
+                             test_data.get('write_bandwidth_mbps') or 
+                             test_data.get('sequential_output_block_mbps') or 0)
+                        
+                        if tp > 0:
+                            tool_name = tool_key.replace('_tests', '').upper()
+                            test_names.append(f"{tool_name}: {test_name.replace('_', ' ').title()}")
+                            throughputs.append(tp)
+            
+            if test_names:
+                fig.add_trace(go.Bar(
+                    name=version_key.replace('_', ' ').upper(),
+                    x=test_names,
+                    y=throughputs
+                ))
+        
+        fig.update_layout(
+            title='📊 Throughput Performance Across NFS Versions',
+            xaxis_title='Test',
+            yaxis_title='Throughput (MB/s)',
+            barmode='group',
+            height=500,
+            xaxis={'tickangle': -45},
+            legend={'orientation': 'h', 'yanchor': 'bottom', 'y': 1.02}
+        )
+        
+        return fig.to_html(include_plotlyjs="cdn", full_html=False)
+    
+    def create_multi_version_dimension_iops_chart(self, results_by_version: Dict[str, Dict]) -> Optional[str]:
+        """
+        Create multi-version IOPS comparison chart organized by dimension.
+        
+        Args:
+            results_by_version: Results organized by NFS version
+            
+        Returns:
+            HTML string for chart or None if no data
+        """
+        if not self.plotly_available:
+            return None
+        
+        versions = sorted(results_by_version.keys())
+        
+        # Extract IOPS data for each version
+        version_data = {}
+        for version_key in versions:
+            version_results = results_by_version[version_key]
+            dimension_data = dimension_mapper.extract_dimension_data(version_results, 'iops')
+            version_data[version_key] = dimension_data
+        
+        if not version_data:
+            return None
+        
+        # Collect test data
+        fig = go.Figure()
+        for version_key in versions:
+            test_names = []
+            read_iops = []
+            write_iops = []
+            
+            dim_data = version_data[version_key]
+            for tool_key, tool_data in dim_data.items():
+                tool_name = tool_key.replace('_tests', '').upper()
+                for test_name, test_data in tool_data.items():
+                    if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                        r_iops = test_data.get('read_iops', 0)
+                        w_iops = test_data.get('write_iops', 0)
+                        if r_iops > 0 or w_iops > 0:
+                            test_names.append(f"{tool_name}: {test_name.replace('_', ' ').title()}")
+                            read_iops.append(r_iops)
+                            write_iops.append(w_iops)
+            
+            if test_names:
+                fig.add_trace(go.Bar(
+                    name=f'{version_key.replace("_", " ").upper()} Read',
+                    x=test_names,
+                    y=read_iops
+                ))
+                fig.add_trace(go.Bar(
+                    name=f'{version_key.replace("_", " ").upper()} Write',
+                    x=test_names,
+                    y=write_iops
+                ))
+        
+        fig.update_layout(
+            title='⚡ IOPS Performance Across NFS Versions',
+            xaxis_title='Test',
+            yaxis_title='IOPS',
+            barmode='group',
+            height=500,
+            xaxis={'tickangle': -45},
+            legend={'orientation': 'h', 'yanchor': 'bottom', 'y': 1.02}
+        )
+        
+        return fig.to_html(include_plotlyjs="cdn", full_html=False)
+    
+    def create_multi_version_dimension_latency_chart(self, results_by_version: Dict[str, Dict]) -> Optional[str]:
+        """
+        Create multi-version latency comparison chart organized by dimension.
+        
+        Args:
+            results_by_version: Results organized by NFS version
+            
+        Returns:
+            HTML string for chart or None if no data
+        """
+        if not self.plotly_available:
+            return None
+        
+        versions = sorted(results_by_version.keys())
+        
+        # Extract latency data for each version
+        version_data = {}
+        for version_key in versions:
+            version_results = results_by_version[version_key]
+            dimension_data = dimension_mapper.extract_dimension_data(version_results, 'latency')
+            version_data[version_key] = dimension_data
+        
+        if not version_data:
+            return None
+        
+        fig = go.Figure()
+        for version_key in versions:
+            test_names = []
+            latencies = []
+            
+            dim_data = version_data[version_key]
+            for tool_key, tool_data in dim_data.items():
+                tool_name = tool_key.replace('_tests', '').upper()
+                for test_name, test_data in tool_data.items():
+                    if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                        lat = test_data.get('avg_latency_ms') or test_data.get('write_latency_ms', 0)
+                        if lat > 0:
+                            test_names.append(f"{tool_name}: {test_name.replace('_', ' ').title()}")
+                            latencies.append(lat)
+            
+            if test_names:
+                fig.add_trace(go.Bar(
+                    name=version_key.replace('_', ' ').upper(),
+                    x=test_names,
+                    y=latencies
+                ))
+        
+        fig.update_layout(
+            title='⏱️ Latency Performance Across NFS Versions (Lower is Better)',
+            xaxis_title='Test',
+            yaxis_title='Latency (ms)',
+            barmode='group',
+            height=400,
+            xaxis={'tickangle': -45},
+            legend={'orientation': 'h', 'yanchor': 'bottom', 'y': 1.02}
+        )
+        
+        return fig.to_html(include_plotlyjs="cdn", full_html=False)
+    
+    def generate_all_multi_version_dimension_charts(self, results_by_version: Dict[str, Dict]) -> str:
+        """
+        Generate all dimension-based charts for multi-version report.
+        
+        Args:
+            results_by_version: Results organized by NFS version
+            
+        Returns:
+            HTML string with all dimension charts
+        """
+        if not self.plotly_available:
+            return ""
+        
+        charts_html = '<div class="section"><h2>📊 Performance by Dimension Across Versions</h2>'
+        charts_html += '<p>Results organized by performance characteristics, comparing NFS versions.</p>'
+        
+        # Throughput chart
+        throughput_chart = self.create_multi_version_dimension_throughput_chart(results_by_version)
+        if throughput_chart:
+            charts_html += f'<div class="chart-container">{throughput_chart}</div>'
+        
+        # IOPS chart
+        iops_chart = self.create_multi_version_dimension_iops_chart(results_by_version)
+        if iops_chart:
+            charts_html += f'<div class="chart-container">{iops_chart}</div>'
+        
+        # Latency chart
+        latency_chart = self.create_multi_version_dimension_latency_chart(results_by_version)
+        if latency_chart:
+            charts_html += f'<div class="chart-container">{latency_chart}</div>'
+        
+        charts_html += '</div>'
+        return charts_html
+
 
 # Made with Bob

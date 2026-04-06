@@ -34,6 +34,10 @@ report/
 samples/logs/
 samples/reports/
 
+# But keep the sample generator and documentation
+!samples/README.md
+!samples/create_sample_data.py
+
 # Backup files
 *.backup
 

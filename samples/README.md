@@ -1,55 +1,56 @@
-# Sample Data and Reports
+# Sample Data Generator
 
-This directory contains sample test data and generated reports for demonstration and testing purposes.
+This directory contains the `create_sample_data.py` script for generating sample test data for demonstration and testing purposes.
+
+## Quick Start
+
+Generate sample data with:
+
+```bash
+cd samples
+python3 create_sample_data.py
+```
+
+This creates sample JSON files in `samples/logs/` and generates HTML reports in `samples/reports/`.
 
 ## Directory Structure
 
 ```
 samples/
-├── logs/          # Sample JSON test result files (12 files)
-└── reports/       # Sample HTML reports generated from test data (28 files)
+├── create_sample_data.py  # Script to generate sample data
+├── logs/                   # Generated JSON test results (not in git)
+└── reports/                # Generated HTML reports (not in git)
 ```
 
-## Sample Test Data (logs/)
 
-### Test Scenarios Included:
+## Generated Test Scenarios
+
+The script creates 4 test scenarios:
 
 1. **baseline_2026** - Complete test suite with all 4 NFS versions
-   - `nfs_performance_baseline_2026_nfsv3_tcp_20260406_100000.json`
-   - `nfs_performance_baseline_2026_nfsv4.0_tcp_20260406_100000.json`
-   - `nfs_performance_baseline_2026_nfsv4.1_tcp_20260406_100000.json`
-   - `nfs_performance_baseline_2026_nfsv4.2_tcp_20260406_100000.json`
+   - NFSv3, NFSv4.0, NFSv4.1, NFSv4.2 (4 files)
 
 2. **optimized_2026** - Optimized configuration with all 4 NFS versions
-   - `nfs_performance_optimized_2026_nfsv3_tcp_20260406_110000.json`
-   - `nfs_performance_optimized_2026_nfsv4.0_tcp_20260406_110000.json`
-   - `nfs_performance_optimized_2026_nfsv4.1_tcp_20260406_110000.json`
-   - `nfs_performance_optimized_2026_nfsv4.2_tcp_20260406_110000.json`
+   - NFSv3, NFSv4.0, NFSv4.1, NFSv4.2 (4 files)
+   - Shows ~15-20% performance improvement over baseline
 
-3. **single_test** - Single version test (NFSv4.2 only)
-   - `nfs_performance_single_test_nfsv4.2_tcp_20260406_120000.json`
+3. **single_test** - Single version test
+   - NFSv4.2 only (1 file)
 
-4. **multi_version_test** - Multi-version comparison (3 versions)
-   - `nfs_performance_multi_version_test_nfsv3_tcp_20260406_130000.json`
-   - `nfs_performance_multi_version_test_nfsv4.1_tcp_20260406_130000.json`
-   - `nfs_performance_multi_version_test_nfsv4.2_tcp_20260406_130000.json`
+4. **multi_version_test** - Multi-version comparison
+   - NFSv3, NFSv4.1, NFSv4.2 (3 files)
 
-## Sample Reports (reports/)
-
-The reports directory contains HTML reports generated from the sample data, demonstrating:
-
-- **Single-file reports** - Individual test results
-- **Multi-version reports** - Comparing multiple NFS versions
-- **Comparison reports** - Side-by-side comparison of different test-IDs
-- **Both report styles** - Tool-based and dimension-based views
+**Total**: 12 JSON files with comprehensive benchmark results
 
 ## Generating Reports from Sample Data
 
-You can regenerate reports from the sample data using:
+After generating sample data, create reports with:
 
 ```bash
+# From repository root directory
+
 # Single file report (dimension-based, default)
-python3 generate_html_report.py samples/logs/nfs_performance_single_test_nfsv4.2_tcp_20260406_120000.json
+python3 generate_html_report.py samples/logs/nfs_performance_single_test_nfsv4.2_tcp_*.json
 
 # Multi-version report (dimension-based, default)
 python3 generate_html_report.py --test-id multi_version_test --directory samples/logs
@@ -60,16 +61,6 @@ python3 generate_html_report.py --test-id baseline_2026 --compare-with optimized
 # Tool-based report (old style)
 python3 generate_html_report.py --test-id baseline_2026 --directory samples/logs --report-style tool-based
 ```
-
-## Creating New Sample Data
-
-To create fresh sample data, run:
-
-```bash
-python3 create_sample_data.py
-```
-
-This will generate new JSON files with current timestamps in the current directory. You can then move them to `samples/logs/` if desired.
 
 ## Report Types
 

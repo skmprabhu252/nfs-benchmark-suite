@@ -64,8 +64,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 Examples:
-  # Generate report from single JSON file (dimension-based, default with comprehensive analysis)
+  # Generate report from single JSON file (dimension-based, with comprehensive analysis by default)
   python3 generate_html_report.py nfs_performance_nfsv3_tcp_20240403_120000.json
+  
+  # Generate report without automated analysis
+  python3 generate_html_report.py nfs_performance_nfsv3_tcp_20240403_120000.json --disable-analysis
   
   # Generate tool-based report (organized by benchmark tools)
   python3 generate_html_report.py --test-id baseline_2026 --report-style tool-based
@@ -118,11 +121,17 @@ Examples:
         help='Report organization style: dimension-based (default, by performance dimension) or tool-based (by benchmark tool)'
     )
     
+    parser.add_argument(
+        '--disable-analysis',
+        action='store_true',
+        help='Disable automated performance analysis (enabled by default with comprehensive level)'
+    )
+    
     args = parser.parse_args()
     
-    # Always enable comprehensive analysis by default
-    enable_analysis = True
-    analysis_level = 'comprehensive'
+    # Enable comprehensive analysis by default, unless --disable-analysis is specified
+    enable_analysis = not args.disable_analysis
+    analysis_level = 'comprehensive' if enable_analysis else ''
     
     # Determine which scenario and create appropriate generator
     try:
@@ -130,7 +139,10 @@ Examples:
         if args.json_file:
             logger.info(f"Scenario: Single file report")
             logger.info(f"Loading results from: {args.json_file}")
-            logger.info(f"Analysis enabled: {analysis_level} level")
+            if enable_analysis:
+                logger.info(f"Analysis enabled: {analysis_level} level")
+            else:
+                logger.info("Analysis disabled")
             
             generator = SingleFileReportGenerator(
                 json_file=Path(args.json_file),

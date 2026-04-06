@@ -1068,6 +1068,29 @@ def get_dimension_section_html(dimension_key: str, dimension_data: Dict[str, Any
                     metrics['Write Bandwidth'] = f"{test_data['write_bandwidth_mbps']:.2f} MB/s"
                 if 'read_bandwidth_mbps' in test_data:
                     metrics['Read Bandwidth'] = f"{test_data['read_bandwidth_mbps']:.2f} MB/s"
+                # IOzone-specific metrics
+                if 'write_throughput_mbps' in test_data:
+                    metrics['Write'] = f"{test_data['write_throughput_mbps']:.2f} MB/s"
+                if 'read_throughput_mbps' in test_data:
+                    metrics['Read'] = f"{test_data['read_throughput_mbps']:.2f} MB/s"
+                if 'rewrite_throughput_mbps' in test_data:
+                    metrics['Rewrite'] = f"{test_data['rewrite_throughput_mbps']:.2f} MB/s"
+                if 'reread_throughput_mbps' in test_data:
+                    metrics['Reread'] = f"{test_data['reread_throughput_mbps']:.2f} MB/s"
+                # Bonnie++ specific metrics (with value/status structure)
+                for key in ['sequential_output_block_mbps', 'sequential_input_block_mbps',
+                           'sequential_output_char_mbps', 'sequential_input_char_mbps',
+                           'sequential_rewrite_mbps']:
+                    if key in test_data:
+                        value = test_data[key]
+                        # Handle both direct values and {value, status} structure
+                        if isinstance(value, dict) and 'value' in value:
+                            actual_value = value['value']
+                        else:
+                            actual_value = value
+                        if isinstance(actual_value, (int, float)):
+                            label = key.replace('_mbps', '').replace('_', ' ').title()
+                            metrics[label] = f"{actual_value:.2f} MB/s"
             
             elif dimension_key == 'iops':
                 if 'read_iops' in test_data:

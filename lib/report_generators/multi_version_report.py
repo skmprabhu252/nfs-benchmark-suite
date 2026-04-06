@@ -44,11 +44,23 @@ class MultiVersionReportGenerator(BaseReportGenerator):
             directory: Directory to search for JSON files (default: current directory)
             output_dir: Optional output directory (default: ./report)
             report_style: Report organization style - 'tool-based' or 'dimension-based' (default: 'tool-based')
+        
+        Note:
+            Dimension-based reporting is currently only supported for single-file reports.
+            Multi-version reports will use tool-based style regardless of this parameter.
         """
         super().__init__(output_dir, report_style)
         self.test_id = test_id
         self.directory = Path(directory) if directory else Path(".")
         self.chart_generator = ChartGenerator()
+        
+        # Log warning if dimension-based style requested
+        if report_style == 'dimension-based':
+            self.logger.warning(
+                "Dimension-based reporting is not yet implemented for multi-version reports. "
+                "Using tool-based style instead."
+            )
+            self.report_style = 'tool-based'
     
     def generate(self) -> Path:
         """

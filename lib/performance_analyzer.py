@@ -1326,6 +1326,375 @@ class PerformanceAnalyzer:
             return 'System configuration changes, resource contention, or environmental factors'
 
 
+class ComparisonAnalyzer:
+    """
+    Analyzer for comparing performance between test-ids and NFS versions.
+    
+    Provides workload-category-based insights:
+    - Within test-id: Shows best NFS version per workload category with ranking
+    - Cross test-id: Compares same version/protocol across test-ids
+    
+    Expected data format:
+    {
+        'test_id': 'baseline_2026',
+        'versions': {
+            'nfsv3_tcp': {
+                'nfs_version': 'nfsv3',
+                'transport': 'tcp',
+                'metrics': {
+                    'fio_sequential_write_read_mbps': 100.5,
+                    'fio_random_read_4k_read_iops': 5000,
+                    ...
+                }
+            },
+            ...
+        }
+    }
+    """
+    
+    # Workload category mapping
+    WORKLOAD_CATEGORIES = {
+        'Metadata Operations': [
+            'bonnie_file_ops', 'dbench_throughput', 'iozone_baseline_throughput'
+        ],
+        'Sequential Read': [
+            'fio_sequential_read', 'dd_sequential_read', 'iozone_baseline_read',
+            'iozone_random_io_4k_read', 'bonnie_sequential_input'
+        ],
+        'Sequential Write': [
+            'fio_sequential_write', 'dd_sequential_write', 'iozone_baseline_write',
+            'bonnie_sequential_output'
+        ],
+        'Random Read': [
+            'fio_random_read', 'iozone_random_io_4k_read'
+        ],
+        'Random Write': [
+            'fio_random_write', 'iozone_random_io_4k_write'
+        ],
+        'Mixed Workload': [
+            'fio_mixed', 'dbench'
+        ]
+    }
+    
+    def __init__(self, testid1_name: str, testid1_versions: Dict[str, Dict],
+                 testid2_name: str, testid2_versions: Dict[str, Dict]):
+        """
+        Initialize comparison analyzer with pre-extracted version data.
+        
+        Args:
+            testid1_name: Name of first test-id (e.g., 'baseline_2026')
+            testid1_versions: Dict of version data for first test-id
+            testid2_name: Name of second test-id (e.g., 'optimized_2026')
+            testid2_versions: Dict of version data for second test-id
+            
+        Version data format:
+            {
+                'nfsv3_tcp': {
+                    'nfs_version': 'nfsv3',
+                    'transport': 'tcp',
+                    'metrics': {'metric_name': value, ...}
+                },
+                ...
+            }
+        """
+        self.testid1_name = testid1_name
+        self.testid2_name = testid2_name
+        self.testid1_versions = testid1_versions
+        self.testid2_versions = testid2_versions
+        
+        self.insights = []
+        self.severity_counts = {'critical': 0, 'warning': 0, 'info': 0, 'success': 0}
+    
+    
+    def analyze(self) -> Dict[str, Any]:
+        """
+        Perform workload-category-based comparison analysis.
+        
+        Returns:
+            dict: Analysis results with insights grouped by workload category
+        """
+        # Within test-id: Best version per workload category
+        within_testid1_insights = self._analyze_workload_categories(
+            self.testid1_name, self.testid1_versions
+        )
+        within_testid2_insights = self._analyze_workload_categories(
+            self.testid2_name, self.testid2_versions
+        )
+        
+        # Cross test-id: Same version/protocol comparison
+        cross_testid_insights = self._analyze_cross_testid_by_category()
+        
+        return {
+            'comparison_type': 'workload_category_based',
+            'testid1': self.testid1_name,
+            'testid2': self.testid2_name,
+            'cross_testid_insights': cross_testid_insights,
+            'testid1_version_insights': within_testid1_insights,
+            'testid2_version_insights': within_testid2_insights,
+            'severity_counts': self.severity_counts,
+            'summary': self._generate_summary()
+        }
+    
+    def _get_metric_category(self, metric_name: str) -> str:
+        """Determine workload category for a metric."""
+        metric_lower = metric_name.lower()
+        
+        for category, keywords in self.WORKLOAD_CATEGORIES.items():
+            for keyword in keywords:
+                if keyword.replace('_', ' ') in metric_lower.replace('_', ' '):
+                    return category
+        
+        return 'Other'
+    
+    def _analyze_workload_categories(self, testid_name: str,
+                                    versions: Dict[str, Dict]) -> List[Dict[str, Any]]:
+        """
+        Analyze performance by workload category, showing best NFS version for each.
+        
+        Example output:
+        "Metadata Operations: NFSv3 performs best (+15% vs NFSv4.0)"
+        """
+        insights = []
+        
+        if len(versions) < 2:
+            return insights
+        
+        # Group metrics by category across all versions
+        category_metrics = {}  # {category: {metric: {version: value}}}
+        
+        for version_key, version_data in versions.items():
+            nfs_version = version_data['nfs_version']
+            for metric, value in version_data['metrics'].items():
+                category = self._get_metric_category(metric)
+                
+                if category not in category_metrics:
+                    category_metrics[category] = {}
+                if metric not in category_metrics[category]:
+                    category_metrics[category][metric] = {}
+                
+                category_metrics[category][metric][nfs_version] = value
+        
+        # For each category, find best performing version
+        for category in sorted(category_metrics.keys()):
+            if category == 'Other':
+                continue
+            
+            metrics = category_metrics[category]
+            category_best_versions = []
+            
+            # For each metric in category, find best version
+            for metric, version_values in metrics.items():
+                if len(version_values) < 2:
+                    continue
+                
+                # Find best (highest value)
+                best_version = max(version_values.items(), key=lambda x: x[1])
+                worst_version = min(version_values.items(), key=lambda x: x[1])
+                
+                if best_version[1] > 0 and worst_version[1] > 0:
+                    improvement = ((best_version[1] - worst_version[1]) / worst_version[1]) * 100
+                    if improvement > 5:  # Only significant improvements
+                        category_best_versions.append({
+                            'version': best_version[0],
+                            'improvement': improvement,
+                            'metric': metric
+                        })
+            
+            if category_best_versions:
+                # Calculate average performance for each version in this category
+                version_performance = {}  # {version: [values]}
+                
+                for metric, version_values in metrics.items():
+                    for version, value in version_values.items():
+                        if version not in version_performance:
+                            version_performance[version] = []
+                        version_performance[version].append(value)
+                
+                # Calculate average and rank versions
+                version_avg = {}
+                for version, values in version_performance.items():
+                    version_avg[version] = sum(values) / len(values)
+                
+                # Sort by average performance (descending)
+                ranked_versions = sorted(version_avg.items(), key=lambda x: x[1], reverse=True)
+                
+                best_version = ranked_versions[0][0]
+                best_value = ranked_versions[0][1]
+                worst_value = ranked_versions[-1][1]
+                
+                if worst_value > 0:
+                    improvement_pct = ((best_value - worst_value) / worst_value) * 100
+                else:
+                    improvement_pct = 0
+                
+                # Create ranking string
+                ranking = ' > '.join([v[0] for v in ranked_versions])
+                
+                insight = {
+                    'severity': 'info',
+                    'title': f"{testid_name}: {category}",
+                    'description': f"{best_version} performs best (+{improvement_pct:.0f}% vs worst)\nRanking: {ranking}",
+                    'recommendation': f"Use {best_version} for {category.lower()} workloads."
+                }
+                insights.append(insight)
+                self.severity_counts['info'] += 1
+        
+        return insights
+    
+    def _analyze_cross_testid_by_category(self) -> List[Dict[str, Any]]:
+        """
+        Compare same NFS version across test-ids (regardless of protocol), grouped by workload category.
+        
+        Example: "Sequential Read - nfsv4.0: TQB/tcp (1126 MB/s) vs RQB/rdma (1638 MB/s) = RQB +45%"
+        """
+        insights = []
+        
+        # Get all NFS versions from both test-ids
+        testid1_nfs_versions = set()
+        testid2_nfs_versions = set()
+        
+        for version_key, version_data in self.testid1_versions.items():
+            testid1_nfs_versions.add(version_data['nfs_version'])
+        
+        for version_key, version_data in self.testid2_versions.items():
+            testid2_nfs_versions.add(version_data['nfs_version'])
+        
+        # Find common NFS versions (regardless of transport)
+        common_nfs_versions = testid1_nfs_versions & testid2_nfs_versions
+        
+        if not common_nfs_versions:
+            return insights
+        
+        # For each common NFS version, compare by workload category
+        for nfs_version in sorted(common_nfs_versions, key=self._version_sort_key):
+            # Find version keys for this NFS version in both test-ids
+            testid1_version_key = None
+            testid2_version_key = None
+            
+            for version_key, version_data in self.testid1_versions.items():
+                if version_data['nfs_version'] == nfs_version:
+                    testid1_version_key = version_key
+                    break
+            
+            for version_key, version_data in self.testid2_versions.items():
+                if version_data['nfs_version'] == nfs_version:
+                    testid2_version_key = version_key
+                    break
+            
+            if not testid1_version_key or not testid2_version_key:
+                continue
+            
+            v1_data = self.testid1_versions[testid1_version_key]
+            v2_data = self.testid2_versions[testid2_version_key]
+            
+            transport1 = v1_data['transport']
+            transport2 = v2_data['transport']
+            
+            # Group metrics by category and calculate averages
+            category_data = {}  # {category: {testid1_avg, testid2_avg, count}}
+            
+            v1_metrics = v1_data['metrics']
+            v2_metrics = v2_data['metrics']
+            common_metrics = set(v1_metrics.keys()) & set(v2_metrics.keys())
+            
+            for metric in common_metrics:
+                v1_val = v1_metrics[metric]
+                v2_val = v2_metrics[metric]
+                
+                if v1_val == 0 or v2_val == 0:
+                    continue
+                
+                category = self._get_metric_category(metric)
+                if category == 'Other':
+                    continue
+                
+                if category not in category_data:
+                    category_data[category] = {'testid1_sum': 0, 'testid2_sum': 0, 'count': 0}
+                
+                category_data[category]['testid1_sum'] += v1_val
+                category_data[category]['testid2_sum'] += v2_val
+                category_data[category]['count'] += 1
+            
+            # Create insights for each category
+            for category in sorted(category_data.keys()):
+                data = category_data[category]
+                
+                if data['count'] == 0:
+                    continue
+                
+                testid1_avg = data['testid1_sum'] / data['count']
+                testid2_avg = data['testid2_sum'] / data['count']
+                
+                change_pct = ((testid2_avg - testid1_avg) / testid1_avg) * 100
+                
+                # Only report significant differences (>5%)
+                if abs(change_pct) < 5:
+                    continue
+                
+                better_testid = self.testid2_name if change_pct > 0 else self.testid1_name
+                worse_testid = self.testid1_name if change_pct > 0 else self.testid2_name
+                
+                severity = 'info'  # Neutral since we're comparing different configs
+                
+                # Format the comparison
+                protocol_info = f"{self.testid1_name}/{transport1} vs {self.testid2_name}/{transport2}"
+                if transport1 != transport2:
+                    protocol_note = f" (Note: Different protocols - {transport1.upper()} vs {transport2.upper()})"
+                else:
+                    protocol_note = ""
+                
+                insight = {
+                    'severity': severity,
+                    'title': f"{category} - {nfs_version}",
+                    'description': f"{protocol_info}: {better_testid} performs {abs(change_pct):.1f}% better{protocol_note}",
+                    'recommendation': f"For {category.lower()} workloads with {nfs_version}, {better_testid} shows better performance.",
+                    'nfs_version': nfs_version,
+                    'category': category,
+                    'testid1_name': self.testid1_name,
+                    'testid2_name': self.testid2_name,
+                    'testid1_avg': testid1_avg,
+                    'testid2_avg': testid2_avg,
+                    'change_pct': change_pct,
+                    'transport1': transport1,
+                    'transport2': transport2
+                }
+                insights.append(insight)
+                self.severity_counts[severity] += 1
+        
+        return insights
+    
+    def _version_sort_key(self, version: str) -> tuple:
+        """Generate sort key for NFS version."""
+        version_lower = version.lower()
+        if 'nfsv3' in version_lower:
+            return (3, 0)
+        elif 'nfsv4.0' in version_lower or version_lower == 'nfsv4':
+            return (4, 0)
+        elif 'nfsv4.1' in version_lower:
+            return (4, 1)
+        elif 'nfsv4.2' in version_lower:
+            return (4, 2)
+        else:
+            return (0, 0)
+    
+    def _generate_summary(self) -> str:
+        """Generate summary of comparison analysis."""
+        total_insights = sum(self.severity_counts.values())
+        
+        if total_insights == 0:
+            return "No significant differences found between test-ids or versions."
+        
+        summary_parts = [
+            f"Found {total_insights} insights:",
+            f"- {self.severity_counts['success']} improvements",
+            f"- {self.severity_counts['warning']} regressions",
+            f"- {self.severity_counts['info']} informational"
+        ]
+        
+        return "\n".join(summary_parts)
+
+
+
 def analyze_performance(results: Dict[str, Any]) -> Dict[str, Any]:
     """
     Convenience function to analyze performance results.

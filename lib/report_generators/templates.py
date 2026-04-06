@@ -1948,6 +1948,74 @@ def get_comparison_only_analysis_html(comparison_insights: List[Dict[str, Any]],
     </div>
     """
 
+def get_multi_version_workload_analysis_html(category_insights: List[Dict[str, Any]], 
+                                              test_id: str) -> str:
+    """
+    Generate workload-category-based analysis HTML for multi-version reports.
+    
+    Args:
+        category_insights: List of insights from ComparisonAnalyzer._analyze_workload_categories
+        test_id: Test identifier
+        
+    Returns:
+        HTML string with workload category analysis table
+    """
+    if not category_insights:
+        return ""
+    
+    # Group insights by category
+    by_category = {}
+    for insight in category_insights:
+        category = insight.get('category', 'Unknown')
+        if category not in by_category:
+            by_category[category] = insight
+    
+    # Create table rows
+    table_rows = ''
+    for category in sorted(by_category.keys()):
+        insight = by_category[category]
+        best_version = insight.get('best_version', 'N/A')
+        ranking = insight.get('ranking', [])
+        improvement_pct = insight.get('improvement_pct', 0)
+        
+        # Format best version with improvement percentage
+        best_info = f"{best_version} performs best"
+        if improvement_pct > 0:
+            best_info += f" (+{improvement_pct:.0f}% vs worst)"
+        
+        # Format ranking
+        ranking_str = ' > '.join(ranking) if ranking else 'N/A'
+        
+        table_rows += f"""
+        <tr>
+            <td><strong>{category}</strong></td>
+            <td>{best_info}</td>
+            <td>{ranking_str}</td>
+        </tr>
+        """
+    
+    return f"""
+    <div style="margin-bottom: 40px;">
+        <h2 style="color: #667eea; margin-bottom: 20px;">🔍 Performance Analysis by Workload</h2>
+        <div style="margin-bottom: 30px;">
+            <h3 style="color: #667eea; margin-bottom: 15px;">📊 {test_id.upper().replace('_', ' ')} Performance by Workload</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Workload Category</th>
+                        <th>Best Version</th>
+                        <th>Performance Ranking</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {table_rows}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    """
+
+
 
 
 # Made with Bob

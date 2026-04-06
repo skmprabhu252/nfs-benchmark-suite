@@ -425,45 +425,205 @@ class MultiVersionReportGenerator(BaseReportGenerator):
     
     def _generate_analysis_section(self, data: Dict[str, Any]) -> str:
         """
-        Override to provide aggregated analysis for multi-version reports.
-        Deduplicates insights and recommendations across versions.
+        Generate workload-category-based analysis for multi-version reports.
+        Shows best NFS version per workload category in a table format.
         """
         if not self.enable_analysis:
             return ""
         
         try:
-            from ..performance_analyzer import PerformanceAnalyzer
-            from .templates import get_analysis_section_html, get_analysis_error_html
-            
-            # Analyze each version separately
-            analyses = []
             results_by_version = data.get('results_by_version', {})
             
-            for version_key, version_results in results_by_version.items():
-                try:
-                    analyzer = PerformanceAnalyzer(version_results)
-                    analysis = analyzer.analyze()
-                    analyses.append(analysis)
-                except Exception as e:
-                    self.logger.warning(f"Failed to analyze {version_key}: {e}")
-            
-            if not analyses:
+            if not results_by_version:
                 return ""
             
-            # Aggregate analyses to avoid repetition
-            aggregated_analysis = self._aggregate_multi_analysis(analyses)
+            # Generate workload-category-based analysis
+            analysis_html = self._generate_workload_category_analysis(results_by_version)
             
-            # Filter by analysis level if needed
-            if self.analysis_level == 'basic':
-                aggregated_analysis = self._filter_basic_analysis(aggregated_analysis)
-            
-            # Render aggregated analysis HTML
-            return get_analysis_section_html(aggregated_analysis, self.report_style)
+            return analysis_html
             
         except Exception as e:
             self.logger.error(f"Multi-version analysis failed: {e}", exc_info=True)
             from .templates import get_analysis_error_html
             return get_analysis_error_html(str(e))
+    
+    def _generate_workload_category_analysis(self, results_by_version: Dict[str, Dict]) -> str:
+        """
+        Generate workload-category-based performance analysis.
+        
+        Args:
+            results_by_version: Results organized by version
+            
+        Returns:
+            Analysis HTML with workload category table
+        """
+        # Extract version metrics
+        versions_data = {}
+        for version_key, version_data in results_by_version.items():
+            # Parse nfs_version and transport from version_key
+            parts = version_key.rsplit('_', 1)
+            if len(parts) == 2:
+                nfs_version, transport = parts
+            else:
+                nfs_version = version_key
+                transport = 'tcp'
+            
+            # Extract metrics
+            metrics = self._extract_version_metrics_for_analysis(version_data)
+            
+            versions_data[version_key] = {
+                'nfs_version': nfs_version,
+                'transport': transport,
+                'metrics': metrics
+            }
+        
+        if len(versions_data) < 2:
+            return ""
+        
+        # Analyze workload categories
+        category_insights = self._analyze_categories(versions_data)
+        
+        # Generate HTML
+        from .templates import get_multi_version_workload_analysis_html
+        return get_multi_version_workload_analysis_html(category_insights, self.test_id)
+    
+    def _analyze_categories(self, versions_data: Dict[str, Dict]) -> List[Dict[str, Any]]:
+        """
+        Analyze performance by workload category across versions.
+        
+        Args:
+            versions_data: Dictionary of version data with metrics
+            
+        Returns:
+            List of category insights
+        """
+        from ..performance_analyzer import ComparisonAnalyzer
+        
+        # Create a temporary analyzer to use its helper methods
+        temp_analyzer = ComparisonAnalyzer(
+            testid1_name=self.test_id,
+            testid2_name=self.test_id,
+            testid1_versions=versions_data,
+            testid2_versions={}
+        )
+        
+        # Group metrics by category across all versions
+        category_metrics = {}  # {category: {metric: {version: value}}}
+        
+        for version_key, version_data in versions_data.items():
+            nfs_version = version_data['nfs_version']
+            for metric, value in version_data['metrics'].items():
+                category = temp_analyzer._get_metric_category(metric)
+                
+                if category not in category_metrics:
+                    category_metrics[category] = {}
+                if metric not in category_metrics[category]:
+                    category_metrics[category][metric] = {}
+                
+                category_metrics[category][metric][nfs_version] = value
+        
+        # For each category, find best performing version
+        insights = []
+        for category in sorted(category_metrics.keys()):
+            if category == 'Other':
+                continue
+            
+            # Calculate average performance per version for this category
+            version_avgs = {}
+            for metric, version_values in category_metrics[category].items():
+                for version, value in version_values.items():
+                    if version not in version_avgs:
+                        version_avgs[version] = []
+                    version_avgs[version].append(value)
+            
+            # Calculate averages
+            version_scores = {}
+            for version, values in version_avgs.items():
+                version_scores[version] = sum(values) / len(values) if values else 0
+            
+            if not version_scores:
+                continue
+            
+            # Find best and worst
+            sorted_versions = sorted(version_scores.items(), key=lambda x: x[1], reverse=True)
+            best_version = sorted_versions[0][0]
+            worst_version = sorted_versions[-1][0]
+            
+            # Calculate improvement percentage
+            best_score = sorted_versions[0][1]
+            worst_score = sorted_versions[-1][1]
+            improvement_pct = ((best_score - worst_score) / worst_score * 100) if worst_score > 0 else 0
+            
+            # Create ranking
+            ranking = [v[0] for v in sorted_versions]
+            
+            insights.append({
+                'category': category,
+                'best_version': best_version,
+                'improvement_pct': improvement_pct,
+                'ranking': ranking
+            })
+        
+        return insights
+    
+    def _extract_version_metrics_for_analysis(self, version_data: Dict[str, Any]) -> Dict[str, float]:
+        """
+        Extract metrics from version data for workload category analysis.
+        
+        Args:
+            version_data: Single version's test results
+            
+        Returns:
+            Dictionary of metric_name -> value
+        """
+        metrics = {}
+        
+        # Extract FIO metrics
+        fio_tests = version_data.get('fio_tests', {})
+        for test_name, test_data in fio_tests.items():
+            if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                if 'read_bandwidth_mbps' in test_data and test_data['read_bandwidth_mbps'] > 0:
+                    metrics[f'fio_{test_name}_read_mbps'] = test_data['read_bandwidth_mbps']
+                if 'write_bandwidth_mbps' in test_data and test_data['write_bandwidth_mbps'] > 0:
+                    metrics[f'fio_{test_name}_write_mbps'] = test_data['write_bandwidth_mbps']
+                if 'read_iops' in test_data and test_data['read_iops'] > 0:
+                    metrics[f'fio_{test_name}_read_iops'] = test_data['read_iops']
+                if 'write_iops' in test_data and test_data['write_iops'] > 0:
+                    metrics[f'fio_{test_name}_write_iops'] = test_data['write_iops']
+        
+        # Extract IOzone metrics
+        iozone_tests = version_data.get('iozone_tests', {})
+        for test_name, test_data in iozone_tests.items():
+            if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                if 'read_throughput_mbps' in test_data and test_data['read_throughput_mbps'] > 0:
+                    metrics[f'iozone_{test_name}_read_mbps'] = test_data['read_throughput_mbps']
+                if 'write_throughput_mbps' in test_data and test_data['write_throughput_mbps'] > 0:
+                    metrics[f'iozone_{test_name}_write_mbps'] = test_data['write_throughput_mbps']
+        
+        # Extract DBench metrics
+        dbench_tests = version_data.get('dbench_tests', {})
+        for test_name, test_data in dbench_tests.items():
+            if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                if 'throughput_mbps' in test_data and test_data['throughput_mbps'] > 0:
+                    metrics[f'dbench_{test_name}_mbps'] = test_data['throughput_mbps']
+        
+        # Extract Bonnie++ metrics
+        bonnie_tests = version_data.get('bonnie_tests', {})
+        for test_name, test_data in bonnie_tests.items():
+            if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                if 'sequential_output_block_mbps' in test_data and test_data['sequential_output_block_mbps'] > 0:
+                    metrics[f'bonnie_{test_name}_seq_out'] = test_data['sequential_output_block_mbps']
+                if 'sequential_input_block_mbps' in test_data and test_data['sequential_input_block_mbps'] > 0:
+                    metrics[f'bonnie_{test_name}_seq_in'] = test_data['sequential_input_block_mbps']
+        
+        # Extract DD metrics
+        dd_tests = version_data.get('dd_tests', {})
+        for test_name, test_data in dd_tests.items():
+            if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                if 'throughput_mbps' in test_data and test_data['throughput_mbps'] > 0:
+                    metrics[f'dd_{test_name}_mbps'] = test_data['throughput_mbps']
+        
+        return metrics
         return sections_html
 
 # Made with Bob

@@ -48,7 +48,8 @@ class SingleFileReportGenerator(BaseReportGenerator):
     from a single test run with one NFS version.
     """
     
-    def __init__(self, json_file: Path, output_dir: Path = None, report_style: str = 'tool-based'):
+    def __init__(self, json_file: Path, output_dir: Path = None, report_style: str = 'tool-based',
+                 enable_analysis: bool = True, analysis_level: str = 'detailed'):
         """
         Initialize single file report generator.
         
@@ -56,8 +57,10 @@ class SingleFileReportGenerator(BaseReportGenerator):
             json_file: Path to JSON results file
             output_dir: Optional output directory (default: ./report)
             report_style: Report organization style - 'tool-based' or 'dimension-based' (default: 'tool-based')
+            enable_analysis: Whether to include performance analysis (default: True)
+            analysis_level: Analysis detail level - 'basic', 'detailed', or 'comprehensive' (default: 'detailed')
         """
-        super().__init__(output_dir, report_style)
+        super().__init__(output_dir, report_style, enable_analysis, analysis_level)
         self.json_file = Path(json_file)
         self.chart_generator = ChartGenerator()
     
@@ -136,12 +139,16 @@ class SingleFileReportGenerator(BaseReportGenerator):
             charts_html = self._generate_charts(test_results)
             tests_html = self._generate_test_sections(test_results)
         
+        # Generate analysis section
+        analysis_html = self._generate_analysis_section(data)
+        
         # Combine all sections
         content = f"""
         <div class="container">
             {header_html}
             {summary_html}
             {charts_html}
+            {analysis_html}
             {tests_html}
         </div>
         """

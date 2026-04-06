@@ -239,6 +239,238 @@ def get_base_styles() -> str:
             color: #667eea;
             margin-bottom: 10px;
         }
+        
+        /* Analysis Section Styles */
+        .analysis-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .analysis-section h2 {
+            color: #667eea;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Health Score Card */
+        .health-score-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .score-display {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .score-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #1f2937;
+            position: relative;
+        }
+        
+        .score-circle.excellent {
+            background: conic-gradient(#10b981 0deg 306deg, #e5e7eb 306deg 360deg);
+        }
+        
+        .score-circle.good {
+            background: conic-gradient(#3b82f6 0deg 270deg, #e5e7eb 270deg 360deg);
+        }
+        
+        .score-circle.fair {
+            background: conic-gradient(#f59e0b 0deg 216deg, #e5e7eb 216deg 360deg);
+        }
+        
+        .score-circle.poor {
+            background: conic-gradient(#ef4444 0deg 180deg, #e5e7eb 180deg 360deg);
+        }
+        
+        .score-label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        
+        .severity-badges {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .severity-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .severity-badge.critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .severity-badge.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .severity-badge.info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .severity-badge .count {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        /* Insights Grid */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .insight-card {
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .insight-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .insight-card.critical {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+        }
+        
+        .insight-card.warning {
+            background: #fffbeb;
+            border-left-color: #f59e0b;
+        }
+        
+        .insight-card.info {
+            background: #eff6ff;
+            border-left-color: #3b82f6;
+        }
+        
+        .insight-card h4 {
+            margin-bottom: 12px;
+            color: #1f2937;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .insight-card p {
+            color: #4b5563;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        
+        .insight-recommendation {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+            font-size: 14px;
+            color: #374151;
+        }
+        
+        .insight-recommendation::before {
+            content: '💡 ';
+            font-weight: bold;
+        }
+        
+        /* Recommendations Section */
+        .recommendations-section {
+            background: #f9fafb;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .recommendations-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .recommendations-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .recommendations-list li {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+            display: flex;
+            align-items: start;
+            gap: 10px;
+        }
+        
+        .recommendations-list li::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        /* No Analysis Message */
+        .no-analysis {
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-style: italic;
+        }
+        
+        /* Analysis Error */
+        .analysis-error {
+            padding: 20px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            color: #991b1b;
+        }
     """
 
 
@@ -1018,3 +1250,278 @@ def get_multi_version_dimension_overview_html(results_by_version: Dict[str, Dict
         cards_html += '</div>'
         
         return get_section_html("📊 Performance Dimensions Overview", cards_html)
+
+
+# Analysis Section Template Functions
+
+def get_analysis_section_html(analysis: Dict[str, Any], report_style: str = 'tool') -> str:
+    """
+    Generate complete analysis section HTML.
+    
+    Args:
+        analysis: Analysis results from PerformanceAnalyzer
+        report_style: 'tool' or 'dimension' for style-specific rendering
+        
+    Returns:
+        Complete analysis section HTML
+    """
+    if not analysis or not analysis.get('insights'):
+        return get_no_analysis_html()
+    
+    health_score = analysis.get('overall_health', 0)
+    severity_counts = analysis.get('severity_counts', {})
+    insights = analysis.get('insights', [])
+    recommendations = analysis.get('recommendations', [])
+    
+    # Generate health score card
+    health_card_html = get_health_score_card_html(health_score, severity_counts)
+    
+    # Generate insights grid
+    insights_html = get_insights_grid_html(insights, report_style)
+    
+    # Generate recommendations
+    recommendations_html = get_recommendations_html(recommendations)
+    
+    return f"""
+    <div class="analysis-section">
+        <h2>🔍 Performance Analysis & Insights</h2>
+        {health_card_html}
+        {insights_html}
+        {recommendations_html}
+    </div>
+    """
+
+
+def get_health_score_card_html(health_score: float, severity_counts: Dict[str, int]) -> str:
+    """
+    Generate health score card with severity badges.
+    
+    Args:
+        health_score: Overall health score (0-100)
+        severity_counts: Dictionary with counts for critical, warning, info
+        
+    Returns:
+        Health score card HTML
+    """
+    # Determine health category
+    if health_score >= 85:
+        category = 'excellent'
+        label = 'Excellent'
+        color = '#10b981'
+    elif health_score >= 70:
+        category = 'good'
+        label = 'Good'
+        color = '#3b82f6'
+    elif health_score >= 50:
+        category = 'fair'
+        label = 'Fair'
+        color = '#f59e0b'
+    else:
+        category = 'poor'
+        label = 'Needs Attention'
+        color = '#ef4444'
+    
+    critical_count = severity_counts.get('critical', 0)
+    warning_count = severity_counts.get('warning', 0)
+    info_count = severity_counts.get('info', 0)
+    
+    badges_html = ''
+    if critical_count > 0:
+        badges_html += f'<div class="severity-badge critical"><span class="count">{critical_count}</span> Critical</div>'
+    if warning_count > 0:
+        badges_html += f'<div class="severity-badge warning"><span class="count">{warning_count}</span> Warnings</div>'
+    if info_count > 0:
+        badges_html += f'<div class="severity-badge info"><span class="count">{info_count}</span> Info</div>'
+    
+    return f"""
+    <div class="health-score-card">
+        <div class="score-display">
+            <div class="score-circle {category}">
+                <span>{health_score:.0f}</span>
+            </div>
+            <div>
+                <div style="font-size: 20px; font-weight: 600; color: {color};">{label}</div>
+                <div class="score-label">Overall Health Score</div>
+            </div>
+        </div>
+        <div class="severity-badges">
+            {badges_html}
+        </div>
+    </div>
+    """
+
+
+def get_insights_grid_html(insights: List[Dict[str, Any]], report_style: str) -> str:
+    """
+    Generate insights grid with cards.
+    
+    Args:
+        insights: List of insight dictionaries
+        report_style: Report style for context
+        
+    Returns:
+        Insights grid HTML
+    """
+    if not insights:
+        return '<p class="no-analysis">No insights generated.</p>'
+    
+    # Sort insights by severity: critical, warning, info
+    severity_order = {'critical': 0, 'warning': 1, 'info': 2}
+    sorted_insights = sorted(insights, key=lambda x: severity_order.get(x.get('severity', 'info'), 3))
+    
+    cards_html = []
+    for insight in sorted_insights:
+        severity = insight.get('severity', 'info')
+        title = insight.get('title', 'Insight')
+        description = insight.get('description', '')
+        recommendation = insight.get('recommendation', '')
+        
+        # Add emoji based on severity
+        emoji = {'critical': '🚨', 'warning': '⚠️', 'info': 'ℹ️'}.get(severity, 'ℹ️')
+        
+        recommendation_html = ''
+        if recommendation:
+            recommendation_html = f'<div class="insight-recommendation">{recommendation}</div>'
+        
+        card_html = f"""
+        <div class="insight-card {severity}">
+            <h4>{emoji} {severity.title()}: {title}</h4>
+            <p>{description}</p>
+            {recommendation_html}
+        </div>
+        """
+        cards_html.append(card_html)
+    
+    return f'<div class="insights-grid">{"".join(cards_html)}</div>'
+
+
+def get_recommendations_html(recommendations: List[str]) -> str:
+    """
+    Generate recommendations section.
+    
+    Args:
+        recommendations: List of recommendation strings
+        
+    Returns:
+        Recommendations section HTML
+    """
+    if not recommendations:
+        return ''
+    
+    recommendations_items = ''.join([f'<li>{rec}</li>' for rec in recommendations])
+    
+    return f"""
+    <div class="recommendations-section">
+        <h3>🎯 Key Recommendations</h3>
+        <ul class="recommendations-list">
+            {recommendations_items}
+        </ul>
+    </div>
+    """
+
+
+def get_no_analysis_html() -> str:
+    """
+    Generate message when analysis is disabled or unavailable.
+    
+    Returns:
+        No analysis message HTML
+    """
+    return """
+    <div class="analysis-section">
+        <h2>🔍 Performance Analysis</h2>
+        <p class="no-analysis">Analysis is disabled or unavailable for this report.</p>
+    </div>
+    """
+
+
+def get_analysis_error_html(error: str) -> str:
+    """
+    Generate error message when analysis fails.
+    
+    Args:
+        error: Error message string
+        
+    Returns:
+        Analysis error HTML
+    """
+    return f"""
+    <div class="analysis-section">
+        <h2>🔍 Performance Analysis</h2>
+        <div class="analysis-error">
+            <strong>Analysis Error:</strong> {error}
+            <p style="margin-top: 10px;">The report has been generated without performance analysis.</p>
+        </div>
+    </div>
+    """
+
+
+def get_comparison_analysis_html(test_id_1: str, analysis_1: Dict[str, Any],
+                                test_id_2: str, analysis_2: Dict[str, Any],
+                                comparison_insights: List[Dict[str, Any]],
+                                report_style: str) -> str:
+    """
+    Generate comparison analysis HTML showing both test-ids side-by-side.
+    
+    Args:
+        test_id_1: First test ID
+        analysis_1: Analysis for first test
+        test_id_2: Second test ID
+        analysis_2: Analysis for second test
+        comparison_insights: Additional comparison-specific insights
+        report_style: Report style for rendering
+        
+    Returns:
+        Comparison analysis HTML
+    """
+    # Generate side-by-side health scores
+    health_comparison = f"""
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+        <div>
+            <h3 style="text-align: center; color: #667eea; margin-bottom: 15px;">{test_id_1}</h3>
+            {get_health_score_card_html(analysis_1.get('overall_health', 0), analysis_1.get('severity_counts', {}))}
+        </div>
+        <div>
+            <h3 style="text-align: center; color: #667eea; margin-bottom: 15px;">{test_id_2}</h3>
+            {get_health_score_card_html(analysis_2.get('overall_health', 0), analysis_2.get('severity_counts', {}))}
+        </div>
+    </div>
+    """
+    
+    # Generate comparison insights
+    comparison_insights_html = ''
+    if comparison_insights:
+        comparison_insights_html = f"""
+        <div style="margin-bottom: 30px;">
+            <h3 style="color: #667eea; margin-bottom: 15px;">📊 Comparison Insights</h3>
+            {get_insights_grid_html(comparison_insights, report_style)}
+        </div>
+        """
+    
+    # Combine top insights from both analyses (limit to 3 each)
+    all_insights = comparison_insights + analysis_1.get('insights', [])[:3] + analysis_2.get('insights', [])[:3]
+    insights_html = ''
+    if all_insights:
+        insights_html = f"""
+        <div style="margin-bottom: 30px;">
+            <h3 style="color: #667eea; margin-bottom: 15px;">🔍 Key Insights</h3>
+            {get_insights_grid_html(all_insights, report_style)}
+        </div>
+        """
+    
+    # Combine recommendations (unique, limit to 5)
+    all_recommendations = list(set(analysis_1.get('recommendations', [])[:3] + analysis_2.get('recommendations', [])[:3]))[:5]
+    recommendations_html = get_recommendations_html(all_recommendations)
+    
+    return f"""
+    <div class="analysis-section">
+        <h2>🔍 Comparative Performance Analysis</h2>
+        {health_comparison}
+        {comparison_insights_html}
+        {insights_html}
+        {recommendations_html}
+    </div>
+    """
+
+
+# Made with Bob

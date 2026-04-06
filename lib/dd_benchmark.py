@@ -345,7 +345,7 @@ class DDTestTool(BaseTestTool):
             self.log(f"  • Check for stale file handles: dmesg | grep -i stale", "ERROR")
     
     def _dd_delete_test(self):
-        """Delete DD test files."""
+        """Delete DD test files (cleanup operation, not a test)."""
         self.log("Deleting DD test files...", "INFO")
         
         try:
@@ -354,16 +354,11 @@ class DDTestTool(BaseTestTool):
             if self.file2.exists():
                 self.file2.unlink()
             
-            self.results["delete"] = {
-                "status": "passed"
-            }
+            # Don't add to results - this is cleanup, not a test
             self.log("DD test files deleted successfully", "SUCCESS")
             
         except Exception as e:
-            self.results["delete"] = {
-                "status": "failed",
-                "error": str(e)
-            }
+            # Don't add to results - this is cleanup, not a test
             self.log(f"❌ Failed to delete DD test files: {e}", "ERROR")
             self.log(f"  Files may still exist:", "ERROR")
             self.log(f"  • {self.file1}", "ERROR")

@@ -20,8 +20,11 @@ from .templates import (
     get_section_html,
     get_version_card_html,
     get_no_data_html,
+    get_multi_version_dimension_overview_html,
+    get_multi_version_dimension_section_html,
 )
 from .charts import ChartGenerator
+from . import dimension_mapper
 
 
 logger = logging.getLogger(__name__)
@@ -44,23 +47,11 @@ class MultiVersionReportGenerator(BaseReportGenerator):
             directory: Directory to search for JSON files (default: current directory)
             output_dir: Optional output directory (default: ./report)
             report_style: Report organization style - 'tool-based' or 'dimension-based' (default: 'tool-based')
-        
-        Note:
-            Dimension-based reporting is currently only supported for single-file reports.
-            Multi-version reports will use tool-based style regardless of this parameter.
         """
         super().__init__(output_dir, report_style)
         self.test_id = test_id
         self.directory = Path(directory) if directory else Path(".")
         self.chart_generator = ChartGenerator()
-        
-        # Log warning if dimension-based style requested
-        if report_style == 'dimension-based':
-            self.logger.warning(
-                "Dimension-based reporting is not yet implemented for multi-version reports. "
-                "Using tool-based style instead."
-            )
-            self.report_style = 'tool-based'
     
     def generate(self) -> Path:
         """
@@ -180,24 +171,35 @@ class MultiVersionReportGenerator(BaseReportGenerator):
         metadata = data.get('test_metadata', {})
         results_by_version = data.get('results_by_version', {})
         
-        # Generate sections
+        # Generate sections based on report style
         header_html = self._generate_header(metadata, len(results_by_version))
-        version_grid_html = self._generate_version_grid(results_by_version)
-        charts_html = self._generate_charts(results_by_version)
-        details_html = self._generate_version_details(results_by_version)
+        
+        if self.report_style == 'dimension-based':
+            # Dimension-based report
+            overview_html = get_multi_version_dimension_overview_html(results_by_version)
+            charts_html = self._generate_dimension_charts(results_by_version)
+            details_html = self._generate_dimension_sections(results_by_version)
+        else:
+            # Tool-based report (default)
+            overview_html = self._generate_version_grid(results_by_version)
+            charts_html = self._generate_charts(results_by_version)
+            details_html = self._generate_version_details(results_by_version)
         
         # Combine all sections
         content = f"""
         <div class="container">
             {header_html}
-            {version_grid_html}
+            {overview_html}
             {charts_html}
             {details_html}
         </div>
         """
         
         # Wrap in base template
-        return get_base_template("NFS Benchmark Suite - Multi-Version Report", content)
+        title = "NFS Benchmark Suite - Multi-Version Report"
+        if self.report_style == 'dimension-based':
+            title += " - Dimension View"
+        return get_base_template(title, content)
     
     def _generate_header(self, metadata: Dict[str, Any], num_versions: int) -> str:
         """
@@ -346,5 +348,67 @@ class MultiVersionReportGenerator(BaseReportGenerator):
         summary_html += "</tbody></table>"
         
         return summary_html
+    
+    def _generate_dimension_charts(self, results_by_version: Dict[str, Dict]) -> str:
+        """
+        Generate dimension-based performance charts for multi-version report.
+        
+        Args:
+            results_by_version: Results organized by NFS version
+            
+        Returns:
+            Charts HTML string
+        """
+        if not self.chart_generator.plotly_available:
+            return get_section_html(
+                "📊 Performance Charts",
+                "<p>Charts not available. Install plotly: pip3 install plotly</p>"
+            )
+        
+        return self.chart_generator.generate_all_multi_version_dimension_charts(results_by_version)
+    
+    def _generate_dimension_sections(self, results_by_version: Dict[str, Dict]) -> str:
+        """
+        Generate test result sections organized by performance dimension.
+        
+        Args:
+            results_by_version: Results organized by NFS version
+            
+        Returns:
+            Dimension sections HTML string
+        """
+        sections_html = ""
+        
+        # Generate a section for each dimension
+        for dimension_key in dimension_mapper.get_all_dimensions():
+            # Check if any version has data for this dimension
+            has_data = False
+            for version_results in results_by_version.values():
+                dimension_data = dimension_mapper.extract_dimension_data(version_results, dimension_key)
+                if dimension_data:
+                    has_data = True
+                    break
+            
+            if not has_data:
+                continue
+            
+            # Get chart for this dimension
+            chart_html = ""
+            if self.chart_generator.plotly_available:
+                if dimension_key == 'throughput':
+                    chart_html = self.chart_generator.create_multi_version_dimension_throughput_chart(results_by_version)
+                elif dimension_key == 'iops':
+                    chart_html = self.chart_generator.create_multi_version_dimension_iops_chart(results_by_version)
+                elif dimension_key == 'latency':
+                    chart_html = self.chart_generator.create_multi_version_dimension_latency_chart(results_by_version)
+            
+            # Generate section with chart and comparison table
+            sections_html += get_multi_version_dimension_section_html(
+                dimension_key,
+                results_by_version,
+                chart_html or ""
+            )
+        
+        return sections_html
 
 # Made with Bob

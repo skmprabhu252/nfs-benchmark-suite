@@ -748,11 +748,9 @@ def get_dimension_overview_html(test_results: Dict[str, Any]) -> str:
     
     return get_section_html("📊 Performance Dimensions Overview", cards_html)
 
-# Made with Bob
+# ========== Multi-Version Dimension-Based Template Functions ==========
 
-    # ========== Multi-Version Dimension-Based Template Functions ==========
-    
-    def get_multi_version_dimension_section_html(dimension_key: str, 
+def get_multi_version_dimension_section_html(dimension_key: str,
                                                  results_by_version: Dict[str, Dict],
                                                  chart_html: str = "") -> str:
         """
@@ -848,8 +846,8 @@ def get_dimension_overview_html(test_results: Dict[str, Any]) -> str:
             content += '</tbody></table>'
         
         return get_section_html(f"{dim_info['icon']} {dim_info['name']}", content)
-    
-    def get_multi_version_dimension_overview_html(results_by_version: Dict[str, Dict]) -> str:
+
+def get_multi_version_dimension_overview_html(results_by_version: Dict[str, Dict]) -> str:
         """
         Generate dimension overview for multi-version report.
         

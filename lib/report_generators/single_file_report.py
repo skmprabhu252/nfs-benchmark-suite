@@ -30,8 +30,11 @@ from .templates import (
     get_section_html,
     get_test_result_html,
     get_no_data_html,
+    get_dimension_overview_html,
+    get_dimension_section_html,
 )
 from .charts import ChartGenerator
+from . import dimension_mapper
 
 
 logger = logging.getLogger(__name__)
@@ -119,11 +122,19 @@ class SingleFileReportGenerator(BaseReportGenerator):
         test_results = extract_test_results(data)
         metadata = get_test_metadata(data)
         
-        # Generate sections
+        # Generate sections based on report style
         header_html = self._generate_header(metadata)
-        summary_html = self._generate_summary(test_results, metadata)
-        charts_html = self._generate_charts(test_results)
-        tests_html = self._generate_test_sections(test_results)
+        
+        if self.report_style == 'dimension-based':
+            # Dimension-based report
+            summary_html = get_dimension_overview_html(test_results)
+            charts_html = self._generate_dimension_charts(test_results)
+            tests_html = self._generate_dimension_sections(test_results)
+        else:
+            # Tool-based report (default)
+            summary_html = self._generate_summary(test_results, metadata)
+            charts_html = self._generate_charts(test_results)
+            tests_html = self._generate_test_sections(test_results)
         
         # Combine all sections
         content = f"""
@@ -136,7 +147,10 @@ class SingleFileReportGenerator(BaseReportGenerator):
         """
         
         # Wrap in base template
-        return get_base_template("NFS Benchmark Suite Report", content)
+        title = "NFS Benchmark Suite Report"
+        if self.report_style == 'dimension-based':
+            title += " - Dimension View"
+        return get_base_template(title, content)
     
     def _generate_header(self, metadata: Dict[str, Any]) -> str:
         """
@@ -384,5 +398,64 @@ class SingleFileReportGenerator(BaseReportGenerator):
                 content += f'<div class="test-result failed"><h4>{test_name.replace("_", " ").title()} <span class="status-badge failed">failed</span></h4><p style="color: #ef4444;">Error: {test_data.get("error", "Unknown error")}</p></div>'
         
         return get_section_html("DBench Test Results", content or get_no_data_html())
+    
+    def _generate_dimension_charts(self, test_results: Dict[str, Dict]) -> str:
+        """
+        Generate dimension-based performance charts.
+        
+        Args:
+            test_results: Dictionary of test results
+            
+        Returns:
+            Charts HTML string
+        """
+        if not self.chart_generator.plotly_available:
+            return get_section_html(
+                "📊 Performance Charts",
+                "<p>Charts not available. Install plotly: pip3 install plotly</p>"
+            )
+        
+        return self.chart_generator.generate_all_dimension_charts(test_results)
+    
+    def _generate_dimension_sections(self, test_results: Dict[str, Dict]) -> str:
+        """
+        Generate test result sections organized by performance dimension.
+        
+        Args:
+            test_results: Dictionary of test results
+            
+        Returns:
+            Dimension sections HTML string
+        """
+        sections_html = ""
+        
+        # Generate a section for each dimension
+        for dimension_key in dimension_mapper.get_all_dimensions():
+            # Extract data for this dimension
+            dimension_data = dimension_mapper.extract_dimension_data(test_results, dimension_key)
+            
+            if not dimension_data:
+                continue
+            
+            # Get chart for this dimension
+            chart_html = ""
+            if self.chart_generator.plotly_available:
+                if dimension_key == 'throughput':
+                    chart_html = self.chart_generator.create_dimension_throughput_chart(test_results)
+                elif dimension_key == 'iops':
+                    chart_html = self.chart_generator.create_dimension_iops_chart(test_results)
+                elif dimension_key == 'latency':
+                    chart_html = self.chart_generator.create_dimension_latency_chart(test_results)
+                elif dimension_key == 'metadata':
+                    chart_html = self.chart_generator.create_dimension_metadata_chart(test_results)
+                elif dimension_key == 'cache_effects':
+                    chart_html = self.chart_generator.create_dimension_cache_chart(test_results)
+                elif dimension_key == 'concurrency':
+                    chart_html = self.chart_generator.create_dimension_concurrency_chart(test_results)
+            
+            # Generate section with chart and test results
+            sections_html += get_dimension_section_html(dimension_key, dimension_data, chart_html or "")
+        
+        return sections_html
 
 # Made with Bob

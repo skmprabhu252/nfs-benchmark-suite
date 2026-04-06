@@ -3,9 +3,11 @@
 HTML template management for report generators
 
 Provides reusable HTML templates and styling for all report types.
+Includes dimension-based templates for organizing results by performance dimensions.
 """
 
 from typing import Dict, Any, List
+from . import dimension_mapper
 
 
 def get_base_styles() -> str:
@@ -497,5 +499,253 @@ def get_error_html(error_message: str) -> str:
         <p>{error_message}</p>
     </div>
     """
+
+
+# ========== Dimension-Based Template Functions ==========
+
+def get_dimension_header_html(dimension_key: str) -> str:
+    """
+    Generate dimension section header with icon and description.
+    
+    Args:
+        dimension_key: Dimension key (e.g., 'throughput', 'iops')
+        
+    Returns:
+        Dimension header HTML
+    """
+    dim_info = dimension_mapper.get_dimension_info(dimension_key)
+    
+    return f"""
+    <div style="margin-bottom: 20px;">
+        <h3 style="color: #667eea; font-size: 1.5em; margin-bottom: 10px;">
+            {dim_info['icon']} {dim_info['name']}
+        </h3>
+        <p style="color: #666; font-size: 1em; line-height: 1.6;">
+            {dim_info['description']}
+        </p>
+    </div>
+    """
+
+
+def get_dimension_test_result_html(tool_name: str, test_name: str,
+                                   status: str, metrics: Dict[str, Any]) -> str:
+    """
+    Generate test result HTML for dimension-based reports.
+    
+    Similar to get_test_result_html but includes tool name prefix.
+    
+    Args:
+        tool_name: Name of the tool (e.g., 'DD', 'FIO')
+        test_name: Name of the test
+        status: Test status (passed/failed)
+        metrics: Dictionary of metrics to display
+        
+    Returns:
+        Test result HTML
+    """
+    status_class = 'passed' if status == 'passed' else 'failed'
+    
+    metrics_html = '<div class="test-metrics">'
+    for label, value in metrics.items():
+        metrics_html += f"""
+        <div class="test-metric">
+            <span class="label">{label}:</span>
+            <span class="value">{value}</span>
+        </div>
+        """
+    metrics_html += '</div>'
+    
+    return f"""
+    <div class="test-result {status_class}">
+        <h4>
+            <span style="color: #667eea; font-weight: normal;">{tool_name}:</span> {test_name.replace('_', ' ').title()}
+            <span class="status-badge {status_class}">{status}</span>
+        </h4>
+        {metrics_html}
+    </div>
+    """
+
+
+def get_dimension_summary_card_html(dimension_key: str, best_value: float,
+                                   source: str, unit: str = "") -> str:
+    """
+    Generate summary card for a dimension showing best performance.
+    
+    Args:
+        dimension_key: Dimension key
+        best_value: Best performance value
+        source: Source of best performance (tool and test)
+        unit: Unit string
+        
+    Returns:
+        Dimension summary card HTML
+    """
+    dim_info = dimension_mapper.get_dimension_info(dimension_key)
+    
+    # Format value based on magnitude
+    if best_value >= 1000:
+        formatted_value = f"{best_value:,.0f}"
+    elif best_value >= 10:
+        formatted_value = f"{best_value:.1f}"
+    else:
+        formatted_value = f"{best_value:.2f}"
+    
+    return f"""
+    <div class="metric-card">
+        <h3>{dim_info['icon']} {dim_info['name']}</h3>
+        <div class="value">{formatted_value}<span class="unit">{unit}</span></div>
+        <p style="font-size: 0.85em; color: #666; margin-top: 10px;">
+            <strong>Best:</strong> {source}
+        </p>
+    </div>
+    """
+
+
+def get_dimension_section_html(dimension_key: str, dimension_data: Dict[str, Any],
+                               chart_html: str = "") -> str:
+    """
+    Generate complete dimension section with header, chart, and test results.
+    
+    Args:
+        dimension_key: Dimension key
+        dimension_data: Extracted dimension data from dimension_mapper
+        chart_html: Optional chart HTML
+        
+    Returns:
+        Complete dimension section HTML
+    """
+    content = get_dimension_header_html(dimension_key)
+    
+    # Add chart if provided
+    if chart_html:
+        content += f'<div class="chart-container">{chart_html}</div>'
+    
+    # Add test results organized by tool
+    tool_names = {
+        'dd_tests': 'DD',
+        'fio_tests': 'FIO',
+        'iozone_tests': 'IOzone',
+        'bonnie_tests': 'Bonnie++',
+        'dbench_tests': 'DBench'
+    }
+    
+    for tool_key, tool_data in dimension_data.items():
+        if not tool_data:
+            continue
+        
+        tool_name = tool_names.get(tool_key, tool_key.replace('_tests', '').upper())
+        
+        # Add tool subsection
+        content += f'<h4 style="color: #667eea; margin-top: 20px; margin-bottom: 10px;">{tool_name} Tests</h4>'
+        
+        for test_name, test_data in tool_data.items():
+            if not isinstance(test_data, dict):
+                continue
+            
+            status = test_data.get('status', 'unknown')
+            
+            # Extract relevant metrics based on dimension
+            metrics = {}
+            if dimension_key == 'throughput':
+                if 'throughput_mbps' in test_data:
+                    metrics['Throughput'] = f"{test_data['throughput_mbps']:.2f} MB/s"
+                if 'write_bandwidth_mbps' in test_data:
+                    metrics['Write Bandwidth'] = f"{test_data['write_bandwidth_mbps']:.2f} MB/s"
+                if 'read_bandwidth_mbps' in test_data:
+                    metrics['Read Bandwidth'] = f"{test_data['read_bandwidth_mbps']:.2f} MB/s"
+            
+            elif dimension_key == 'iops':
+                if 'read_iops' in test_data:
+                    metrics['Read IOPS'] = f"{test_data['read_iops']:,.0f}"
+                if 'write_iops' in test_data:
+                    metrics['Write IOPS'] = f"{test_data['write_iops']:,.0f}"
+            
+            elif dimension_key == 'latency':
+                if 'avg_latency_ms' in test_data:
+                    metrics['Avg Latency'] = f"{test_data['avg_latency_ms']:.2f} ms"
+                if 'read_latency_ms' in test_data:
+                    metrics['Read Latency'] = f"{test_data['read_latency_ms']:.2f} ms"
+                if 'write_latency_ms' in test_data:
+                    metrics['Write Latency'] = f"{test_data['write_latency_ms']:.2f} ms"
+            
+            elif dimension_key == 'metadata':
+                # Look for any ops/sec metrics
+                for key, value in test_data.items():
+                    if ('per_sec' in key or 'ops' in key) and isinstance(value, (int, float)):
+                        label = key.replace('_', ' ').replace('per sec', '/sec').title()
+                        metrics[label] = f"{value:,.0f}"
+            
+            elif dimension_key == 'cache_effects':
+                # Handle cache comparison data
+                if 'cached' in test_data and 'direct' in test_data:
+                    cached = test_data['cached']
+                    direct = test_data['direct']
+                    if isinstance(cached, dict) and isinstance(direct, dict):
+                        cached_tp = cached.get('throughput_mbps', 0)
+                        direct_tp = direct.get('throughput_mbps', 0)
+                        if cached_tp > 0 and direct_tp > 0:
+                            metrics['Cached I/O'] = f"{cached_tp:.2f} MB/s"
+                            metrics['Direct I/O'] = f"{direct_tp:.2f} MB/s"
+                            improvement = ((cached_tp - direct_tp) / direct_tp) * 100
+                            metrics['Cache Benefit'] = f"{improvement:.1f}%"
+            
+            elif dimension_key == 'concurrency':
+                if 'num_clients' in test_data:
+                    metrics['Clients'] = str(test_data['num_clients'])
+                if 'num_threads' in test_data:
+                    metrics['Threads'] = str(test_data['num_threads'])
+                if 'throughput_mbps' in test_data:
+                    metrics['Throughput'] = f"{test_data['throughput_mbps']:.2f} MB/s"
+            
+            # Add duration if available
+            if 'duration' in test_data:
+                metrics['Duration'] = test_data['duration']
+            
+            if metrics:
+                content += get_dimension_test_result_html(tool_name, test_name, status, metrics)
+    
+    return get_section_html(f"{dimension_mapper.get_dimension_info(dimension_key)['icon']} {dimension_mapper.get_dimension_info(dimension_key)['name']}", content)
+
+
+def get_dimension_overview_html(test_results: Dict[str, Any]) -> str:
+    """
+    Generate dimension overview section with summary cards for all dimensions.
+    
+    Args:
+        test_results: Full test results dictionary
+        
+    Returns:
+        Dimension overview HTML
+    """
+    summary = dimension_mapper.get_dimension_summary(test_results)
+    
+    if not summary:
+        return get_no_data_html("No dimension summary available")
+    
+    cards_html = '<div class="summary-grid">'
+    
+    # Define units for each dimension
+    units = {
+        'throughput': 'MB/s',
+        'iops': 'ops/sec',
+        'latency': 'ms',
+        'metadata': 'ops/sec',
+        'cache_effects': 'MB/s',
+        'concurrency': 'MB/s'
+    }
+    
+    for dimension_key in dimension_mapper.get_all_dimensions():
+        if dimension_key in summary:
+            dim_summary = summary[dimension_key]
+            cards_html += get_dimension_summary_card_html(
+                dimension_key,
+                dim_summary['value'],
+                dim_summary['source'],
+                units.get(dimension_key, '')
+            )
+    
+    cards_html += '</div>'
+    
+    return get_section_html("📊 Performance Dimensions Overview", cards_html)
 
 # Made with Bob

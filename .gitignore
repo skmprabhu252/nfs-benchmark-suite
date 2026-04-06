@@ -23,12 +23,15 @@ wheels/
 # Our source lib/ directory is tracked
 
 # Test results and logs
-nfs_performance_test_*.json
-nfs_performance_test_*.log
-nfs_performance_report_*.html
+nfs_performance_*.json
 *.log
 results/
 test_results/
+logs/
+report/
+
+# Backup files
+*.backup
 
 # Documentation (internal use only - exclude all .md files except README.md)
 *.md

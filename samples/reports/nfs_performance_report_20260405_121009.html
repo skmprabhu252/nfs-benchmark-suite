@@ -1,0 +1,312 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFS Benchmark Suite Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .metric-card h3 {
+            color: #667eea;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .metric-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .metric-card .unit {
+            font-size: 0.9em;
+            color: #666;
+            margin-left: 5px;
+        }
+        
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .test-result {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        
+        .test-result.passed {
+            border-left-color: #10b981;
+        }
+        
+        .test-result.failed {
+            border-left-color: #ef4444;
+        }
+        
+        .test-result h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .test-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .test-metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+        }
+        
+        .test-metric .label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .test-metric .value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-badge.passed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-badge.failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .chart-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        tr:hover {
+            background: #f9fafb;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 NFS Benchmark Suite Report</h1>
+            <p><strong>Mount Path:</strong> N/A</p>
+            <p><strong>Hostname:</strong> N/A</p>
+            <p><strong>Test Date:</strong> N/A</p>
+        </div>
+        
+        <div class="summary-grid">
+            <div class="metric-card">
+                <h3>Total Tests</h3>
+                <div class="value">0</div>
+            </div>
+            <div class="metric-card">
+                <h3>Tests Passed</h3>
+                <div class="value" style="color: #10b981;">0</div>
+            </div>
+            <div class="metric-card">
+                <h3>Tests Failed</h3>
+                <div class="value" style="color: #ef4444;">0</div>
+            </div>
+            <div class="metric-card">
+                <h3>Pass Rate</h3>
+                <div class="value">0.0<span class="unit">%</span></div>
+            </div>
+            <div class="metric-card">
+                <h3>Total Duration</h3>
+                <div class="value">0.0<span class="unit">s</span></div>
+            </div>
+        </div>
+        
+        <div class="section" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px;"><h2 style="color: white; margin-bottom: 20px;">🎯 Executive Summary</h2>
+    <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+        <h3 style="color: white; margin-bottom: 10px;">Overall Health Score</h3>
+        <div style="font-size: 3em; font-weight: bold;">95/100</div>
+        <div style="font-size: 1.2em; margin-top: 10px; text-transform: uppercase; letter-spacing: 2px;">excellent</div>
+    </div>
+    <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; margin-bottom: 20px;"><h3 style="color: white; margin-bottom: 15px;">Issues Found</h3><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+            <div style="background: rgba(251, 191, 36, 0.3); padding: 15px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 2em; font-weight: bold;">1</div>
+                <div style="font-size: 0.9em; margin-top: 5px;">Warnings</div>
+            </div>
+            </div></div></div><div class="section"><h2>🔍 Performance Insights</h2><p style="color: #666; margin-bottom: 20px;">Automated analysis of test results with actionable recommendations</p>
+            <div style="border-left: 4px solid #f59e0b; background: #fef3c7; padding: 20px; margin-bottom: 15px; border-radius: 5px;">
+                <h3 style="color: #333; margin-bottom: 10px;">⚠️ No NFS Metrics Collected</h3>
+                <p style="color: #555; margin-bottom: 10px;">NFS-specific metrics were not collected during tests.</p>
+                <div style="background: white; padding: 15px; border-radius: 5px; margin-top: 10px;">
+                    <strong style="color: #667eea;">💡 Recommendation:</strong>
+                    <p style="color: #555; margin-top: 5px;">Ensure NFS metrics collection is enabled and nfsstat is available.</p>
+                </div>
+            </div>
+            </div><div class="section"><h2>📋 Action Items</h2><p style="color: #666; margin-bottom: 20px;">Prioritized recommendations to improve NFS performance</p>
+            <div style="background: white; padding: 25px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="margin-bottom: 15px;">
+                    <span style="background: #3b82f6; color: white; padding: 5px 10px; border-radius: 5px; font-size: 0.8em; font-weight: bold;">LOW PRIORITY</span>
+                    <h3 style="color: #333; margin-top: 10px;">General Best Practices</h3>
+                </div>
+                <p style="color: #666; margin-bottom: 15px;">Follow these practices for optimal NFS performance.</p>
+                <div style="background: #f9fafb; padding: 15px; border-radius: 5px;">
+                    <strong style="color: #667eea;">Action Steps:</strong>
+                    <ul style="margin-top: 10px; padding-left: 20px;">
+            <li style="color: #555; margin-bottom: 5px;">Use NFSv4 or later for better performance</li><li style="color: #555; margin-bottom: 5px;">Enable async mount option for write-heavy workloads</li><li style="color: #555; margin-bottom: 5px;">Tune rsize/wsize to match network MTU</li><li style="color: #555; margin-bottom: 5px;">Monitor NFS metrics regularly</li><li style="color: #555; margin-bottom: 5px;">Keep NFS client and server software updated</li>
+                    </ul>
+                </div>
+            </div>
+            </div>
+        
+        
+        
+        <div class="section"><h2>📊 Cross-Tool Performance Comparison</h2><p style="color: #666; margin-bottom: 20px;">Unified view of performance metrics across all benchmark tools (normalized to MB/s)</p><h3 style="margin-top: 30px;">Performance Summary</h3><div class="summary-grid"></div></div></div>
+        
+        
+        
+        <div class="section">
+            <h2>DD Test Results</h2>
+            <p>No DD tests were run.</p>
+        </div>
+        
+        <div class="section">
+            <h2>FIO Test Results</h2>
+            <p>No FIO tests were run.</p>
+        </div>
+        
+        <div class="section">
+            <h2>IOzone Test Results</h2>
+            <p>No IOzone tests were run.</p>
+        </div>
+        
+        <div class="section">
+            <h2>Bonnie++ Test Results</h2>
+            <p>No Bonnie++ tests were run.</p>
+        </div>
+        
+        <div class="section">
+            <h2>DBench Test Results</h2>
+            <p>No DBench tests were run.</p>
+        </div>
+        
+        
+        
+        <div class="footer">
+            <p>Generated on 2026-04-05 12:10:09</p>
+            <p>NFS Benchmark Suite</p>
+        </div>
+    </div>
+</body>
+</html>

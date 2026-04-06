@@ -273,12 +273,12 @@ def get_base_template(title: str, content: str) -> str:
 
 def get_header_html(title: str, subtitle: str, metadata: Dict[str, Any] = None) -> str:
     """
-    Generate header HTML.
+    Generate header HTML with test metadata.
     
     Args:
         title: Main title
         subtitle: Subtitle text
-        metadata: Optional metadata to display
+        metadata: Optional metadata to display (includes test_metadata fields)
         
     Returns:
         Header HTML string
@@ -286,17 +286,44 @@ def get_header_html(title: str, subtitle: str, metadata: Dict[str, Any] = None) 
     metadata_html = ""
     if metadata:
         meta_items = []
+        
+        # Primary metadata (test_id, server, mount path)
         if 'test_id' in metadata:
-            meta_items.append(f"Test ID: {metadata['test_id']}")
+            meta_items.append(f"<strong>Test ID:</strong> {metadata['test_id']}")
         if 'server_ip' in metadata:
-            meta_items.append(f"Server: {metadata['server_ip']}")
-        if 'versions' in metadata:
-            meta_items.append(f"Versions: {metadata['versions']}")
+            meta_items.append(f"<strong>Server:</strong> {metadata['server_ip']}")
+        if 'mount_path' in metadata:
+            meta_items.append(f"<strong>Mount Path:</strong> {metadata['mount_path']}")
+        
+        # Transport and test mode
+        if 'transport' in metadata:
+            meta_items.append(f"<strong>Transport:</strong> {metadata['transport'].upper()}")
+        if 'test_mode' in metadata:
+            meta_items.append(f"<strong>Test Mode:</strong> {metadata['test_mode'].title()}")
+        
+        # Versions tested
+        if 'versions_tested' in metadata:
+            versions = metadata['versions_tested']
+            if isinstance(versions, list):
+                versions_str = ', '.join([f"NFSv{v}" for v in versions])
+            else:
+                versions_str = str(versions)
+            meta_items.append(f"<strong>Versions:</strong> {versions_str}")
+        elif 'versions' in metadata:
+            meta_items.append(f"<strong>Versions:</strong> {metadata['versions']}")
+        
+        # Timestamp
         if 'timestamp' in metadata:
-            meta_items.append(f"Generated: {metadata['timestamp']}")
+            meta_items.append(f"<strong>Timestamp:</strong> {metadata['timestamp']}")
         
         if meta_items:
-            metadata_html = f"<p>{' | '.join(meta_items)}</p>"
+            metadata_html = f"""
+            <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 0.95em;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
+                    {''.join([f'<div>{item}</div>' for item in meta_items])}
+                </div>
+            </div>
+            """
     
     return f"""
     <div class="header">

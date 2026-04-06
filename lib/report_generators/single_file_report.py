@@ -154,10 +154,10 @@ class SingleFileReportGenerator(BaseReportGenerator):
     
     def _generate_header(self, metadata: Dict[str, Any]) -> str:
         """
-        Generate report header.
+        Generate report header with test metadata.
         
         Args:
-            metadata: Test metadata
+            metadata: Test metadata (from test_metadata field in JSON)
             
         Returns:
             Header HTML string
@@ -165,16 +165,9 @@ class SingleFileReportGenerator(BaseReportGenerator):
         title = "NFS Benchmark Suite"
         subtitle = "Performance Test Report"
         
-        # Format metadata for display
-        display_metadata = {}
-        if metadata.get('server_ip'):
-            display_metadata['server_ip'] = metadata['server_ip']
-        if metadata.get('hostname'):
-            display_metadata['hostname'] = metadata['hostname']
-        if metadata.get('timestamp'):
-            display_metadata['timestamp'] = metadata['timestamp']
-        
-        return get_header_html(title, subtitle, display_metadata)
+        # Pass all available metadata to header
+        # The get_header_html function will extract what it needs
+        return get_header_html(title, subtitle, metadata)
     
     def _generate_summary(self, test_results: Dict[str, Dict], 
                          metadata: Dict[str, Any]) -> str:

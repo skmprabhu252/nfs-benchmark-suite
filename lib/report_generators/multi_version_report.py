@@ -203,10 +203,10 @@ class MultiVersionReportGenerator(BaseReportGenerator):
     
     def _generate_header(self, metadata: Dict[str, Any], num_versions: int) -> str:
         """
-        Generate report header.
+        Generate report header with test metadata.
         
         Args:
-            metadata: Test metadata
+            metadata: Test metadata (from test_metadata field in JSON)
             num_versions: Number of versions tested
             
         Returns:
@@ -215,15 +215,9 @@ class MultiVersionReportGenerator(BaseReportGenerator):
         title = "NFS Benchmark Suite"
         subtitle = "Multi-Version Performance Report"
         
-        # Format metadata for display
-        display_metadata = {
-            'test_id': metadata.get('test_id', 'N/A'),
-            'versions': str(num_versions),
-        }
-        if metadata.get('server_ip'):
-            display_metadata['server_ip'] = metadata['server_ip']
-        if metadata.get('transport'):
-            display_metadata['transport'] = metadata['transport'].upper()
+        # Pass all metadata and add version count
+        display_metadata = metadata.copy() if metadata else {}
+        display_metadata['versions_count'] = f"{num_versions} versions tested"
         
         return get_header_html(title, subtitle, display_metadata)
     

@@ -208,7 +208,7 @@ class ComparisonReportGenerator(BaseReportGenerator):
     
     def _generate_header(self, test_id_1: str, test_id_2: str) -> str:
         """
-        Generate report header.
+        Generate report header for comparison.
         
         Args:
             test_id_1: First test ID
@@ -218,10 +218,13 @@ class ComparisonReportGenerator(BaseReportGenerator):
             Header HTML string
         """
         title = "NFS Benchmark Suite"
-        subtitle = "Test-ID Comparison Report"
+        subtitle = f"Comparison Report: {test_id_1} vs {test_id_2}"
         
+        # For comparison reports, we don't have single test_metadata
+        # The metadata is shown in the comparison grid instead
         display_metadata = {
-            'comparison': f"{test_id_1} vs {test_id_2}",
+            'test_id_1': test_id_1,
+            'test_id_2': test_id_2,
         }
         
         return get_header_html(title, subtitle, display_metadata)

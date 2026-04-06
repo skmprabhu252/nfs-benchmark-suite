@@ -1245,13 +1245,41 @@ def get_multi_version_dimension_section_html(dimension_key: str,
                     # Extract relevant metric
                     value = 0
                     if dimension_key == 'throughput':
-                        value = (test_data.get('throughput_mbps') or 
-                                test_data.get('write_bandwidth_mbps') or 
+                        value = (test_data.get('throughput_mbps') or
+                                test_data.get('write_bandwidth_mbps') or
+                                test_data.get('read_bandwidth_mbps') or
+                                test_data.get('write_throughput_mbps') or
+                                test_data.get('read_throughput_mbps') or
                                 test_data.get('sequential_output_block_mbps') or 0)
                     elif dimension_key == 'iops':
                         value = max(test_data.get('write_iops', 0), test_data.get('read_iops', 0))
                     elif dimension_key == 'latency':
-                        value = test_data.get('avg_latency_ms') or test_data.get('write_latency_ms', 0)
+                        value = (test_data.get('avg_latency_ms') or
+                                test_data.get('write_latency_ms') or
+                                test_data.get('read_latency_ms') or
+                                test_data.get('max_latency_ms') or 0)
+                    elif dimension_key == 'metadata':
+                        # Look for metadata_ops_per_sec first, then IOPS, then any ops/sec metric
+                        value = test_data.get('metadata_ops_per_sec', 0)
+                        if not value:
+                            value = max(test_data.get('read_iops', 0), test_data.get('write_iops', 0))
+                        if not value:
+                            for key in test_data:
+                                if 'per_sec' in key and key != 'throughput_mbps':
+                                    metric_data = test_data[key]
+                                    if isinstance(metric_data, (int, float)):
+                                        value = metric_data
+                                        break
+                    elif dimension_key == 'cache_effects':
+                        # For cache effects, look for throughput differences or reread performance
+                        value = (test_data.get('reread_throughput_mbps') or
+                                test_data.get('throughput_mbps') or
+                                test_data.get('read_bandwidth_mbps') or 0)
+                    elif dimension_key == 'concurrency':
+                        # For concurrency, look for throughput from multi-threaded tests
+                        value = (test_data.get('throughput_mbps') or
+                                test_data.get('write_bandwidth_mbps') or
+                                test_data.get('read_bandwidth_mbps') or 0)
                     
                     if value > best_value:
                         best_value = value
@@ -1278,6 +1306,12 @@ def get_multi_version_dimension_section_html(dimension_key: str,
                     value_str = f"{summary['best_value']:,.0f} IOPS"
                 elif dimension_key == 'latency':
                     value_str = f"{summary['best_value']:.2f} ms"
+                elif dimension_key == 'metadata':
+                    value_str = f"{summary['best_value']:,.0f} ops/sec"
+                elif dimension_key == 'cache_effects':
+                    value_str = f"{summary['best_value']:.2f} MB/s"
+                elif dimension_key == 'concurrency':
+                    value_str = f"{summary['best_value']:.2f} MB/s"
                 else:
                     value_str = f"{summary['best_value']:.2f}"
                 

@@ -88,19 +88,30 @@ DIMENSION_MAPPING = {
     },
     'latency': {
         'fio_tests': [
-            'latency_test'
+            'latency_test',
+            'sequential_write',  # Has write_latency_ms
+            'sequential_read',   # Has read_latency_ms
+            'random_read_4k',    # Has read_latency_ms
+            'random_write_4k',   # Has write_latency_ms
+            'mixed_randrw_70_30' # Has both latencies
         ],
         'dbench_tests': [
             'light_client_load',
-            'latency_test'
+            'latency_test',
+            'moderate_client_load',
+            'heavy_client_load'
         ]
     },
     'metadata': {
         'fio_tests': [
-            'metadata_operations'
+            'metadata_operations',
+            'random_read_4k',    # IOPS-based, metadata-heavy
+            'random_write_4k',   # IOPS-based, metadata-heavy
+            'mixed_randrw_70_30' # Mixed workload with metadata ops
         ],
         'iozone_tests': [
-            'metadata_operations'
+            'metadata_operations',
+            'random_io_4k'  # Random I/O involves metadata operations
         ],
         'bonnie_tests': [
             'file_create_seq_per_sec',
@@ -112,7 +123,10 @@ DIMENSION_MAPPING = {
             'random_seeks_per_sec'
         ],
         'dbench_tests': [
-            'metadata_intensive'
+            'metadata_intensive',
+            'light_client_load',
+            'moderate_client_load',
+            'heavy_client_load'
         ]
     },
     'cache_effects': {
@@ -126,9 +140,13 @@ DIMENSION_MAPPING = {
         ]
     },
     'concurrency': {
+        'fio_tests': [
+            'mixed_randrw_70_30'  # Mixed workload tests concurrency
+        ],
         'iozone_tests': [
             'concurrency_16_threads',
-            'scaling_test'
+            'scaling_test',
+            'mixed_workload'  # Mixed workload tests concurrency
         ],
         'dbench_tests': [
             'scalability_test',
@@ -221,13 +239,11 @@ def extract_dimension_data(results: Dict[str, Any], dimension: str) -> Dict[str,
                 else:
                     for bonnie_test_name, bonnie_test_data in tool_results.items():
                         if isinstance(bonnie_test_data, dict) and test_name in bonnie_test_data:
-                            if tool_key not in dimension_data:
-                                dimension_data[tool_key] = {}
-                            if bonnie_test_name not in dimension_data[tool_key]:
-                                dimension_data[tool_key][bonnie_test_name] = {}
-                            # Create a dict with the metric value and inherit status from parent test
-                            dimension_data[tool_key][bonnie_test_name][test_name] = {
-                                'value': bonnie_test_data[test_name],
+                            # Create a synthetic test entry with the metric as the main value
+                            # Use format: "test_name: metric_name" for clarity
+                            synthetic_key = f"{bonnie_test_name}_{test_name}"
+                            tool_dimension_data[synthetic_key] = {
+                                test_name: bonnie_test_data[test_name],
                                 'status': bonnie_test_data.get('status', 'unknown')
                             }
         
@@ -273,22 +289,45 @@ def get_dimension_summary(results: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
                 # Extract relevant metric based on dimension
                 value = None
                 if dimension == 'throughput':
-                    value = test_data.get('throughput_mbps') or test_data.get('write_bandwidth_mbps')
+                    # Check all possible throughput fields
+                    value = (test_data.get('throughput_mbps') or
+                            test_data.get('write_bandwidth_mbps') or
+                            test_data.get('read_bandwidth_mbps') or
+                            test_data.get('write_throughput_mbps') or
+                            test_data.get('read_throughput_mbps'))
                 elif dimension == 'iops':
-                    value = test_data.get('write_iops') or test_data.get('read_iops')
+                    value = (test_data.get('write_iops') or
+                            test_data.get('read_iops'))
                 elif dimension == 'latency':
-                    value = test_data.get('avg_latency_ms') or test_data.get('write_latency_ms')
+                    value = (test_data.get('avg_latency_ms') or
+                            test_data.get('write_latency_ms') or
+                            test_data.get('read_latency_ms') or
+                            test_data.get('max_latency_ms'))
                 elif dimension == 'metadata':
-                    # Look for any ops/sec metric
-                    for key in test_data:
-                        if 'per_sec' in key or 'ops' in key:
-                            metric_data = test_data[key]
-                            # Handle Bonnie++ metrics with 'value' structure
-                            if isinstance(metric_data, dict) and 'value' in metric_data:
-                                value = metric_data['value']
-                            else:
-                                value = metric_data
-                            break
+                    # Look for metadata_ops_per_sec first, then IOPS, then any ops/sec metric
+                    value = test_data.get('metadata_ops_per_sec')
+                    if not value:
+                        value = test_data.get('read_iops') or test_data.get('write_iops')
+                    if not value:
+                        for key in test_data:
+                            if 'per_sec' in key or ('ops' in key and key != 'total_ops'):
+                                metric_data = test_data[key]
+                                # Handle Bonnie++ metrics with 'value' structure
+                                if isinstance(metric_data, dict) and 'value' in metric_data:
+                                    value = metric_data['value']
+                                else:
+                                    value = metric_data
+                                break
+                elif dimension == 'cache_effects':
+                    # For cache effects, look for throughput differences or reread performance
+                    value = (test_data.get('reread_throughput_mbps') or
+                            test_data.get('throughput_mbps') or
+                            test_data.get('read_bandwidth_mbps'))
+                elif dimension == 'concurrency':
+                    # For concurrency, look for throughput from multi-threaded tests
+                    value = (test_data.get('throughput_mbps') or
+                            test_data.get('write_bandwidth_mbps') or
+                            test_data.get('read_bandwidth_mbps'))
                 
                 if value and isinstance(value, (int, float)) and (best_value is None or value > best_value):
                     best_value = value

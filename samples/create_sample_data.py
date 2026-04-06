@@ -179,9 +179,10 @@ def create_nfs_metrics(test_type="write"):
 def create_comprehensive_test_data(test_id, nfs_version, transport="tcp"):
     """Create comprehensive test data matching actual benchmark suite format.
     
-    Note: This generates data in the format expected by report generators,
-    which includes nfs_version, transport, and test_metadata at the top level.
-    The actual benchmark suite output has a different structure without these fields.
+    The actual format has all test results at the top level, NOT nested under 'results'.
+    Structure matches the real benchmark output exactly.
+    
+    The filename pattern is: nfs_performance_{test_id}_nfsv{version}_{transport}_{timestamp}.json
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
@@ -191,15 +192,6 @@ def create_comprehensive_test_data(test_id, nfs_version, transport="tcp"):
     return {
         "nfs_version": nfs_version,
         "transport": transport,
-        "test_metadata": {
-            "test_id": test_id,
-            "server_ip": "10.11.28.193",
-            "mount_path": f"/mnt/nfs_benchmark_mount/nfsv{nfs_version}_{transport}",
-            "transport": transport,
-            "test_mode": "comprehensive",
-            "versions_tested": [nfs_version],
-            "timestamp": datetime.now().isoformat()
-        },
         "test_run": {
             "timestamp": datetime.now().isoformat(),
             "mount_path": f"/mnt/nfs_benchmark_mount/nfsv{nfs_version}_{transport}",
@@ -327,6 +319,7 @@ def create_comprehensive_test_data(test_id, nfs_version, transport="tcp"):
                 "write_bandwidth_mbps": round(20.0 * v4_boost + random.uniform(-2, 2), 1),
                 "read_latency_ms": round(0.2 / v4_boost + random.uniform(-0.02, 0.02), 3),
                 "write_latency_ms": round(0.2 / v4_boost + random.uniform(-0.02, 0.02), 3),
+                "metadata_ops_per_sec": int(10000 * v4_boost + random.uniform(-1000, 1000)),
                 "system_metrics": create_system_metrics(38, 34),
                 "nfs_metrics": create_nfs_metrics("write")
             },
@@ -338,6 +331,7 @@ def create_comprehensive_test_data(test_id, nfs_version, transport="tcp"):
                 "write_bandwidth_mbps": 0.0,
                 "read_latency_ms": round(0.067 / v4_boost + random.uniform(-0.008, 0.008), 3),
                 "write_latency_ms": 0.0,
+                "avg_latency_ms": round(0.067 / v4_boost + random.uniform(-0.008, 0.008), 3),
                 "system_metrics": create_system_metrics(45, 35),
                 "nfs_metrics": create_nfs_metrics("read")
             }

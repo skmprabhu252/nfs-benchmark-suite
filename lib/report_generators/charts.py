@@ -205,11 +205,11 @@ class ChartGenerator:
             return None
         
         fig = go.Figure(data=[
-            go.Bar(name='Output', x=names, y=output_throughputs, marker_color='#f59e0b'),
-            go.Bar(name='Input', x=names, y=input_throughputs, marker_color='#8b5cf6')
+            go.Bar(name='Write (Sequential Output)', x=names, y=output_throughputs, marker_color='#3b82f6'),
+            go.Bar(name='Read (Sequential Input)', x=names, y=input_throughputs, marker_color='#10b981')
         ])
         fig.update_layout(
-            title='Bonnie++ Test Throughput',
+            title='Bonnie++ Sequential Block Throughput',
             xaxis_title='Test Name',
             yaxis_title='Throughput (MB/s)',
             barmode='group',
@@ -480,7 +480,7 @@ class ChartGenerator:
     
     def create_multi_version_iozone_chart(self, results_by_version: Dict[str, Dict]) -> Optional[str]:
         """
-        Create multi-version IOzone comparison chart.
+        Create multi-version IOzone comparison chart showing write and read throughput.
         
         Args:
             results_by_version: Results organized by NFS version
@@ -492,42 +492,77 @@ class ChartGenerator:
             return None
         
         versions = sorted(results_by_version.keys())
-        iozone_data = {}
+        
+        # Collect data for each test and metric type
+        test_names_set = set()
+        write_data = {}  # {test_name: {version: value}}
+        read_data = {}   # {test_name: {version: value}}
         
         for version_key, version_results in results_by_version.items():
             iozone_tests = version_results.get('iozone_tests', {})
             for test_name, test_data in iozone_tests.items():
                 if test_data.get('status') == 'passed':
-                    if test_name not in iozone_data:
-                        iozone_data[test_name] = {}
-                    # Use write throughput as primary metric
-                    tp = test_data.get('write_throughput_mbps', 0)
-                    if tp > 0:
-                        iozone_data[test_name][version_key] = tp
+                    test_names_set.add(test_name)
+                    
+                    # Get write throughput
+                    write_tp = test_data.get('write_throughput_mbps', 0)
+                    if write_tp > 0:
+                        if test_name not in write_data:
+                            write_data[test_name] = {}
+                        write_data[test_name][version_key] = write_tp
+                    
+                    # Get read throughput
+                    read_tp = test_data.get('read_throughput_mbps', 0)
+                    if read_tp > 0:
+                        if test_name not in read_data:
+                            read_data[test_name] = {}
+                        read_data[test_name][version_key] = read_tp
         
-        if not iozone_data:
+        if not test_names_set:
             return None
         
+        test_names = sorted(test_names_set)
+        
         fig = go.Figure()
+        
+        # Add write throughput traces
         for version_key in versions:
-            test_names = []
-            throughputs = []
-            for test_name in iozone_data.keys():
-                if version_key in iozone_data[test_name]:
-                    test_names.append(test_name.replace('_', ' ').title())
-                    throughputs.append(iozone_data[test_name][version_key])
+            write_values = []
+            x_labels = []
+            for test_name in test_names:
+                if test_name in write_data and version_key in write_data[test_name]:
+                    x_labels.append(f"{test_name.replace('_', ' ').title()} (Write)")
+                    write_values.append(write_data[test_name][version_key])
             
-            if test_names:
+            if x_labels:
                 fig.add_trace(go.Bar(
-                    name=version_key.replace('_', ' ').upper(),
-                    x=test_names,
-                    y=throughputs
+                    name=f"{version_key.replace('_', ' ').upper()} Write",
+                    x=x_labels,
+                    y=write_values,
+                    marker_color='#3b82f6'
+                ))
+        
+        # Add read throughput traces
+        for version_key in versions:
+            read_values = []
+            x_labels = []
+            for test_name in test_names:
+                if test_name in read_data and version_key in read_data[test_name]:
+                    x_labels.append(f"{test_name.replace('_', ' ').title()} (Read)")
+                    read_values.append(read_data[test_name][version_key])
+            
+            if x_labels:
+                fig.add_trace(go.Bar(
+                    name=f"{version_key.replace('_', ' ').upper()} Read",
+                    x=x_labels,
+                    y=read_values,
+                    marker_color='#10b981'
                 ))
         
         fig.update_layout(
-            title='IOzone Test Throughput Comparison',
+            title='IOzone Test Throughput Comparison (Write & Read)',
             xaxis_title='Test Name',
-            yaxis_title='Write Throughput (MB/s)',
+            yaxis_title='Throughput (MB/s)',
             barmode='group',
             height=400
         )
@@ -536,7 +571,7 @@ class ChartGenerator:
     
     def create_multi_version_bonnie_chart(self, results_by_version: Dict[str, Dict]) -> Optional[str]:
         """
-        Create multi-version Bonnie++ comparison chart.
+        Create multi-version Bonnie++ comparison chart showing both output and input throughput.
         
         Args:
             results_by_version: Results organized by NFS version
@@ -548,42 +583,77 @@ class ChartGenerator:
             return None
         
         versions = sorted(results_by_version.keys())
-        bonnie_data = {}
+        
+        # Collect data for each test and metric type
+        test_names_set = set()
+        output_data = {}  # {test_name: {version: value}}
+        input_data = {}   # {test_name: {version: value}}
         
         for version_key, version_results in results_by_version.items():
             bonnie_tests = version_results.get('bonnie_tests', {})
             for test_name, test_data in bonnie_tests.items():
                 if test_data.get('status') == 'passed':
-                    if test_name not in bonnie_data:
-                        bonnie_data[test_name] = {}
-                    # Use sequential output block as primary metric
-                    tp = test_data.get('sequential_output_block_mbps', 0)
-                    if tp > 0:
-                        bonnie_data[test_name][version_key] = tp
+                    test_names_set.add(test_name)
+                    
+                    # Get output throughput
+                    output_tp = test_data.get('sequential_output_block_mbps', 0)
+                    if output_tp >= 0:  # Include zero values
+                        if test_name not in output_data:
+                            output_data[test_name] = {}
+                        output_data[test_name][version_key] = output_tp
+                    
+                    # Get input throughput
+                    input_tp = test_data.get('sequential_input_block_mbps', 0)
+                    if input_tp >= 0:  # Include zero values
+                        if test_name not in input_data:
+                            input_data[test_name] = {}
+                        input_data[test_name][version_key] = input_tp
         
-        if not bonnie_data:
+        if not test_names_set:
             return None
         
+        test_names = sorted(test_names_set)
+        
         fig = go.Figure()
+        
+        # Add write throughput traces (sequential output)
         for version_key in versions:
-            test_names = []
-            throughputs = []
-            for test_name in bonnie_data.keys():
-                if version_key in bonnie_data[test_name]:
-                    test_names.append(test_name.replace('_', ' ').title())
-                    throughputs.append(bonnie_data[test_name][version_key])
+            output_values = []
+            x_labels = []
+            for test_name in test_names:
+                if test_name in output_data and version_key in output_data[test_name]:
+                    x_labels.append(f"{test_name.replace('_', ' ').title()} (Write)")
+                    output_values.append(output_data[test_name][version_key])
             
-            if test_names:
+            if x_labels:
                 fig.add_trace(go.Bar(
-                    name=version_key.replace('_', ' ').upper(),
-                    x=test_names,
-                    y=throughputs
+                    name=f"{version_key.replace('_', ' ').upper()} Write",
+                    x=x_labels,
+                    y=output_values,
+                    marker_color='#3b82f6'
+                ))
+        
+        # Add read throughput traces (sequential input)
+        for version_key in versions:
+            input_values = []
+            x_labels = []
+            for test_name in test_names:
+                if test_name in input_data and version_key in input_data[test_name]:
+                    x_labels.append(f"{test_name.replace('_', ' ').title()} (Read)")
+                    input_values.append(input_data[test_name][version_key])
+            
+            if x_labels:
+                fig.add_trace(go.Bar(
+                    name=f"{version_key.replace('_', ' ').upper()} Read",
+                    x=x_labels,
+                    y=input_values,
+                    marker_color='#10b981'
                 ))
         
         fig.update_layout(
-            title='Bonnie++ Test Throughput Comparison',
+            title='Bonnie++ Sequential Block Throughput Comparison (Write & Read)',
             xaxis_title='Test Name',
-            yaxis_title='Sequential Output Block (MB/s)',
+            yaxis_title='Throughput (MB/s)',
             barmode='group',
             height=400
         )
@@ -642,13 +712,19 @@ class ChartGenerator:
         Generate all charts for multi-version report.
         
         Args:
-            results_by_version: Results organized by NFS version
+            results_by_version: Results organized by NFS version or test-id_version
             
         Returns:
             HTML string with all charts
         """
         if not self.plotly_available:
             return ""
+        
+        # Check if this is a comparison (keys contain test-id prefix)
+        is_comparison = any('_nfsv' in key for key in results_by_version.keys())
+        
+        if is_comparison:
+            return self.generate_comparison_charts(results_by_version)
         
         charts_html = '<div class="section"><h2>📊 Multi-Version Performance Comparison</h2>'
         
@@ -680,6 +756,560 @@ class ChartGenerator:
         charts_html += '</div>'
         return charts_html
     
+    def generate_comparison_charts(self, combined_results: Dict[str, Dict]) -> str:
+        """
+        Generate charts for test-id comparison reports.
+        
+        Args:
+            combined_results: Results with keys like 'testid_nfsv3_tcp'
+            
+        Returns:
+            HTML string with comparison charts
+        """
+        charts_html = '<div class="section"><h2>📊 Test-ID Performance Comparison</h2>'
+        
+        # DD comparison
+        dd_chart = self.create_comparison_dd_chart(combined_results)
+        if dd_chart:
+            charts_html += f'<div class="chart-container">{dd_chart}</div>'
+        
+        # FIO comparison
+        fio_chart = self.create_comparison_fio_chart(combined_results)
+        if fio_chart:
+            charts_html += f'<div class="chart-container">{fio_chart}</div>'
+        
+        # IOzone comparison
+        iozone_chart = self.create_comparison_iozone_chart(combined_results)
+        if iozone_chart:
+            charts_html += f'<div class="chart-container">{iozone_chart}</div>'
+        
+        # Bonnie++ comparison
+        bonnie_chart = self.create_comparison_bonnie_chart(combined_results)
+        if bonnie_chart:
+            charts_html += f'<div class="chart-container">{bonnie_chart}</div>'
+        
+        # DBench comparison
+        dbench_chart = self.create_comparison_dbench_chart(combined_results)
+        if dbench_chart:
+            charts_html += f'<div class="chart-container">{dbench_chart}</div>'
+        
+        charts_html += '</div>'
+        return charts_html
+    
+    
+    def create_comparison_dd_chart(self, combined_results: Dict[str, Dict]) -> Optional[str]:
+        """
+        Create DD throughput comparison chart for test-id comparison.
+        
+        Args:
+            combined_results: Results with keys like 'testid_nfsv3_tcp'
+            
+        Returns:
+            HTML string for chart or None
+        """
+        if not self.plotly_available:
+            return None
+        
+        # Extract data organized by test-id and version
+        data_by_test = {}
+        
+        for key, result in combined_results.items():
+            # Parse key: testid_nfsv3_tcp or testid_nfsv4.1_rdma
+            parts = key.split('_nfsv')
+            if len(parts) != 2:
+                continue
+            
+            test_id = parts[0]
+            version_transport = 'nfsv' + parts[1]
+            
+            if test_id not in data_by_test:
+                data_by_test[test_id] = {}
+            
+            dd_tests = result.get('dd_tests', {})
+            if not dd_tests:
+                continue
+            
+            # Get write throughput
+            write_test = dd_tests.get('sequential_write_direct', {})
+            write_tp = write_test.get('throughput_mbps', 0)
+            
+            # Get read throughput
+            read_test = dd_tests.get('sequential_read_direct', {})
+            read_tp = read_test.get('throughput_mbps', 0)
+            
+            data_by_test[test_id][version_transport] = {
+                'write': write_tp,
+                'read': read_tp
+            }
+        
+        if not data_by_test:
+            return None
+        
+        # Create grouped bar chart
+        fig = go.Figure()
+        
+        # Extract NFS versions (without transport) for x-axis
+        nfs_versions = set()
+        for test_data in data_by_test.values():
+            for version_transport in test_data.keys():
+                # Extract just the version part (nfsv3, nfsv4.0, etc.)
+                nfs_version = version_transport.split('_')[0]
+                nfs_versions.add(nfs_version)
+        nfs_versions = sorted(nfs_versions)
+        
+        # Add traces for each test-id
+        colors = ['#667eea', '#f59e0b', '#10b981', '#ef4444']
+        for idx, (test_id, test_data) in enumerate(sorted(data_by_test.items())):
+            write_values = []
+            read_values = []
+            x_labels = []
+            
+            for nfs_version in nfs_versions:
+                # Find matching version_transport for this test_id
+                found = False
+                for version_transport, metrics in test_data.items():
+                    if version_transport.startswith(nfs_version):
+                        write_values.append(metrics['write'])
+                        read_values.append(metrics['read'])
+                        # Extract transport for label
+                        transport = version_transport.split('_')[1] if '_' in version_transport else 'tcp'
+                        x_labels.append(f"{nfs_version.replace('nfsv', 'v')} ({transport.upper()})")
+                        found = True
+                        break
+                
+                if not found:
+                    write_values.append(0)
+                    read_values.append(0)
+                    x_labels.append(f"{nfs_version.replace('nfsv', 'v')}")
+            
+            # Add write trace
+            fig.add_trace(go.Bar(
+                name=f'{test_id} Write',
+                x=x_labels,
+                y=write_values,
+                marker_color=colors[idx % len(colors)],
+                opacity=0.8
+            ))
+            
+            # Add read trace
+            fig.add_trace(go.Bar(
+                name=f'{test_id} Read',
+                x=x_labels,
+                y=read_values,
+                marker_color=colors[idx % len(colors)],
+                opacity=0.5,
+                marker_pattern_shape="/"
+            ))
+        
+        fig.update_layout(
+            title='DD Test Throughput Comparison (Write & Read)',
+            xaxis_title='NFS Version (Transport)',
+            yaxis_title='Throughput (MB/s)',
+            barmode='group',
+            height=400,
+            margin=dict(t=60, b=50, l=50, r=150),
+            legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02)
+        )
+        
+        return fig.to_html(include_plotlyjs="cdn", full_html=False)
+    
+    def create_comparison_fio_chart(self, combined_results: Dict[str, Dict]) -> Optional[str]:
+        """
+        Create FIO IOPS comparison chart for test-id comparison.
+        
+        Args:
+            combined_results: Results with keys like 'testid_nfsv3_tcp'
+            
+        Returns:
+            HTML string for chart or None
+        """
+        if not self.plotly_available:
+            return None
+        
+        # Extract data organized by test-id and version
+        data_by_test = {}
+        
+        for key, result in combined_results.items():
+            parts = key.split('_nfsv')
+            if len(parts) != 2:
+                continue
+            
+            test_id = parts[0]
+            version_transport = 'nfsv' + parts[1]
+            
+            if test_id not in data_by_test:
+                data_by_test[test_id] = {}
+            
+            fio_tests = result.get('fio_tests', {})
+            if not fio_tests:
+                continue
+            
+            # Get sequential read/write IOPS
+            seq_read = fio_tests.get('sequential_read', {})
+            seq_write = fio_tests.get('sequential_write', {})
+            
+            data_by_test[test_id][version_transport] = {
+                'read_iops': seq_read.get('read_iops', 0),
+                'write_iops': seq_write.get('write_iops', 0)
+            }
+        
+        if not data_by_test:
+            return None
+        
+        fig = go.Figure()
+        
+        # Extract NFS versions for x-axis
+        nfs_versions = set()
+        for test_data in data_by_test.values():
+            for version_transport in test_data.keys():
+                nfs_version = version_transport.split('_')[0]
+                nfs_versions.add(nfs_version)
+        nfs_versions = sorted(nfs_versions)
+        
+        colors = ['#10b981', '#ef4444', '#3b82f6', '#f59e0b']
+        for idx, (test_id, test_data) in enumerate(sorted(data_by_test.items())):
+            read_values = []
+            write_values = []
+            x_labels = []
+            
+            for nfs_version in nfs_versions:
+                found = False
+                for version_transport, metrics in test_data.items():
+                    if version_transport.startswith(nfs_version):
+                        read_values.append(metrics['read_iops'])
+                        write_values.append(metrics['write_iops'])
+                        transport = version_transport.split('_')[1] if '_' in version_transport else 'tcp'
+                        x_labels.append(f"{nfs_version.replace('nfsv', 'v')} ({transport.upper()})")
+                        found = True
+                        break
+                
+                if not found:
+                    read_values.append(0)
+                    write_values.append(0)
+                    x_labels.append(f"{nfs_version.replace('nfsv', 'v')}")
+            
+            fig.add_trace(go.Bar(
+                name=f'{test_id} Read',
+                x=x_labels,
+                y=read_values,
+                marker_color=colors[idx % len(colors)],
+                opacity=0.8
+            ))
+            
+            fig.add_trace(go.Bar(
+                name=f'{test_id} Write',
+                x=x_labels,
+                y=write_values,
+                marker_color=colors[idx % len(colors)],
+                opacity=0.5,
+                marker_pattern_shape="/"
+            ))
+        
+        fig.update_layout(
+            title='FIO Sequential IOPS Comparison (Read & Write)',
+            xaxis_title='NFS Version (Transport)',
+            yaxis_title='IOPS',
+            barmode='group',
+            height=400,
+            margin=dict(t=60, b=50, l=50, r=150),
+            legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02)
+        )
+        
+        return fig.to_html(include_plotlyjs="cdn", full_html=False)
+    
+    def create_comparison_iozone_chart(self, combined_results: Dict[str, Dict]) -> Optional[str]:
+        """
+        Create IOzone throughput comparison chart for test-id comparison.
+        
+        Args:
+            combined_results: Results with keys like 'testid_nfsv3_tcp'
+            
+        Returns:
+            HTML string for chart or None
+        """
+        if not self.plotly_available:
+            return None
+        
+        data_by_test = {}
+        
+        for key, result in combined_results.items():
+            parts = key.split('_nfsv')
+            if len(parts) != 2:
+                continue
+            
+            test_id = parts[0]
+            version_transport = 'nfsv' + parts[1]
+            
+            if test_id not in data_by_test:
+                data_by_test[test_id] = {}
+            
+            iozone_tests = result.get('iozone_tests', {})
+            if not iozone_tests:
+                continue
+            
+            baseline = iozone_tests.get('baseline_throughput', {})
+            
+            data_by_test[test_id][version_transport] = {
+                'write': baseline.get('write_throughput_mbps', 0),
+                'read': baseline.get('read_throughput_mbps', 0)
+            }
+        
+        if not data_by_test:
+            return None
+        
+        fig = go.Figure()
+        
+        # Extract NFS versions for x-axis
+        nfs_versions = set()
+        for test_data in data_by_test.values():
+            for version_transport in test_data.keys():
+                nfs_version = version_transport.split('_')[0]
+                nfs_versions.add(nfs_version)
+        nfs_versions = sorted(nfs_versions)
+        
+        colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
+        for idx, (test_id, test_data) in enumerate(sorted(data_by_test.items())):
+            write_values = []
+            read_values = []
+            x_labels = []
+            
+            for nfs_version in nfs_versions:
+                found = False
+                for version_transport, metrics in test_data.items():
+                    if version_transport.startswith(nfs_version):
+                        write_values.append(metrics['write'])
+                        read_values.append(metrics['read'])
+                        transport = version_transport.split('_')[1] if '_' in version_transport else 'tcp'
+                        x_labels.append(f"{nfs_version.replace('nfsv', 'v')} ({transport.upper()})")
+                        found = True
+                        break
+                
+                if not found:
+                    write_values.append(0)
+                    read_values.append(0)
+                    x_labels.append(f"{nfs_version.replace('nfsv', 'v')}")
+            
+            fig.add_trace(go.Bar(
+                name=f'{test_id} Write',
+                x=x_labels,
+                y=write_values,
+                marker_color=colors[idx % len(colors)],
+                opacity=0.8
+            ))
+            
+            fig.add_trace(go.Bar(
+                name=f'{test_id} Read',
+                x=x_labels,
+                y=read_values,
+                marker_color=colors[idx % len(colors)],
+                opacity=0.5,
+                marker_pattern_shape="/"
+            ))
+        
+        fig.update_layout(
+            title='IOzone Baseline Throughput Comparison (Write & Read)',
+            xaxis_title='NFS Version (Transport)',
+            yaxis_title='Throughput (MB/s)',
+            barmode='group',
+            height=400,
+            margin=dict(t=60, b=50, l=50, r=150),
+            legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02)
+        )
+        
+        return fig.to_html(include_plotlyjs="cdn", full_html=False)
+    
+    def create_comparison_bonnie_chart(self, combined_results: Dict[str, Dict]) -> Optional[str]:
+        """
+        Create Bonnie++ throughput comparison chart for test-id comparison.
+        
+        Args:
+            combined_results: Results with keys like 'testid_nfsv3_tcp'
+            
+        Returns:
+            HTML string for chart or None
+        """
+        if not self.plotly_available:
+            return None
+        
+        data_by_test = {}
+        
+        for key, result in combined_results.items():
+            parts = key.split('_nfsv')
+            if len(parts) != 2:
+                continue
+            
+            test_id = parts[0]
+            version_transport = 'nfsv' + parts[1]
+            
+            if test_id not in data_by_test:
+                data_by_test[test_id] = {}
+            
+            bonnie_tests = result.get('bonnie_tests', {})
+            if not bonnie_tests:
+                continue
+            
+            comprehensive = bonnie_tests.get('comprehensive_test', {})
+            
+            data_by_test[test_id][version_transport] = {
+                'output': comprehensive.get('sequential_output_block_mbps', 0),
+                'input': comprehensive.get('sequential_input_block_mbps', 0)
+            }
+        
+        if not data_by_test:
+            return None
+        
+        fig = go.Figure()
+        
+        # Extract NFS versions for x-axis
+        nfs_versions = set()
+        for test_data in data_by_test.values():
+            for version_transport in test_data.keys():
+                nfs_version = version_transport.split('_')[0]
+                nfs_versions.add(nfs_version)
+        nfs_versions = sorted(nfs_versions)
+        
+        colors = ['#f59e0b', '#8b5cf6', '#10b981', '#ef4444']
+        for idx, (test_id, test_data) in enumerate(sorted(data_by_test.items())):
+            output_values = []
+            input_values = []
+            x_labels = []
+            
+            for nfs_version in nfs_versions:
+                found = False
+                for version_transport, metrics in test_data.items():
+                    if version_transport.startswith(nfs_version):
+                        output_values.append(metrics['output'])
+                        input_values.append(metrics['input'])
+                        transport = version_transport.split('_')[1] if '_' in version_transport else 'tcp'
+                        x_labels.append(f"{nfs_version.replace('nfsv', 'v')} ({transport.upper()})")
+                        found = True
+                        break
+                
+                if not found:
+                    output_values.append(0)
+                    input_values.append(0)
+                    x_labels.append(f"{nfs_version.replace('nfsv', 'v')}")
+            
+            fig.add_trace(go.Bar(
+                name=f'{test_id} Write',
+                x=x_labels,
+                y=output_values,
+                marker_color=colors[idx % len(colors)],
+                opacity=0.8
+            ))
+            
+            fig.add_trace(go.Bar(
+                name=f'{test_id} Read',
+                x=x_labels,
+                y=input_values,
+                marker_color=colors[idx % len(colors)],
+                opacity=0.5,
+                marker_pattern_shape="/"
+            ))
+        
+        fig.update_layout(
+            title='Bonnie++ Sequential Block Throughput Comparison (Write & Read)',
+            xaxis_title='NFS Version (Transport)',
+            yaxis_title='Throughput (MB/s)',
+            barmode='group',
+            height=400,
+            margin=dict(t=60, b=50, l=50, r=150),
+            legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02)
+        )
+        
+        return fig.to_html(include_plotlyjs="cdn", full_html=False)
+    
+    def create_comparison_dbench_chart(self, combined_results: Dict[str, Dict]) -> Optional[str]:
+        """
+        Create DBench throughput comparison chart for test-id comparison.
+        
+        Args:
+            combined_results: Results with keys like 'testid_nfsv3_tcp'
+            
+        Returns:
+            HTML string for chart or None
+        """
+        if not self.plotly_available:
+            return None
+        
+        data_by_test = {}
+        
+        for key, result in combined_results.items():
+            parts = key.split('_nfsv')
+            if len(parts) != 2:
+                continue
+            
+            test_id = parts[0]
+            version_transport = 'nfsv' + parts[1]
+            
+            # DBench typically only runs on NFSv3
+            if 'nfsv3' not in version_transport:
+                continue
+            
+            if test_id not in data_by_test:
+                data_by_test[test_id] = {}
+            
+            dbench_tests = result.get('dbench_tests', {})
+            if not dbench_tests:
+                continue
+            
+            # Get moderate client load throughput
+            moderate = dbench_tests.get('moderate_client_load', {})
+            
+            data_by_test[test_id][version_transport] = {
+                'throughput': moderate.get('throughput_mbps', 0)
+            }
+        
+        if not data_by_test:
+            return None
+        
+        fig = go.Figure()
+        
+        # Extract NFS versions for x-axis
+        nfs_versions = set()
+        for test_data in data_by_test.values():
+            for version_transport in test_data.keys():
+                nfs_version = version_transport.split('_')[0]
+                nfs_versions.add(nfs_version)
+        nfs_versions = sorted(nfs_versions)
+        
+        colors = ['#ec4899', '#10b981', '#3b82f6', '#f59e0b']
+        for idx, (test_id, test_data) in enumerate(sorted(data_by_test.items())):
+            throughput_values = []
+            x_labels = []
+            
+            for nfs_version in nfs_versions:
+                found = False
+                for version_transport, metrics in test_data.items():
+                    if version_transport.startswith(nfs_version):
+                        throughput_values.append(metrics['throughput'])
+                        transport = version_transport.split('_')[1] if '_' in version_transport else 'tcp'
+                        x_labels.append(f"{nfs_version.replace('nfsv', 'v')} ({transport.upper()})")
+                        found = True
+                        break
+                
+                if not found:
+                    throughput_values.append(0)
+                    x_labels.append(f"{nfs_version.replace('nfsv', 'v')}")
+            
+            fig.add_trace(go.Bar(
+                name=test_id,
+                x=x_labels,
+                y=throughput_values,
+                marker_color=colors[idx % len(colors)]
+            ))
+        
+        fig.update_layout(
+            title='DBench Moderate Client Load Throughput Comparison',
+            xaxis_title='NFS Version (Transport)',
+            yaxis_title='Throughput (MB/s)',
+            barmode='group',
+            height=400,
+            margin=dict(t=60, b=50, l=50, r=150),
+            legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02)
+        )
+        
+        return fig.to_html(include_plotlyjs="cdn", full_html=False)
     # ========== Dimension-Based Chart Methods ==========
     
     def create_dimension_throughput_chart(self, test_results: Dict[str, Any]) -> Optional[str]:
@@ -1253,7 +1883,11 @@ class ChartGenerator:
                         
                         if tp > 0:
                             tool_name = tool_key.replace('_tests', '').upper()
-                            test_names.append(f"{tool_name}: {test_name.replace('_', ' ').title()}")
+                            # Format test name and replace Bonnie++ terminology
+                            formatted_name = test_name.replace('_', ' ').title()
+                            formatted_name = formatted_name.replace('Sequential Output', 'Sequential Write')
+                            formatted_name = formatted_name.replace('Sequential Input', 'Sequential Read')
+                            test_names.append(f"{tool_name}: {formatted_name}")
                             throughputs.append(tp)
             
             if test_names:
@@ -1274,8 +1908,9 @@ class ChartGenerator:
             yaxis_title='Throughput (MB/s)',
             barmode='group',
             height=500,
+            margin=dict(t=80, b=80, l=60, r=180),
             xaxis={'tickangle': -45},
-            legend={'orientation': 'h', 'yanchor': 'bottom', 'y': 1.02}
+            legend={'orientation': 'v', 'yanchor': 'middle', 'y': 0.5, 'xanchor': 'left', 'x': 1.02}
         )
         
         return fig.to_html(include_plotlyjs="cdn", full_html=False)
@@ -1347,8 +1982,9 @@ class ChartGenerator:
             yaxis_title='IOPS',
             barmode='group',
             height=500,
+            margin=dict(t=80, b=80, l=60, r=180),
             xaxis={'tickangle': -45},
-            legend={'orientation': 'h', 'yanchor': 'bottom', 'y': 1.02}
+            legend={'orientation': 'v', 'yanchor': 'middle', 'y': 0.5, 'xanchor': 'left', 'x': 1.02}
         )
         
         return fig.to_html(include_plotlyjs="cdn", full_html=False)
@@ -1388,7 +2024,10 @@ class ChartGenerator:
                 tool_name = tool_key.replace('_tests', '').upper()
                 for test_name, test_data in tool_data.items():
                     if isinstance(test_data, dict) and test_data.get('status') == 'passed':
-                        lat = test_data.get('avg_latency_ms') or test_data.get('write_latency_ms', 0)
+                        # Try multiple latency fields
+                        lat = (test_data.get('avg_latency_ms') or
+                               test_data.get('read_latency_ms') or
+                               test_data.get('write_latency_ms', 0))
                         if lat > 0:
                             test_names.append(f"{tool_name}: {test_name.replace('_', ' ').title()}")
                             latencies.append(lat)
@@ -1410,12 +2049,315 @@ class ChartGenerator:
             xaxis_title='Test',
             yaxis_title='Latency (ms)',
             barmode='group',
-            height=400,
+            height=500,
+            margin=dict(t=80, b=80, l=60, r=180),
             xaxis={'tickangle': -45},
-            legend={'orientation': 'h', 'yanchor': 'bottom', 'y': 1.02}
+            legend={'orientation': 'v', 'yanchor': 'middle', 'y': 0.5, 'xanchor': 'left', 'x': 1.02}
         )
         
         return fig.to_html(include_plotlyjs="cdn", full_html=False)
+    def create_multi_version_dimension_metadata_chart(self, results_by_version: Dict[str, Dict]) -> Optional[str]:
+        """
+        Create multi-version metadata operations comparison chart.
+        
+        Args:
+            results_by_version: Results organized by NFS version
+            
+        Returns:
+            HTML string for chart or None if no data
+        """
+        if not self.plotly_available:
+            return None
+        
+        versions = sorted(results_by_version.keys())
+        
+        # Extract metadata data for each version
+        version_data = {}
+        for version_key in versions:
+            version_results = results_by_version[version_key]
+            dimension_data = dimension_mapper.extract_dimension_data(version_results, 'metadata')
+            version_data[version_key] = dimension_data
+        
+        if not version_data:
+            return None
+        
+        fig = go.Figure()
+        for version_key in versions:
+            test_names = []
+            ops_values = []
+            
+            dim_data = version_data[version_key]
+            
+            # Extract FIO metadata tests
+            for test_name, test_data in dim_data.get('fio_tests', {}).items():
+                if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                    # Try metadata_ops_per_sec first, then fall back to IOPS for metadata-heavy tests
+                    ops = (test_data.get('metadata_ops_per_sec') or
+                           test_data.get('read_iops') or
+                           test_data.get('write_iops', 0))
+                    if ops > 0:
+                        test_names.append(f"FIO: {test_name.replace('_', ' ').title()}")
+                        ops_values.append(ops)
+            
+            # Extract Bonnie++ metadata metrics
+            for test_name, test_data in dim_data.get('bonnie_tests', {}).items():
+                if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                    for metric in ['file_create_seq_per_sec', 'file_delete_seq_per_sec',
+                                  'file_stat_seq_per_sec', 'random_seeks_per_sec']:
+                        ops = test_data.get(metric, 0)
+                        if ops > 0:
+                            metric_name = metric.replace('_', ' ').replace('per sec', '').title()
+                            test_names.append(f"Bonnie++: {metric_name}")
+                            ops_values.append(ops)
+            
+            if test_names:
+                fig.add_trace(go.Bar(
+                    name=version_key.replace('_', ' ').upper(),
+                    x=test_names,
+                    y=ops_values
+                ))
+        
+        fig.update_layout(
+            title={
+                'text': '📁 Metadata Operations Performance Across NFS Versions',
+                'font': {'size': 22, 'color': '#1f2937', 'family': 'Arial, sans-serif', 'weight': 'bold'},
+                'x': 0.5,
+                'xanchor': 'center'
+            },
+            xaxis_title='Test',
+            yaxis_title='Operations/sec',
+            barmode='group',
+            height=500,
+            margin=dict(t=80, b=80, l=60, r=180),
+            xaxis={'tickangle': -45},
+            legend={'orientation': 'v', 'yanchor': 'middle', 'y': 0.5, 'xanchor': 'left', 'x': 1.02}
+        )
+        
+        return fig.to_html(include_plotlyjs="cdn", full_html=False)
+    
+    def create_multi_version_dimension_cache_chart(self, results_by_version: Dict[str, Dict]) -> Optional[str]:
+        """
+        Create multi-version cache effects comparison chart.
+        
+        Args:
+            results_by_version: Results organized by NFS version
+            
+        Returns:
+            HTML string for chart or None if no data
+        """
+        if not self.plotly_available:
+            return None
+        
+        versions = sorted(results_by_version.keys())
+        
+        # Extract cache data for each version
+        version_data = {}
+        for version_key in versions:
+            version_results = results_by_version[version_key]
+            dimension_data = dimension_mapper.extract_dimension_data(version_results, 'cache_effects')
+            version_data[version_key] = dimension_data
+        
+        if not version_data:
+            return None
+        
+        # Collect all unique test names
+        all_tests = set()
+        for dim_data in version_data.values():
+            for tool_key, tool_data in dim_data.items():
+                for test_name in tool_data.keys():
+                    all_tests.add(f"{tool_key}:{test_name}")
+        
+        if not all_tests:
+            return None
+        
+        fig = go.Figure()
+        
+        # Create traces for cached and direct I/O for each version
+        for version_key in versions:
+            cached_values = []
+            direct_values = []
+            test_labels = []
+            
+            dim_data = version_data[version_key]
+            
+            for test_key in sorted(all_tests):
+                tool_key, test_name = test_key.split(':', 1)
+                
+                if tool_key in dim_data and test_name in dim_data[tool_key]:
+                    comparison_data = dim_data[tool_key][test_name]
+                    
+                    if isinstance(comparison_data, dict) and 'cached' in comparison_data and 'direct' in comparison_data:
+                        cached = comparison_data['cached']
+                        direct = comparison_data['direct']
+                        
+                        if cached.get('status') == 'passed' and direct.get('status') == 'passed':
+                            cached_tp = cached.get('throughput_mbps') or cached.get('cached_read_throughput_mbps', 0)
+                            direct_tp = direct.get('throughput_mbps') or direct.get('direct_read_throughput_mbps', 0)
+                            
+                            if cached_tp > 0 and direct_tp > 0:
+                                test_labels.append(test_name.replace('_vs_', ' vs ').replace('_', ' ').title())
+                                cached_values.append(cached_tp)
+                                direct_values.append(direct_tp)
+            
+            if test_labels:
+                # Add cached trace
+                fig.add_trace(go.Bar(
+                    name=f"{version_key.replace('_', ' ').upper()} Cached",
+                    x=test_labels,
+                    y=cached_values,
+                    legendgroup=version_key,
+                    marker_pattern_shape="/"
+                ))
+                
+                # Add direct trace
+                fig.add_trace(go.Bar(
+                    name=f"{version_key.replace('_', ' ').upper()} Direct",
+                    x=test_labels,
+                    y=direct_values,
+                    legendgroup=version_key
+                ))
+        
+        fig.update_layout(
+            title={
+                'text': '💾 Cache Effects Comparison Across NFS Versions',
+                'font': {'size': 22, 'color': '#1f2937', 'family': 'Arial, sans-serif', 'weight': 'bold'},
+                'x': 0.5,
+                'xanchor': 'center'
+            },
+            xaxis_title='Test',
+            yaxis_title='Throughput (MB/s)',
+            barmode='group',
+            height=500,
+            margin=dict(t=80, b=80, l=60, r=180),
+            xaxis={'tickangle': -45},
+            legend={'orientation': 'v', 'yanchor': 'middle', 'y': 0.5, 'xanchor': 'left', 'x': 1.02}
+        )
+        
+        return fig.to_html(include_plotlyjs="cdn", full_html=False)
+    
+    def create_multi_version_dimension_concurrency_chart(self, results_by_version: Dict[str, Dict]) -> Optional[str]:
+        """
+        Create multi-version concurrency scaling comparison chart.
+        
+        Args:
+            results_by_version: Results organized by NFS version
+            
+        Returns:
+            HTML string for chart or None if no data
+        """
+        if not self.plotly_available:
+            return None
+        
+        versions = sorted(results_by_version.keys())
+        
+        # Extract concurrency data for each version
+        version_data = {}
+        for version_key in versions:
+            version_results = results_by_version[version_key]
+            dimension_data = dimension_mapper.extract_dimension_data(version_results, 'concurrency')
+            version_data[version_key] = dimension_data
+        
+        if not version_data:
+            return None
+        
+        fig = go.Figure()
+        colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+        
+        for idx, version_key in enumerate(versions):
+            dim_data = version_data[version_key]
+            
+            # Extract IOzone scaling data
+            iozone_threads = []
+            iozone_throughput = []
+            for test_name, test_data in dim_data.get('iozone_tests', {}).items():
+                if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                    # Handle scaling_test with nested results
+                    if test_name == 'scaling_test' and 'scaling_results' in test_data:
+                        for thread_name, thread_data in test_data['scaling_results'].items():
+                            # Get threads from config or parse from thread_name
+                            num_threads = thread_data.get('config', {}).get('threads', 0)
+                            if num_threads == 0 and '_threads' in thread_name:
+                                # Parse from name like "4_threads"
+                                try:
+                                    num_threads = int(thread_name.split('_')[0])
+                                except:
+                                    pass
+                            tp = thread_data.get('write_throughput_mbps', 0)
+                            if num_threads > 0 and tp > 0:
+                                iozone_threads.append(num_threads)
+                                iozone_throughput.append(tp)
+                    # Handle individual concurrency tests like "concurrency_16_threads"
+                    elif 'concurrency' in test_name or 'threads' in test_name:
+                        num_threads = test_data.get('config', {}).get('threads', 0)
+                        if num_threads == 0 and '_threads' in test_name:
+                            # Parse from name
+                            try:
+                                parts = test_name.split('_')
+                                for i, part in enumerate(parts):
+                                    if part == 'threads' and i > 0:
+                                        num_threads = int(parts[i-1])
+                                        break
+                            except:
+                                pass
+                        tp = test_data.get('write_throughput_mbps', 0)
+                        if num_threads > 0 and tp > 0:
+                            iozone_threads.append(num_threads)
+                            iozone_throughput.append(tp)
+            
+            # Extract DBench scaling data
+            dbench_clients = []
+            dbench_throughput = []
+            for test_name, test_data in dim_data.get('dbench_tests', {}).items():
+                if isinstance(test_data, dict) and test_data.get('status') == 'passed':
+                    num_clients = test_data.get('num_clients', 0)
+                    tp = test_data.get('throughput_mbps', 0)
+                    if num_clients > 0 and tp > 0:
+                        dbench_clients.append(num_clients)
+                        dbench_throughput.append(tp)
+            
+            # Add IOzone trace if data exists
+            if iozone_threads:
+                sorted_data = sorted(zip(iozone_threads, iozone_throughput))
+                iozone_threads, iozone_throughput = zip(*sorted_data)
+                fig.add_trace(go.Scatter(
+                    x=list(iozone_threads),
+                    y=list(iozone_throughput),
+                    mode='lines+markers',
+                    name=f"{version_key.replace('_', ' ').upper()} IOzone",
+                    line=dict(color=colors[idx % len(colors)], width=2),
+                    marker=dict(size=8)
+                ))
+            
+            # Add DBench trace if data exists
+            if dbench_clients:
+                sorted_data = sorted(zip(dbench_clients, dbench_throughput))
+                dbench_clients, dbench_throughput = zip(*sorted_data)
+                fig.add_trace(go.Scatter(
+                    x=list(dbench_clients),
+                    y=list(dbench_throughput),
+                    mode='lines+markers',
+                    name=f"{version_key.replace('_', ' ').upper()} DBench",
+                    line=dict(color=colors[idx % len(colors)], width=2, dash='dash'),
+                    marker=dict(size=8, symbol='square')
+                ))
+        
+        fig.update_layout(
+            title={
+                'text': '👥 Concurrency Scaling Performance Across NFS Versions',
+                'font': {'size': 22, 'color': '#1f2937', 'family': 'Arial, sans-serif', 'weight': 'bold'},
+                'x': 0.5,
+                'xanchor': 'center'
+            },
+            xaxis_title='Number of Concurrent Clients/Threads',
+            yaxis_title='Throughput (MB/s)',
+            height=500,
+            margin=dict(t=80, b=80, l=60, r=180),
+            hovermode='x unified',
+            legend={'orientation': 'v', 'yanchor': 'middle', 'y': 0.5, 'xanchor': 'left', 'x': 1.02}
+        )
+        
+        return fig.to_html(include_plotlyjs="cdn", full_html=False)
+    
     
     def generate_all_multi_version_dimension_charts(self, results_by_version: Dict[str, Dict]) -> str:
         """
@@ -1447,6 +2389,21 @@ class ChartGenerator:
         latency_chart = self.create_multi_version_dimension_latency_chart(results_by_version)
         if latency_chart:
             charts_html += f'<div class="chart-container">{latency_chart}</div>'
+        
+        # Metadata chart
+        metadata_chart = self.create_multi_version_dimension_metadata_chart(results_by_version)
+        if metadata_chart:
+            charts_html += f'<div class="chart-container">{metadata_chart}</div>'
+        
+        # Cache effects chart
+        cache_chart = self.create_multi_version_dimension_cache_chart(results_by_version)
+        if cache_chart:
+            charts_html += f'<div class="chart-container">{cache_chart}</div>'
+        
+        # Concurrency chart
+        concurrency_chart = self.create_multi_version_dimension_concurrency_chart(results_by_version)
+        if concurrency_chart:
+            charts_html += f'<div class="chart-container">{concurrency_chart}</div>'
         
         charts_html += '</div>'
         return charts_html

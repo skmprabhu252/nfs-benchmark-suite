@@ -19,22 +19,32 @@ class PerformanceAnalyzer:
         Supports both single-version and multi-version result formats.
         
         Args:
-            results: Complete test results dictionary
+            results: Complete test results dictionary (can be full JSON or just results section)
         """
-        self.results = results
+        # Handle both formats: full JSON with 'results' key, or just the results dict
+        if 'results' in results and isinstance(results['results'], dict):
+            # Full JSON format - extract the results section
+            self.full_data = results
+            self.results = results['results']
+            self.metadata = results.get('test_metadata', {})
+        else:
+            # Already the results section or multi-version format
+            self.full_data = results
+            self.results = results
+            self.metadata = None
+        
         self.insights = []
         self.recommendations = []
         self.severity_counts = {'critical': 0, 'warning': 0, 'info': 0}
         
         # Detect result format
-        self.is_multi_version = 'test_metadata' in results and 'results_by_version' in results
+        self.is_multi_version = 'test_metadata' in self.full_data and 'results_by_version' in self.full_data
         
         # For multi-version, we'll analyze each version separately
         if self.is_multi_version:
-            self.metadata = results.get('test_metadata', {})
-            self.versions = results.get('results_by_version', {})
+            self.metadata = self.full_data.get('test_metadata', {})
+            self.versions = self.full_data.get('results_by_version', {})
         else:
-            self.metadata = None
             self.versions = None
     
     def analyze(self) -> Dict[str, Any]:

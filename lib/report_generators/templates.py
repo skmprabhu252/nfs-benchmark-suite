@@ -1292,34 +1292,58 @@ def get_analysis_section_html(analysis: Dict[str, Any], report_style: str = 'too
     """
 
 
-def get_health_score_card_html(health_score: float, severity_counts: Dict[str, int]) -> str:
+def get_health_score_card_html(health_score: Any, severity_counts: Dict[str, int]) -> str:
     """
     Generate health score card with severity badges.
     
     Args:
-        health_score: Overall health score (0-100)
+        health_score: Overall health score (0-100) or dict with score/status/color
         severity_counts: Dictionary with counts for critical, warning, info
         
     Returns:
         Health score card HTML
     """
-    # Determine health category
-    if health_score >= 85:
-        category = 'excellent'
-        label = 'Excellent'
-        color = '#10b981'
-    elif health_score >= 70:
-        category = 'good'
-        label = 'Good'
-        color = '#3b82f6'
-    elif health_score >= 50:
-        category = 'fair'
-        label = 'Fair'
-        color = '#f59e0b'
+    # Handle dict format from PerformanceAnalyzer
+    if isinstance(health_score, dict):
+        score_value = health_score.get('score', 0)
+        category = health_score.get('status', 'poor')
+        # Map status to label
+        label_map = {
+            'excellent': 'Excellent',
+            'good': 'Good',
+            'fair': 'Fair',
+            'poor': 'Needs Attention',
+            'critical': 'Critical'
+        }
+        label = label_map.get(category, 'Unknown')
+        # Map status to color
+        color_map = {
+            'excellent': '#10b981',
+            'good': '#3b82f6',
+            'fair': '#f59e0b',
+            'poor': '#ef4444',
+            'critical': '#dc2626'
+        }
+        color = color_map.get(category, '#6b7280')
     else:
-        category = 'poor'
-        label = 'Needs Attention'
-        color = '#ef4444'
+        # Handle numeric format
+        score_value = health_score
+        if score_value >= 85:
+            category = 'excellent'
+            label = 'Excellent'
+            color = '#10b981'
+        elif score_value >= 70:
+            category = 'good'
+            label = 'Good'
+            color = '#3b82f6'
+        elif score_value >= 50:
+            category = 'fair'
+            label = 'Fair'
+            color = '#f59e0b'
+        else:
+            category = 'poor'
+            label = 'Needs Attention'
+            color = '#ef4444'
     
     critical_count = severity_counts.get('critical', 0)
     warning_count = severity_counts.get('warning', 0)
@@ -1337,7 +1361,7 @@ def get_health_score_card_html(health_score: float, severity_counts: Dict[str, i
     <div class="health-score-card">
         <div class="score-display">
             <div class="score-circle {category}">
-                <span>{health_score:.0f}</span>
+                <span>{score_value:.0f}</span>
             </div>
             <div>
                 <div style="font-size: 20px; font-weight: 600; color: {color};">{label}</div>
@@ -1509,8 +1533,10 @@ def get_comparison_analysis_html(test_id_1: str, analysis_1: Dict[str, Any],
         </div>
         """
     
-    # Combine recommendations (unique, limit to 5)
-    all_recommendations = list(set(analysis_1.get('recommendations', [])[:3] + analysis_2.get('recommendations', [])[:3]))[:5]
+    # Combine recommendations (limit to 5, can't use set() on dicts)
+    recs_1 = analysis_1.get('recommendations', [])[:3]
+    recs_2 = analysis_2.get('recommendations', [])[:3]
+    all_recommendations = (recs_1 + recs_2)[:5]
     recommendations_html = get_recommendations_html(all_recommendations)
     
     return f"""

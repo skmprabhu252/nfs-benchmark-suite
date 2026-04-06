@@ -67,14 +67,17 @@ Examples:
   # Generate report from single JSON file (dimension-based, default)
   python3 generate_html_report.py nfs_performance_nfsv3_tcp_20240403_120000.json
   
+  # Generate report with automated performance analysis
+  python3 generate_html_report.py nfs_performance_nfsv3_tcp_20240403_120000.json --enable-analysis
+  
   # Generate tool-based report (organized by benchmark tools)
   python3 generate_html_report.py --test-id baseline_2026 --report-style tool-based
   
   # Generate report from all files with test-id
   python3 generate_html_report.py --test-id baseline_2026
   
-  # Compare two different test-ids (e.g., different OS versions, software versions)
-  python3 generate_html_report.py --test-id baseline_2026 --compare-with prod_2026
+  # Compare two different test-ids with comprehensive analysis
+  python3 generate_html_report.py --test-id baseline_2026 --compare-with prod_2026 --enable-analysis --analysis-level comprehensive
   
   # Generate report from all files with test-id in specific directory
   python3 generate_html_report.py --test-id prod_test --directory ./results
@@ -118,6 +121,20 @@ Examples:
         help='Report organization style: dimension-based (default, by performance dimension) or tool-based (by benchmark tool)'
     )
     
+    parser.add_argument(
+        '--enable-analysis',
+        action='store_true',
+        default=False,
+        help='Enable automated performance analysis with insights and recommendations'
+    )
+    
+    parser.add_argument(
+        '--analysis-level',
+        choices=['basic', 'detailed', 'comprehensive'],
+        default='detailed',
+        help='Analysis detail level: basic (critical only), detailed (default), comprehensive (all features)'
+    )
+    
     args = parser.parse_args()
     
     # Determine which scenario and create appropriate generator
@@ -126,36 +143,48 @@ Examples:
         if args.json_file:
             logger.info(f"Scenario: Single file report")
             logger.info(f"Loading results from: {args.json_file}")
+            if args.enable_analysis:
+                logger.info(f"Analysis enabled: {args.analysis_level} level")
             
             generator = SingleFileReportGenerator(
                 json_file=Path(args.json_file),
                 output_dir=Path(args.output_dir),
-                report_style=args.report_style
+                report_style=args.report_style,
+                enable_analysis=args.enable_analysis,
+                analysis_level=args.analysis_level
             )
         
         # Scenario 2: Test-ID comparison
         elif args.test_id and args.compare_test_id:
             logger.info(f"Scenario: Test-ID comparison")
             logger.info(f"Comparing: {args.test_id} vs {args.compare_test_id}")
+            if args.enable_analysis:
+                logger.info(f"Analysis enabled: {args.analysis_level} level")
             
             generator = ComparisonReportGenerator(
                 test_id_1=args.test_id,
                 test_id_2=args.compare_test_id,
                 directory=Path(args.directory),
                 output_dir=Path(args.output_dir),
-                report_style=args.report_style
+                report_style=args.report_style,
+                enable_analysis=args.enable_analysis,
+                analysis_level=args.analysis_level
             )
         
         # Scenario 3: Multi-version aggregation
         elif args.test_id:
             logger.info(f"Scenario: Multi-version aggregation")
             logger.info(f"Test ID: {args.test_id}")
+            if args.enable_analysis:
+                logger.info(f"Analysis enabled: {args.analysis_level} level")
             
             generator = MultiVersionReportGenerator(
                 test_id=args.test_id,
                 directory=Path(args.directory),
                 output_dir=Path(args.output_dir),
-                report_style=args.report_style
+                report_style=args.report_style,
+                enable_analysis=args.enable_analysis,
+                analysis_level=args.analysis_level
             )
         
         else:

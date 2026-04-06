@@ -776,6 +776,15 @@ def main():
     print("\n# Test 4: Tool-based report (old style)")
     print("python3 generate_html_report.py --test-id baseline_2026 --report-style tool-based --directory samples/logs")
     
+    print("\n# Test 5: Single file report with automated analysis")
+    print("python3 generate_html_report.py samples/logs/nfs_performance_single_test_nfsv4.2_tcp_20260406_120000.json --enable-analysis")
+    
+    print("\n# Test 6: Multi-version report with comprehensive analysis")
+    print("python3 generate_html_report.py --test-id multi_version_test --directory samples/logs --enable-analysis --analysis-level comprehensive")
+    
+    print("\n# Test 7: Comparison report with analysis")
+    print("python3 generate_html_report.py --test-id baseline_2026 --compare-with optimized_2026 --directory samples/logs --enable-analysis")
+    
     print("\n" + "="*80)
 
 if __name__ == "__main__":

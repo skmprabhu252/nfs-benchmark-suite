@@ -39,7 +39,8 @@ class ComparisonReportGenerator(BaseReportGenerator):
     """
     
     def __init__(self, test_id_1: str, test_id_2: str,
-                 directory: Path = None, output_dir: Path = None, report_style: str = 'tool-based'):
+                 directory: Path = None, output_dir: Path = None, report_style: str = 'tool-based',
+                 enable_analysis: bool = True, analysis_level: str = 'detailed'):
         """
         Initialize comparison report generator.
         
@@ -49,8 +50,10 @@ class ComparisonReportGenerator(BaseReportGenerator):
             directory: Directory to search for JSON files (default: current directory)
             output_dir: Optional output directory (default: ./report)
             report_style: Report organization style - 'tool-based' or 'dimension-based' (default: 'tool-based')
+            enable_analysis: Whether to include performance analysis (default: True)
+            analysis_level: Analysis detail level - 'basic', 'detailed', or 'comprehensive' (default: 'detailed')
         """
-        super().__init__(output_dir, report_style)
+        super().__init__(output_dir, report_style, enable_analysis, analysis_level)
         self.test_id_1 = test_id_1
         self.test_id_2 = test_id_2
         self.directory = Path(directory) if directory else Path(".")
@@ -157,12 +160,18 @@ class ComparisonReportGenerator(BaseReportGenerator):
             )
             overview_html = comparison_grid_html
         
+        # Generate comparison analysis
+        analysis_html = self._generate_comparison_analysis(
+            test_id_1, results_1, test_id_2, results_2
+        )
+        
         # Combine all sections
         content = f"""
         <div class="container">
             {header_html}
             {overview_html}
             {charts_html}
+            {analysis_html}
             {details_html}
         </div>
         """
@@ -387,5 +396,112 @@ class ComparisonReportGenerator(BaseReportGenerator):
             details_html += get_section_html("Version Coverage Comparison", comparison_table)
         
         return details_html
+    
+    def _generate_comparison_analysis(self, test_id_1: str, results_1: Dict[str, Any],
+                                     test_id_2: str, results_2: Dict[str, Any]) -> str:
+        """
+        Generate comparison analysis for both test-ids.
+        
+        Args:
+            test_id_1: First test ID
+            results_1: Results for first test
+            test_id_2: Second test ID
+            results_2: Results for second test
+            
+        Returns:
+            Comparison analysis HTML
+        """
+        if not self.enable_analysis:
+            return ""
+        
+        try:
+            from ..performance_analyzer import PerformanceAnalyzer
+            from .templates import get_comparison_analysis_html, get_analysis_error_html
+            
+            # Analyze both test-ids
+            analyzer_1 = PerformanceAnalyzer(results_1)
+            analyzer_2 = PerformanceAnalyzer(results_2)
+            
+            analysis_1 = analyzer_1.analyze()
+            analysis_2 = analyzer_2.analyze()
+            
+            # Generate comparison-specific insights
+            comparison_insights = self._generate_comparison_insights(
+                test_id_1, analysis_1, test_id_2, analysis_2
+            )
+            
+            # Render comparison analysis HTML
+            return get_comparison_analysis_html(
+                test_id_1, analysis_1,
+                test_id_2, analysis_2,
+                comparison_insights,
+                self.report_style
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Comparison analysis failed: {e}", exc_info=True)
+            from .templates import get_analysis_error_html
+            return get_analysis_error_html(str(e))
+    
+    def _generate_comparison_insights(self, test_id_1: str, analysis_1: Dict[str, Any],
+                                      test_id_2: str, analysis_2: Dict[str, Any]) -> list:
+        """
+        Generate insights comparing the two test-ids.
+        
+        Args:
+            test_id_1: First test ID
+            analysis_1: Analysis for first test
+            test_id_2: Second test ID
+            analysis_2: Analysis for second test
+            
+        Returns:
+            List of comparison insight dictionaries
+        """
+        insights = []
+        
+        # Compare health scores - extract score from dict if needed
+        health_1_raw = analysis_1.get('overall_health', 0)
+        health_2_raw = analysis_2.get('overall_health', 0)
+        
+        # Handle dict format
+        health_1 = health_1_raw.get('score', 0) if isinstance(health_1_raw, dict) else health_1_raw
+        health_2 = health_2_raw.get('score', 0) if isinstance(health_2_raw, dict) else health_2_raw
+        
+        if abs(health_1 - health_2) > 10:
+            if health_2 > health_1:
+                insights.append({
+                    'severity': 'info',
+                    'title': 'Performance Improvement Detected',
+                    'description': f'{test_id_2} shows {health_2 - health_1:.1f} point improvement in health score ({health_2:.0f} vs {health_1:.0f})',
+                    'recommendation': f'Consider adopting configuration from {test_id_2} for production use.'
+                })
+            else:
+                insights.append({
+                    'severity': 'warning',
+                    'title': 'Performance Regression Detected',
+                    'description': f'{test_id_2} shows {health_1 - health_2:.1f} point decrease in health score ({health_2:.0f} vs {health_1:.0f})',
+                    'recommendation': f'Investigate changes between {test_id_1} and {test_id_2} that may have caused regression.'
+                })
+        
+        # Compare critical issues
+        critical_1 = analysis_1.get('severity_counts', {}).get('critical', 0)
+        critical_2 = analysis_2.get('severity_counts', {}).get('critical', 0)
+        
+        if critical_2 < critical_1:
+            insights.append({
+                'severity': 'info',
+                'title': 'Critical Issues Resolved',
+                'description': f'{test_id_2} has {critical_1 - critical_2} fewer critical issues than {test_id_1}',
+                'recommendation': 'Review what changes resolved these critical issues.'
+            })
+        elif critical_2 > critical_1:
+            insights.append({
+                'severity': 'critical',
+                'title': 'New Critical Issues Introduced',
+                'description': f'{test_id_2} has {critical_2 - critical_1} more critical issues than {test_id_1}',
+                'recommendation': 'Investigate and resolve new critical issues before deployment.'
+            })
+        
+        return insights
 
 # Made with Bob

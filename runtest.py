@@ -1978,6 +1978,16 @@ Transport:
   --transport tcp:  Standard NFS over TCP (default)
   --transport rdma: NFS over RDMA (requires RDMA hardware)
 
+Report Generation:
+  After tests complete, generate HTML reports with:
+    python3 generate_html_report.py --test-id <your_test_id>
+  
+  Enable automated performance analysis:
+    python3 generate_html_report.py --test-id <your_test_id> --enable-analysis
+  
+  For comprehensive analysis with insights and recommendations:
+    python3 generate_html_report.py --test-id <your_test_id> --enable-analysis --analysis-level comprehensive
+
 Note: This script must run as root for NFS mount operations.
       Run with: sudo python3 runtest.py ...
         """

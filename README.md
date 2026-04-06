@@ -55,6 +55,7 @@ NFS performance can vary dramatically based on version, configuration, and workl
 - **Comprehensive Metrics** - Measures 6 critical dimensions: Throughput, IOPS, Latency, Metadata Ops, Cache Effects, and Concurrency Scaling
 - **Historical Tracking** - Automatic comparison with previous test runs to identify performance regressions
 - **Interactive HTML Reports** - Generate visual reports with charts and analysis using `generate_html_report.py`
+- **Test-ID Comparison** - Compare two different test runs side-by-side (e.g., different OS versions, before/after optimization, different hardware)
 
 ---
 
@@ -447,6 +448,17 @@ python3 generate_html_report.py --test-id baseline
 # and creates: nfs_performance_baseline_report.html
 ```
 
+**Compare Two Test IDs (NEW - Compare Different Configurations):**
+```bash
+# Compare two different test runs (e.g., different OS versions, before/after optimization)
+python3 generate_html_report.py --test-id baseline_rhel8 --compare-with baseline_rhel9
+
+# Compare different NFS server versions
+python3 generate_html_report.py --test-id nfs_v1.0 --compare-with nfs_v2.0
+
+# This creates a side-by-side comparison report showing performance differences
+```
+
 **Single File:**
 ```bash
 # Generate report from a specific JSON file
@@ -455,7 +467,7 @@ python3 generate_html_report.py nfs_performance_baseline_nfsv3_tcp_20260405_1200
 # Creates: nfs_performance_baseline_nfsv3_tcp_20260405_120000_report.html
 ```
 
-The generated HTML report includes interactive charts for all 6 performance dimensions, version comparison (when using --test-id with multiple versions), historical trend analysis, performance regression detection, executive summary with key findings, and detailed metrics tables.
+The generated HTML report includes interactive charts for all 6 performance dimensions, version comparison (when using --test-id with multiple versions), test-id comparison (when using --compare-with for different configurations), historical trend analysis, performance regression detection, executive summary with key findings, and detailed metrics tables.
 
 ### Performance Baselines (10 GbE Network)
 

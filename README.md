@@ -50,11 +50,12 @@ NFS performance can vary dramatically based on version, configuration, and workl
 - **Automatic NFS Mounting** - No pre-mounting required; just provide server IP and export path. Automatically validates server, mounts with optimal options, and cleans up after testing
 - **Multi-Version Testing** - Test NFSv3, v4.0, v4.1, and v4.2 in a single run with automatic performance comparison
 - **Two Test Modes** - Quick test (15 min) for validation, Stress test (30 min per version) for production benchmarking
-- **Standardized Test Duration** - All stress tests run for consistent 30-minute duration for reliable, comparable results
+- **Standardized Test Duration** - All stress tests run for consistent 30-minute duration for reliable, comparable results (commit 1fee564)
 - **Transport Protocol Support** - TCP (default) and RDMA for high-performance networks (InfiniBand, RoCE)
 - **Comprehensive Metrics** - Measures 6 critical dimensions: Throughput, IOPS, Latency, Metadata Ops, Cache Effects, and Concurrency Scaling
 - **Historical Tracking** - Automatic comparison with previous test runs to identify performance regressions
 - **Interactive HTML Reports** - Generate visual reports with charts and analysis using `generate_html_report.py`
+- **Flexible Report Views** - Choose between tool-based (organized by benchmark tool) or dimension-based (organized by performance dimension) report layouts
 - **Test-ID Comparison** - Compare two different test runs side-by-side (e.g., different OS versions, before/after optimization, different hardware)
 
 ---
@@ -448,13 +449,25 @@ python3 generate_html_report.py --test-id baseline
 # and creates: nfs_performance_baseline_report.html
 ```
 
-**Compare Two Test IDs (NEW - Compare Different Configurations):**
+**Report Layout Options:**
+```bash
+# Tool-based view (default) - organized by benchmark tool
+python3 generate_html_report.py --test-id baseline --report-style tool-based
+
+# Dimension-based view - organized by performance dimension
+python3 generate_html_report.py --test-id baseline --report-style dimension-based
+```
+
+**Compare Two Test IDs (Compare Different Configurations):**
 ```bash
 # Compare two different test runs (e.g., different OS versions, before/after optimization)
 python3 generate_html_report.py --test-id baseline_rhel8 --compare-with baseline_rhel9
 
 # Compare different NFS server versions
 python3 generate_html_report.py --test-id nfs_v1.0 --compare-with nfs_v2.0
+
+# Use dimension-based view for comparison
+python3 generate_html_report.py --test-id baseline_rhel8 --compare-with baseline_rhel9 --report-style dimension-based
 
 # This creates a side-by-side comparison report showing performance differences
 ```
@@ -467,7 +480,7 @@ python3 generate_html_report.py nfs_performance_baseline_nfsv3_tcp_20260405_1200
 # Creates: nfs_performance_baseline_nfsv3_tcp_20260405_120000_report.html
 ```
 
-The generated HTML report includes interactive charts for all 6 performance dimensions, version comparison (when using --test-id with multiple versions), test-id comparison (when using --compare-with for different configurations), historical trend analysis, performance regression detection, executive summary with key findings, and detailed metrics tables.
+The generated HTML report includes interactive charts for all 6 performance dimensions, version comparison (when using --test-id with multiple versions), test-id comparison (when using --compare-with for different configurations), historical trend analysis, performance regression detection, executive summary with key findings, and detailed metrics tables. Use `--report-style dimension-based` to organize results by performance dimension instead of by tool.
 
 ### Performance Baselines (10 GbE Network)
 

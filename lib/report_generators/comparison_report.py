@@ -178,17 +178,11 @@ class ComparisonReportGenerator(BaseReportGenerator):
         Returns:
             HTML string with dimension charts
         """
-        charts_html = '<div class="section">\n'
-        charts_html += '<h2>Performance Dimension Charts</h2>\n'
-        
         # Generate all multi-version dimension charts using chart generator
+        # This returns a complete HTML string, not a list
         dimension_charts = self.chart_generator.generate_all_multi_version_dimension_charts(combined_results)
         
-        for chart_html in dimension_charts:
-            charts_html += chart_html + '\n'
-        
-        charts_html += '</div>\n'
-        return charts_html
+        return dimension_charts if dimension_charts else ''
     
     def _generate_dimension_sections(self, combined_results: Dict[str, Any]) -> str:
         """

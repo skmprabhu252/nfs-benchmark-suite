@@ -452,11 +452,22 @@ class BonnieTestTool(BaseTestTool):
         """
         Parse Bonnie++ CSV output format.
         
-        Bonnie++ outputs in CSV format with the following fields:
-        name,sequential_output_char,sequential_output_block,sequential_output_rewrite,
-        sequential_input_char,sequential_input_block,random_seeks,
-        file_create_seq,file_stat_seq,file_delete_seq,
-        file_create_random,file_stat_random,file_delete_random
+        Bonnie++ outputs in CSV format. Each throughput metric has TWO fields: value and CPU%.
+        Field indices (0-based):
+        0: name
+        1: sequential_output_char (K/sec)
+        2: sequential_output_char CPU%
+        3: sequential_output_block (K/sec)
+        4: sequential_output_block CPU%
+        5: sequential_rewrite (K/sec)
+        6: sequential_rewrite CPU%
+        7: sequential_input_char (K/sec)
+        8: sequential_input_char CPU%
+        9: sequential_input_block (K/sec)
+        10: sequential_input_block CPU%
+        11: random_seeks (seeks/sec)
+        12: random_seeks CPU%
+        13-24: file operations (create/stat/delete for seq and random, each with value and CPU%)
         
         Args:
             output: Raw Bonnie++ output
@@ -492,56 +503,56 @@ class BonnieTestTool(BaseTestTool):
             # Parse metrics (converting K/sec to MB/s where appropriate)
             metrics = {}
             
-            # Sequential output - character (K/sec)
-            if fields[1] and fields[1] != '+++':
+            # Sequential output - character (K/sec) - field 1 (field 2 is CPU%)
+            if len(fields) > 1 and fields[1] and fields[1] != '+++':
                 metrics['sequential_output_char_kbps'] = self._parse_value(fields[1])
                 metrics['sequential_output_char_mbps'] = metrics['sequential_output_char_kbps'] / 1024
             
-            # Sequential output - block (K/sec)
-            if fields[3] and fields[3] != '+++':
+            # Sequential output - block (K/sec) - field 3 (field 4 is CPU%)
+            if len(fields) > 3 and fields[3] and fields[3] != '+++':
                 metrics['sequential_output_block_kbps'] = self._parse_value(fields[3])
                 metrics['sequential_output_block_mbps'] = metrics['sequential_output_block_kbps'] / 1024
             
-            # Sequential output - rewrite (K/sec)
-            if fields[5] and fields[5] != '+++':
+            # Sequential output - rewrite (K/sec) - field 5 (field 6 is CPU%)
+            if len(fields) > 5 and fields[5] and fields[5] != '+++':
                 metrics['sequential_rewrite_kbps'] = self._parse_value(fields[5])
                 metrics['sequential_rewrite_mbps'] = metrics['sequential_rewrite_kbps'] / 1024
             
-            # Sequential input - character (K/sec)
-            if fields[7] and fields[7] != '+++':
+            # Sequential input - character (K/sec) - field 7 (field 8 is CPU%)
+            if len(fields) > 7 and fields[7] and fields[7] != '+++':
                 metrics['sequential_input_char_kbps'] = self._parse_value(fields[7])
                 metrics['sequential_input_char_mbps'] = metrics['sequential_input_char_kbps'] / 1024
             
-            # Sequential input - block (K/sec)
-            if fields[9] and fields[9] != '+++':
+            # Sequential input - block (K/sec) - field 9 (field 10 is CPU%)
+            if len(fields) > 9 and fields[9] and fields[9] != '+++':
                 metrics['sequential_input_block_kbps'] = self._parse_value(fields[9])
                 metrics['sequential_input_block_mbps'] = metrics['sequential_input_block_kbps'] / 1024
             
-            # Random seeks (seeks/sec)
-            if fields[11] and fields[11] != '+++':
+            # Random seeks (seeks/sec) - field 11 (field 12 is CPU%)
+            if len(fields) > 11 and fields[11] and fields[11] != '+++':
                 metrics['random_seeks_per_sec'] = self._parse_value(fields[11])
             
-            # File operations - sequential create (files/sec)
+            # File operations - sequential create (files/sec) - field 13 (field 14 is CPU%)
             if len(fields) > 13 and fields[13] and fields[13] != '+++':
                 metrics['file_create_seq_per_sec'] = self._parse_value(fields[13])
             
-            # File operations - sequential stat (files/sec)
+            # File operations - sequential stat (files/sec) - field 15 (field 16 is CPU%)
             if len(fields) > 15 and fields[15] and fields[15] != '+++':
                 metrics['file_stat_seq_per_sec'] = self._parse_value(fields[15])
             
-            # File operations - sequential delete (files/sec)
+            # File operations - sequential delete (files/sec) - field 17 (field 18 is CPU%)
             if len(fields) > 17 and fields[17] and fields[17] != '+++':
                 metrics['file_delete_seq_per_sec'] = self._parse_value(fields[17])
             
-            # File operations - random create (files/sec)
+            # File operations - random create (files/sec) - field 19 (field 20 is CPU%)
             if len(fields) > 19 and fields[19] and fields[19] != '+++':
                 metrics['file_create_random_per_sec'] = self._parse_value(fields[19])
             
-            # File operations - random stat (files/sec)
+            # File operations - random stat (files/sec) - field 21 (field 22 is CPU%)
             if len(fields) > 21 and fields[21] and fields[21] != '+++':
                 metrics['file_stat_random_per_sec'] = self._parse_value(fields[21])
             
-            # File operations - random delete (files/sec)
+            # File operations - random delete (files/sec) - field 23 (field 24 is CPU%)
             if len(fields) > 23 and fields[23] and fields[23] != '+++':
                 metrics['file_delete_random_per_sec'] = self._parse_value(fields[23])
             

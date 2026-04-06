@@ -16,6 +16,7 @@ from .multi_version_report import MultiVersionReportGenerator
 from .templates import (
     get_base_template,
     get_header_html,
+    get_comparison_header_html,
     get_section_html,
     get_comparison_grid_html,
     get_multi_version_dimension_overview_html,
@@ -126,8 +127,12 @@ class ComparisonReportGenerator(BaseReportGenerator):
         results_1 = data['results_1']
         results_2 = data['results_2']
         
+        # Extract metadata from both test-ids
+        metadata_1 = results_1.get('test_metadata', {})
+        metadata_2 = results_2.get('test_metadata', {})
+        
         # Generate sections based on report style
-        header_html = self._generate_header(test_id_1, test_id_2)
+        header_html = self._generate_header(test_id_1, test_id_2, metadata_1, metadata_2)
         
         if self.report_style == 'dimension-based':
             # Dimension-based report
@@ -206,13 +211,16 @@ class ComparisonReportGenerator(BaseReportGenerator):
         
         return sections_html
     
-    def _generate_header(self, test_id_1: str, test_id_2: str) -> str:
+    def _generate_header(self, test_id_1: str, test_id_2: str,
+                        metadata_1: Dict[str, Any], metadata_2: Dict[str, Any]) -> str:
         """
-        Generate report header for comparison.
+        Generate report header for comparison with metadata from both test-ids.
         
         Args:
             test_id_1: First test ID
             test_id_2: Second test ID
+            metadata_1: Metadata from first test-id
+            metadata_2: Metadata from second test-id
             
         Returns:
             Header HTML string
@@ -220,14 +228,8 @@ class ComparisonReportGenerator(BaseReportGenerator):
         title = "NFS Benchmark Suite"
         subtitle = f"Comparison Report: {test_id_1} vs {test_id_2}"
         
-        # For comparison reports, we don't have single test_metadata
-        # The metadata is shown in the comparison grid instead
-        display_metadata = {
-            'test_id_1': test_id_1,
-            'test_id_2': test_id_2,
-        }
-        
-        return get_header_html(title, subtitle, display_metadata)
+        # Use the new comparison header template that shows both metadata side-by-side
+        return get_comparison_header_html(title, subtitle, metadata_1, metadata_2)
     
     def _generate_comparison_grid(self, test_id_1: str, test_id_2: str,
                                   results_1: Dict[str, Any], 

@@ -334,6 +334,87 @@ def get_header_html(title: str, subtitle: str, metadata: Dict[str, Any] = None) 
     """
 
 
+def get_comparison_header_html(title: str, subtitle: str,
+                               metadata_1: Dict[str, Any] = None,
+                               metadata_2: Dict[str, Any] = None) -> str:
+    """
+    Generate comparison header HTML with metadata from both test-ids.
+    
+    Args:
+        title: Main title
+        subtitle: Subtitle text
+        metadata_1: Metadata from first test-id
+        metadata_2: Metadata from second test-id
+        
+    Returns:
+        Comparison header HTML string
+    """
+    def format_metadata_column(metadata: Dict[str, Any], label: str) -> str:
+        """Format metadata for one test-id as a column."""
+        if not metadata:
+            return f"<div><h3>{label}</h3><p>No metadata available</p></div>"
+        
+        items = []
+        
+        # Test ID
+        if 'test_id' in metadata:
+            items.append(f"<div><strong>Test ID:</strong> {metadata['test_id']}</div>")
+        
+        # Server and mount
+        if 'server_ip' in metadata:
+            items.append(f"<div><strong>Server:</strong> {metadata['server_ip']}</div>")
+        if 'mount_path' in metadata:
+            items.append(f"<div><strong>Mount Path:</strong> {metadata['mount_path']}</div>")
+        
+        # Transport and mode
+        if 'transport' in metadata:
+            items.append(f"<div><strong>Transport:</strong> {metadata['transport'].upper()}</div>")
+        if 'test_mode' in metadata:
+            items.append(f"<div><strong>Test Mode:</strong> {metadata['test_mode'].title()}</div>")
+        
+        # Versions
+        if 'versions_tested' in metadata:
+            versions = metadata['versions_tested']
+            if isinstance(versions, list):
+                versions_str = ', '.join([f"NFSv{v}" for v in versions])
+            else:
+                versions_str = str(versions)
+            items.append(f"<div><strong>Versions:</strong> {versions_str}</div>")
+        
+        # Timestamp
+        if 'timestamp' in metadata:
+            items.append(f"<div><strong>Timestamp:</strong> {metadata['timestamp']}</div>")
+        
+        return f"""
+        <div style="flex: 1; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+            <h3 style="margin-bottom: 15px; font-size: 1.1em; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 8px;">{label}</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.95em;">
+                {''.join(items)}
+            </div>
+        </div>
+        """
+    
+    metadata_html = ""
+    if metadata_1 or metadata_2:
+        col1 = format_metadata_column(metadata_1 or {}, "Test Configuration 1")
+        col2 = format_metadata_column(metadata_2 or {}, "Test Configuration 2")
+        
+        metadata_html = f"""
+        <div style="margin-top: 20px; display: flex; gap: 20px; flex-wrap: wrap;">
+            {col1}
+            {col2}
+        </div>
+        """
+    
+    return f"""
+    <div class="header">
+        <h1>🚀 {title}</h1>
+        <p>{subtitle}</p>
+        {metadata_html}
+    </div>
+    """
+
+
 def get_metric_card_html(title: str, value: str, unit: str = "", description: str = "") -> str:
     """
     Generate metric card HTML.

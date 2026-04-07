@@ -76,7 +76,7 @@ iozone_tests:
     enabled: true
     file_size: "1g"            # Larger files for metadata
     record_size: "4k"
-    threads: 128                 # Very high thread count
+    threads: 64                 # Very high thread count
     test_types: [0, 1]
     direct_io: false
     throughput_mode: true
@@ -164,7 +164,7 @@ fio_tests:
     ioengine: "libaio"
     iodepth: 16
     direct: 1
-    runtime: 300             # 5 minutes
+    runtime: 600             # 5 minutes
     randrepeat: 0
   
   metadata_operations:
@@ -172,7 +172,7 @@ fio_tests:
     rw: "write"
     bs: "4k"
     filesize: "1M"
-    nrfiles: 50000            # Large number of files
+    nrfiles: 25000            # Large number of files
     numjobs: 8
     ioengine: "sync"
     create_on_open: 1
@@ -196,23 +196,23 @@ bonnie_tests:
   
   comprehensive_test:
     enabled: true
-    file_size: "64g"             # Very large file for benchmark
-    ram_size: "65536"            # Tell bonnie++ to assume 64GB RAM
+    file_size: "128g"             # Very large file for benchmark
+    ram_size: "32768"            # Tell bonnie++ to assume 64GB RAM
     num_files: "128:0:0:128"     # Many files for metadata
     timeout: 1200                # 20 minutes
   
   fast_test:
     enabled: true
-    file_size: "32g"             # Large file for fast test
-    ram_size: "65536"             # Tell bonnie++ to assume 64GB RAM
+    file_size: "64g"             # Large file for fast test
+    ram_size: "16384"             # Tell bonnie++ to assume 64GB RAM
     num_files: "64:0:0:64"
     fast_mode: true
     timeout: 1200                # 20 minutes
   
   file_operations:
     enabled: true
-    file_size: "16g"             # Large file for operations
-    ram_size: "65536"             # Tell bonnie++ to assume 64GB RAM
+    file_size: "64g"             # Large file for operations
+    ram_size: "8096"             # Tell bonnie++ to assume 64GB RAM
     num_files: "256:0:0:256"     # Many files for extensive metadata testing
     # processes: 8               # Disabled - causes issues with CSV output in some bonnie++ versions
 # dbench Test Configuration (Stress Test Profile)

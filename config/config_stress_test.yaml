@@ -196,9 +196,9 @@ bonnie_tests:
   
   comprehensive_test:
     enabled: true
-    file_size: "128g"             # Very large file for benchmark
+    file_size: "64g"             # Very large file for benchmark
     ram_size: "32768"            # Tell bonnie++ to assume 64GB RAM
-    num_files: "128:0:0:128"     # Many files for metadata
+    num_files: "32:0:0:32"     # Many files for metadata
     timeout: 1200                # 20 minutes
   
   fast_test:
@@ -211,7 +211,7 @@ bonnie_tests:
   
   file_operations:
     enabled: true
-    file_size: "64g"             # Large file for operations
+    file_size: "32g"             # Large file for operations
     ram_size: "8096"             # Tell bonnie++ to assume 64GB RAM
     num_files: "256:0:0:256"     # Many files for extensive metadata testing
     # processes: 8               # Disabled - causes issues with CSV output in some bonnie++ versions
